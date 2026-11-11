@@ -107,7 +107,7 @@ const views={
   return head('productivity','',`<button class="btn" data-act="log"><i data-lucide="timer"></i>${t('logStudy')}</button>`)+`<div class="grid">${card(t('study'),chart(D.study,DAYS.map(t)))}${card(t('habits'),D.habits.map(h=>`<div class="item"><div class="grow"><b>${esc(h.name)}</b></div><div class="hab">${h.days.map((d,j)=>`<button class="chk ${d?'on':''}" data-act="hab" data-id="${h.id}" data-i="${j}" title="${t(DAYS[j])}" ${j===i?'style="border-color:var(--primary)"':''}><i data-lucide="check"></i></button>`).join('')}</div>${ctl('hab',h.id)}</div>`).join('')+`<button class="btn ghost" data-act="new" data-m="hab"><i data-lucide="plus"></i>${t('add')}</button>`)}${card(t('tasks'),D.tasks.map(k=>`<div class="item" data-s="${esc(k.title)}"><button class="chk ${k.done?'on':''}" data-act="task" data-id="${k.id}"><i data-lucide="check"></i></button><div class="grow"><b style="${k.done?'text-decoration:line-through;opacity:.6':''}">${esc(k.title)}</b></div>${ctl('task',k.id)}</div>`).join('')+`<button class="btn ghost" data-act="new" data-m="task"><i data-lucide="plus"></i>${t('add')}</button>`)}${card(t('goals'),D.goals.map(g=>`<div class="item"><div class="grow"><b>${esc(g.title)}</b>${bar(g.progress)}<small>${g.progress}%</small></div><button class="icon-btn" data-act="gprog" data-id="${g.id}" aria-label="+10%"><i data-lucide="trending-up"></i></button>${ctl('goal',g.id)}</div>`).join('')+`<button class="btn ghost" data-act="new" data-m="goal"><i data-lucide="plus"></i>${t('add')}</button>`)}</div>`},
  settings(){const p=U.prefs,n=p.notif,u=D.user;
   const tog=(k,l)=>`<label class="item"><span class="grow">${t(l)}</span><input type="checkbox" style="width:22px;min-height:22px" data-set="notif.${k}" ${n[k]?'checked':''}></label>`;
-  return head('settings')+`<div class="grid">${card(t('appearance'),`<label class="field">${t('font')}<select data-set="font" style="font-family:'${p.font}'">${U.config.fonts.map(f=>`<option ${f===p.font?'selected':''} style="font-family:'${f}'">${f}</option>`).join('')}</select></label><label class="field">${t('theme')}${sel('data-set="theme"',['light','dark','system'],p.theme)}</label><label class="field">${t('density')}${sel('data-set="density"',['comfortable','compact'],p.density)}</label>`)}${card(t('language'),`<label class="field">${t('language')}<select data-set="lang"><option value="en" ${p.lang==='en'?'selected':''}>English</option><option value="ms" ${p.lang==='ms'?'selected':''}>Bahasa Melayu</option></select></label>`)}${card(t('notifications'),tog('push','enablePush')+tog('assignments','assignReminders')+tog('classes','classReminders')+tog('exams','examReminders')+tog('finance','financeAlerts'))}${card(t('account'),`${[['name','student'],['university','university'],['semester','semester'],['year','year']].map(([k,l])=>`<label class="field">${t(l)}<input data-p="${k}" value="${esc(u[k])}" maxlength="80"></label>`).join('')}<div class="row"><button class="btn" data-act="profile">${t('save')}</button><button class="btn ghost" data-act="pwd">${t('password')}</button><button class="btn ghost" data-act="logout">${t('logout')}</button></div>`)}</div>`}
+  return head('settings')+`<div class="grid">${card(t('appearance'),`<label class="field">${t('font')}<select data-set="font" style="font-family:'${p.font}'">${U.config.fonts.map(f=>`<option ${f===p.font?'selected':''} style="font-family:'${f}'">${f}</option>`).join('')}</select></label><label class="field">${t('theme')}${sel('data-set="theme"',['light','dark','system'],p.theme)}</label><label class="field">${t('density')}${sel('data-set="density"',['comfortable','compact'],p.density)}</label>`)}${card(t('language'),`<label class="field">${t('language')}<select data-set="lang"><option value="en" ${p.lang==='en'?'selected':''}>English</option><option value="ms" ${p.lang==='ms'?'selected':''}>Bahasa Melayu</option></select></label>`)}${card(t('notifications'),tog('push','enablePush')+tog('assignments','assignReminders')+tog('classes','classReminders')+tog('exams','examReminders')+tog('finance','financeAlerts')+(U.push?U.push.panel():''))}${card(t('account'),`${[['name','student'],['university','university'],['semester','semester'],['year','year']].map(([k,l])=>`<label class="field">${t(l)}<input data-p="${k}" value="${esc(u[k])}" maxlength="80"></label>`).join('')}<div class="row"><button class="btn" data-act="profile">${t('save')}</button><button class="btn ghost" data-act="pwd">${t('password')}</button><button class="btn ghost" data-act="logout">${t('logout')}</button></div>`)}</div>`}
 };
 // ---------- server sync ----------
 const CN={assign:'assignments',cls:'classes',exam:'exams',tx:'tx',sg:'sg',course:'courses',hab:'habits',task:'tasks',goal:'goals',hist:'semesters'};
@@ -117,7 +117,7 @@ function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study})}
 async function load(){
  $('#view').innerHTML=`<div class="empty"><i data-lucide="loader"></i><p>${t('loading')}</p></div>`;window.lucide&&lucide.createIcons();
- try{const r=await U.api.call('bootstrap');hydrate(r);if(U.prefs.lang!==fmt.lang)await fmt.load(U.prefs.lang);apply();render();return true}
+ try{const r=await U.api.call('bootstrap');hydrate(r);if(U.prefs.lang!==fmt.lang)await fmt.load(U.prefs.lang);apply();render();U.push&&U.push.sync();return true}
  catch(e){if(e.code==='auth')return false;
   $('#view').innerHTML=`<div class="empty"><p>${errMsg(e)}</p><button class="btn" data-act="retry">${t('retry')}</button></div>`;return true}}
 async function boot(){
@@ -147,19 +147,30 @@ const acts={
  tt:id=>{st.tt=id;render()},
  profile:async()=>{const v={};$$('[data-p]').forEach(i=>v[i.dataset.p]=i.value.trim());try{Object.assign(D.user,await U.api.call('updateProfile',v));toast(t('saved'));render()}catch(e){toast(errMsg(e))}},
  pwd:()=>form(t('password'),[{n:'current',l:'pwdCurrent',t:'password'},{n:'next',l:'pwdNew',t:'password'}],{},o=>{U.api.call('changePassword',o).then(()=>toast(t('saved'))).catch(e=>toast(errMsg(e)))}),
- logout:async()=>{try{await U.api.call('logout')}catch(e){}localStorage.removeItem('ul_token');location.reload()},
+ logout:async()=>{try{if(U.push)await U.push.unlink();await U.api.call('logout')}catch(e){}localStorage.removeItem('ul_token');location.reload()},
  budget:()=>form(t('budget'),[{n:'budget',l:'budget',t:'number',min:0}],{budget:D.finance.budget},o=>{D.finance.budget=o.budget;store()}),
  import:(_,b)=>U.importer.open(b.dataset.m),
  retry:()=>boot(),
+ pushtest:async()=>{try{await U.api.call('pushTest');toast(t('pushSent'))}catch(e){toast(errMsg(e))}},
+ install:async()=>{await U.push.install();render()},
  mv:(i,b)=>{const o=U.prefs.order,j=+i+ +b.dataset.d;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];store();acts.custom();render()},
  custom:()=>modal(`<h3>${t('customize')}</h3>${U.prefs.order.map((w,i)=>`<div class="item"><label class="grow row"><input type="checkbox" style="width:20px;min-height:20px" data-w="${w}" ${U.prefs.hidden.includes(w)?'':'checked'}> ${t(WN[w]||w)}</label><button class="icon-btn" data-act="mv" data-id="${i}" data-d="-1" aria-label="up">↑</button><button class="icon-btn" data-act="mv" data-id="${i}" data-d="1" aria-label="down">↓</button></div>`).join('')}<div class="row end" style="margin-top:12px"><button class="btn" data-act="close">${t('done')}</button></div>`)
+ 
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&acts[b.dataset.act])acts[b.dataset.act](b.dataset.id,b,e);else if(e.target.id==='modal')close()});
 document.addEventListener('change',async e=>{const el=e.target,d=el.dataset;
  if(d.view){st[d.view]=el.value;return render()}
  if(d.w){const h=U.prefs.hidden,i=h.indexOf(d.w);i<0?h.push(d.w):h.splice(i,1);store();return render()}
  if(!d.set)return;const v=el.type==='checkbox'?el.checked:el.value;
- if(d.set.startsWith('notif.')){U.prefs.notif[d.set.slice(6)]=v;store();if(d.set==='notif.push'&&v)toast(t('phase3'));return}
+ if(d.set.startsWith('notif.')){
+  const key=d.set.slice(6);
+  if(key==='push'&&v){ // permission prompt must start from this click
+   el.disabled=true;
+   const r=U.push?await U.push.enable():{error:'pushFail'};
+   if(r.error){el.checked=false;el.disabled=false;return toast(t(r.error))}
+   U.prefs.notif.push=true;store();toast(t('pushOn'));return render()}
+  if(key==='push'){if(U.push)await U.push.disable();U.prefs.notif.push=false;store();toast(t('pushOff'));return render()}
+  U.prefs.notif[key]=v;store();return}
  U.prefs[d.set]=v;store();if(d.set==='lang')await fmt.load(v);apply();render()});
 $('#search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();$$('#view [data-s]').forEach(n=>n.hidden=!!q&&!n.dataset.s.toLowerCase().includes(q))});
 addEventListener('hashchange',render);

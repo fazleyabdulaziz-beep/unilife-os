@@ -13,7 +13,7 @@ const SCHEMA={
   Finance:['id','user_id','kind','type','cat','amount','date','title','target','saved'],
   Habits:['id','user_id','kind','name','title','days','done','progress'],
   Notifications:['id','user_id','type','ref_id','fire_at','sent_at','status','attempts'],
-  PushSubscriptions:['id','user_id','endpoint','p256dh','auth','created_at'],
+  PushSubscriptions:['id','user_id','token','platform','created_at'],
   ActivityLogs:['id','user_id','action','entity','at'],
   Sessions:['token_hash','user_id','expires_at'] // extra sheet: server-side sessions (token stored hashed)
 };

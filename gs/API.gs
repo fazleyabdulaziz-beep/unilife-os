@@ -17,6 +17,9 @@ function handle(req){
       locked(function(){items.forEach(function(i){dbCreate(cb,uid,{...i,id:undefined})})});
       audit(uid,'import',cb);return{count:items.length};
     }
+    case 'pushSubscribe':locked(function(){pushSubscribe(uid,d)});return{};
+    case 'pushUnsubscribe':locked(function(){pushUnsubscribe(uid,d)});return{};
+    case 'pushTest':return pushTest(uid);
     case 'savePrefs':locked(function(){savePrefs(uid,d)});return{};
     case 'updateProfile':return locked(function(){return updateProfile(uid,d)});
     case 'changePassword':return locked(function(){return changePassword(uid,req.token,d)});
