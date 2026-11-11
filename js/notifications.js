@@ -16,7 +16,38 @@ UL.push={
   return this._l||(this._l=s(this.B+'firebase-app-compat.js').then(()=>s(this.B+'firebase-messaging-compat.js')))},
  async token(){await this.load();const reg=await navigator.serviceWorker.ready;
   firebase.apps.length||firebase.initializeApp(UL_PUSH.firebase);const m=firebase.messaging();
-  if(!this._fg){this._fg=1;m.onMessage(p=>{const d=p.data||{};UL.ui.toast((d.title?d.title+': ':'')+(d.body||''))})} // app open: in-app toast
+  
+if (!this._fg) {
+  this._fg = 1;
+
+  m.onMessage(async p => {
+    const d = p.data || {};
+    const title = d.title || 'UniLife OS';
+    const body = d.body || 'You have a new notification.';
+
+    // Keep the in-app feedback
+    UL.ui.toast(title + ': ' + body);
+
+    // Also show native browser notification
+    if (Notification.permission === 'granted') {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+
+        await reg.showNotification(title, {
+          body: body,
+          tag: d.tag || 'unilife-notification',
+          icon: './assets/icons/icon-192.png',
+          badge: './assets/icons/icon-192.png',
+          data: {
+            url: d.url || '#/dashboard'
+          }
+        });
+      } catch (e) {
+        console.error('Native notification failed:', e);
+      }
+    }
+  });
+}
   return m.getToken({vapidKey:UL_PUSH.vapidKey,serviceWorkerRegistration:reg})},
  async enable(){
   if(!this.supported())return{error:this.isIOS()&&!this.standalone()?'iosInstall':'pushUnsupported'};
