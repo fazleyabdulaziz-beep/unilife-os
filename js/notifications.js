@@ -34,7 +34,7 @@ UL.push={
  async sync(){ // refresh the device token after login/app start if push is on
   if(!UL.prefs.notif.push||!this.supported()||!this.configured()||Notification.permission!=='granted')return;
   try{const tok=await this.token();if(tok&&tok!==localStorage.getItem('ul_fcm')){await UL.api.call('pushSubscribe',{token:tok,platform:this.platform()});localStorage.setItem('ul_fcm',tok)}}catch(e){}},
- panel(){const t=UL.i18n.t;let m='';
+ panel(){const t=k=>UL.i18n.t(k);let m='';
   if(!this.configured())m=t('err_nopush');else if(this.isIOS()&&!this.standalone())m=t('iosInstall');
   else if(!this.supported())m=t('pushUnsupported');else if(Notification.permission==='denied')m=t('pushDenied');
   return`<p class="muted" style="margin-bottom:8px">${m||t('pushReady')}</p><div class="row" style="margin-bottom:8px">${UL.prefs.notif.push?`<button class="btn ghost" data-act="pushtest">${t('pushTest')}</button>`:''}${this.deferred?`<button class="btn ghost" data-act="install">${t('installApp')}</button>`:''}</div>`}
