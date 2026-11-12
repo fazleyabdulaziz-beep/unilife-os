@@ -353,3 +353,202 @@ input,select{border-radius:14px}
 @media(max-width:760px){.authwrap{padding:12px;align-items:center}.auth-shell{display:block;min-height:0;width:min(460px,100%);border-radius:24px}.auth-showcase{display:none}.auth-panel{padding:clamp(26px,8vw,42px) clamp(22px,7vw,38px);background:rgba(255,255,255,.9)}.auth-mobile-brand{display:flex}.auth-card{max-width:none}.auth-panel-footer{margin-top:32px}.auth-card-heading{margin-bottom:17px}.auth-subtitle{margin-bottom:24px}}
 @media(max-height:680px) and (min-width:761px){.authwrap{padding:14px}.auth-shell{min-height:0}.auth-showcase{min-height:590px;padding:30px}.auth-panel{padding:30px}.auth-panel-footer{margin-top:25px}}
 @media(prefers-reduced-motion:reduce){.authwrap,.auth-shell,.auth-showcase-copy,.auth-preview,.auth-card,.auth-orb,.auth-progress i{animation:none!important}.auth-submit,.auth-input-wrap input{transition:none!important}}
+
+
+/* UniLife OS — Minimal Auth */
+.auth-simple {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow-y: auto;
+  display: grid;
+  place-items: center;
+  background: var(--bg, #f8f7fc);
+  animation: authFade .35s ease both;
+}
+
+.auth-simple-shell {
+  width: min(100% - 32px, 420px);
+  margin: auto;
+  padding: 36px 0;
+}
+
+.auth-simple-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 38px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -.5px;
+}
+
+.auth-simple-brand img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.auth-simple-brand b {
+  color: #8056d9;
+}
+
+.auth-simple-card {
+  padding: 34px;
+  background: var(--card, #fff);
+  border: 1px solid var(--border, #ece9f2);
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(40, 25, 75, .055);
+}
+
+.auth-simple-heading {
+  margin-bottom: 28px;
+}
+
+.auth-simple-label {
+  color: #8056d9;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.auth-simple-heading h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(25px, 5vw, 30px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+
+.auth-simple-heading p,
+.auth-simple-footer {
+  color: var(--muted, #898593);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.auth-simple .auth-form {
+  display: grid;
+  gap: 18px;
+}
+
+.auth-simple .auth-field {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-simple .auth-field input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  border: 1px solid var(--border, #e8e5ed);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text, #292532);
+  outline: none;
+  font: inherit;
+  font-weight: 400;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.auth-simple .auth-field input:focus {
+  border-color: #9875df;
+  box-shadow: 0 0 0 3px rgba(128, 86, 217, .10);
+}
+
+.auth-simple-password {
+  position: relative;
+}
+
+.auth-simple-password input {
+  padding-right: 48px !important;
+}
+
+.auth-simple-password .auth-eye {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--muted, #898593);
+  cursor: pointer;
+}
+
+.auth-simple .auth-submit {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 10px;
+  background: #7651cc;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+
+.auth-simple .auth-submit:hover {
+  background: #6540b8;
+  transform: translateY(-1px);
+}
+
+.auth-simple .auth-submit:disabled {
+  opacity: .65;
+  cursor: wait;
+  transform: none;
+}
+
+.auth-simple .auth-switch {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted, #898593);
+}
+
+.auth-simple .auth-switch a {
+  color: #8056d9;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-simple .auth-error {
+  color: #d64c62;
+  font-size: 13px;
+}
+
+.auth-simple-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 11px;
+}
+
+.auth-simple.auth-exit {
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+
+@keyframes authFade {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .auth-simple-card {
+    padding: 26px 21px;
+    border-radius: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-simple,
+  .auth-simple * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
