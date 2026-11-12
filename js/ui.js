@@ -1,33 +1,64 @@
-/* Optional, non-destructive polish for the Student Life OS.
-   Add before </body>:  <script src="ui.js" defer></script>
-   - count-up animation for numbers in .stats b
-   - UI.busy(true/false) drives the top loading bar
-   - UI.toastOut(el) fades a toast out before you remove it
-   Nothing here touches your data, auth or Apps Script calls. */
+/* UniLife OS — fluid interaction layer
+   Visual-only enhancements. Does not modify API, auth, data or storage. */
 (()=>{
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let bar=document.getElementById('topload');
-  if(!bar){bar=document.createElement('div');bar.id='topload';document.body.prepend(bar)}
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const view=document.getElementById('view');
+  const topbar=document.querySelector('.topbar');
+  const bar=document.createElement('div');
+  bar.id='topload';
+  if(!document.getElementById('topload'))document.body.prepend(bar);
+
   window.UI={
     busy:on=>document.body.classList.toggle('busy',!!on),
-    toastOut:(el,ms=300)=>{if(!el)return;el.classList.add('out');setTimeout(()=>el.remove(),reduce?0:ms)}
+    toastOut:(el,ms=260)=>{
+      if(!el)return;
+      el.classList.add('out');
+      window.setTimeout(()=>el.remove(),reduce?0:ms);
+    }
   };
-  if(reduce)return;
-  const ease=t=>1-Math.pow(1-t,4);
-  function count(el){
-    if(el.dataset.counted||el.childNodes.length!==1||el.firstChild.nodeType!==3)return;
-    const m=el.textContent.trim().match(/^(-?\d+(?:\.\d+)?)(\D*)$/);
-    if(!m)return;
-    el.dataset.counted='1';
-    const end=parseFloat(m[1]),dec=(m[1].split('.')[1]||'').length,suf=m[2],node=el.firstChild,t0=performance.now(),dur=900;
-    (function tick(now){
-      const p=Math.min(1,(now-t0)/dur),v=end*ease(p);
-      node.nodeValue=v.toFixed(dec)+suf;
-      if(p<1)requestAnimationFrame(tick);
-    })(t0);
+
+  if(topbar){
+    const update=()=>topbar.classList.toggle('scrolled',window.scrollY>12);
+    window.addEventListener('scroll',update,{passive:true});
+    update();
   }
-  const scan=()=>document.querySelectorAll('.stats b:not([data-counted])').forEach(count);
-  const view=document.getElementById('view');
-  if(view)new MutationObserver(()=>requestAnimationFrame(scan)).observe(view,{childList:true,subtree:true});
+
+  if(!view||reduce)return;
+  let frame=0;
+  const animateView=()=>{
+    cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{
+      view.classList.remove('ui-enter');
+      void view.offsetWidth;
+      view.classList.add('ui-enter');
+      view.querySelectorAll('.card').forEach((card,index)=>{
+        card.style.setProperty('--i',Math.min(index,8));
+      });
+    });
+  };
+  const observer=new MutationObserver(records=>{
+    if(records.some(record=>record.addedNodes.length))animateView();
+  });
+  observer.observe(view,{childList:true});
+  animateView();
+
+  // Gentle count-up for plain numeric dashboard values only.
+  const counted=new WeakSet();
+  const countUp=el=>{
+    if(counted.has(el)||el.children.length||!el.textContent.trim())return;
+    const match=el.textContent.trim().match(/^(-?\d+(?:\.\d+)?)(\D*)$/);
+    if(!match)return;
+    counted.add(el);
+    const end=Number(match[1]),decimals=(match[1].split('.')[1]||'').length,suffix=match[2];
+    const start=performance.now(),duration=650;
+    const tick=now=>{
+      const p=Math.min(1,(now-start)/duration),eased=1-Math.pow(1-p,4);
+      el.textContent=(end*eased).toFixed(decimals)+suffix;
+      if(p<1)requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const scan=()=>view.querySelectorAll('.stats b').forEach(countUp);
+  new MutationObserver(()=>requestAnimationFrame(scan)).observe(view,{childList:true,subtree:true});
   scan();
 })();
