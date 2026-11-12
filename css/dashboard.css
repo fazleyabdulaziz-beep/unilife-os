@@ -1,0 +1,155 @@
+/* =========================================================
+   UNILIFE OS — dashboard.css
+   Styles for the "campus" dashboard markup rendered by app.js
+   (views.dashboard). Load AFTER main.css. Uses tokens from themes.css.
+   ========================================================= */
+
+/* ---------- header ---------- */
+.dashboard-head h1 span{color:var(--primary);font-size:.7em;vertical-align:.12em;margin-left:4px}
+
+/* ---------- layout ---------- */
+.campus-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.campus-main,.campus-side{display:grid;gap:20px;min-width:0}
+.campus-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.campus-metrics>.campus-card{height:100%}
+.campus-main>*,.campus-side>*,.campus-metrics>*{animation:rise var(--t-slow) var(--ease) both}
+.campus-main>:nth-child(2){animation-delay:.06s}.campus-main>:nth-child(3){animation-delay:.12s}.campus-main>:nth-child(4){animation-delay:.18s}
+.campus-side>:nth-child(1){animation-delay:.08s}.campus-side>:nth-child(2){animation-delay:.14s}.campus-side>:nth-child(3){animation-delay:.2s}
+
+/* ---------- cards ---------- */
+.campus-card{position:relative;isolation:isolate;overflow:hidden;min-width:0;
+ background:color-mix(in srgb,var(--surface) 91%,transparent);
+ border:1px solid color-mix(in srgb,var(--border) 72%,transparent);
+ border-radius:25px;box-shadow:var(--shadow);padding:clamp(18px,2vw,24px);
+ transition:transform var(--t-med) var(--ease),box-shadow var(--t-med) var(--ease),border-color var(--t-med)}
+.campus-card::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--primary-soft) 62%,transparent),transparent 52%);opacity:.5}
+@media(hover:hover) and (min-width:901px){
+ .campus-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--primary) 22%,var(--border));box-shadow:var(--shadow-lg)}
+}
+.campus-card svg{width:17px;height:17px;flex:none}
+.campus-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.campus-card-head h3{font-size:16px;letter-spacing:-.02em;margin:0}
+.campus-card-head small{display:block;margin-top:2px}
+.campus-card-head>svg{color:var(--primary);width:20px;height:20px;margin-top:2px}
+.campus-card-head>a{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm);font-weight:700;color:var(--primary);text-decoration:none;white-space:nowrap;padding:4px 10px;border-radius:99px;transition:background var(--t-fast)}
+.campus-card-head>a:hover{background:var(--primary-soft)}
+
+/* ---------- welcome banner ---------- */
+.welcome-card{position:relative;overflow:hidden;isolation:isolate;display:flex;justify-content:space-between;align-items:center;gap:16px;
+ min-height:190px;padding:clamp(22px,3vw,32px);border-radius:28px;
+ background:linear-gradient(135deg,var(--primary-soft) 0%,var(--blue-soft) 100%);
+ border:1px solid color-mix(in srgb,var(--primary) 10%,var(--border));box-shadow:var(--shadow)}
+.welcome-copy{position:relative;z-index:2;max-width:380px}
+.eyebrow{display:inline-block;font-size:var(--fs-xs);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--primary);margin-bottom:10px}
+.welcome-copy h2{font-size:clamp(22px,3vw,30px);letter-spacing:-.04em;line-height:1.1;margin-bottom:8px}
+.welcome-copy p{color:var(--muted);font-size:var(--fs-md);margin-bottom:18px}
+.welcome-link{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:var(--fs-sm);text-decoration:none;color:var(--on-primary);
+ background:var(--primary);padding:10px 16px;border-radius:14px;box-shadow:0 8px 18px -8px var(--glow);transition:transform var(--t-med) var(--ease),filter var(--t-fast)}
+.welcome-link:hover{transform:translateY(-2px);filter:brightness(1.07)}
+.welcome-link svg{width:16px;height:16px}
+
+.welcome-art{position:relative;flex:none;width:min(240px,38%);height:150px}
+.sun-disc{position:absolute;right:18px;top:0;width:78px;height:78px;border-radius:50%;
+ background:radial-gradient(circle at 35% 35%,#fff6dc,#f6d58d 70%);box-shadow:0 0 0 14px rgba(246,213,141,.22),0 0 40px rgba(246,213,141,.5)}
+[data-theme=dark] .sun-disc{background:radial-gradient(circle at 35% 35%,#e9e4ff,#b9a7e8 70%);box-shadow:0 0 0 14px rgba(185,167,232,.14),0 0 40px rgba(185,167,232,.35)}
+.campus-building{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:104px;height:104px;border-radius:26px 26px 14px 14px;
+ display:grid;place-items:center;color:var(--primary);background:color-mix(in srgb,var(--surface) 78%,transparent);
+ border:1px solid var(--glass-border);box-shadow:var(--shadow);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.campus-building svg{width:50px;height:50px;stroke-width:1.6}
+.art-cloud{position:absolute;height:20px;border-radius:99px;background:color-mix(in srgb,var(--surface) 85%,transparent);animation:float 7s ease-in-out infinite}
+.art-cloud::before{content:"";position:absolute;left:16%;top:-10px;width:40%;height:20px;border-radius:99px;background:inherit}
+.cloud-one{left:0;top:26px;width:70px}
+.cloud-two{right:0;bottom:34px;width:56px;animation-delay:-3s;animation-duration:9s}
+
+/* ---------- mini calendar ---------- */
+.mini-calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+.mini-day-label{font-size:var(--fs-xs);font-weight:700;color:var(--muted);padding-bottom:4px;text-transform:uppercase}
+.mini-day{display:grid;place-items:center;aspect-ratio:1;max-height:46px;border-radius:50%;font-size:var(--fs-sm);font-weight:600;font-variant-numeric:tabular-nums;
+ margin:0 auto;width:100%;max-width:46px;transition:background var(--t-fast),color var(--t-fast),transform var(--t-med) var(--pop)}
+.mini-day:hover{background:var(--surface2);transform:scale(1.08)}
+.mini-day.today{background:var(--primary);color:var(--on-primary);box-shadow:0 6px 14px -4px var(--glow)}
+.mini-day-blank{display:block}
+
+/* ---------- study chart ---------- */
+.productivity-card .chart{height:140px}
+
+/* ---------- progress ring ---------- */
+.progress-ring{--progress:0%;position:relative;width:150px;height:150px;margin:6px auto 12px;border-radius:50%;
+ background:conic-gradient(var(--primary) 0,var(--primary2) var(--progress),var(--surface2) 0);display:grid;place-items:center;
+ box-shadow:0 0 24px -6px color-mix(in srgb,var(--primary) 28%,transparent)}
+.progress-ring>div{width:calc(100% - 28px);height:calc(100% - 28px);border-radius:50%;background:var(--surface);display:grid;place-content:center;text-align:center}
+.progress-ring b{font-family:var(--font-display);font-size:30px;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.progress-ring small{display:block;margin-top:2px;font-size:var(--fs-xs)}
+.ring-foot{display:block;text-align:center;font-weight:600}
+
+/* ---------- quick access ---------- */
+.quick-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.quick-links a{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 10px;border-radius:var(--r-md);text-align:center;text-decoration:none;
+ color:var(--text);font-size:var(--fs-sm);font-weight:700;background:var(--surface2);border:1px solid transparent;
+ transition:transform var(--t-med) var(--ease),background var(--t-fast),border-color var(--t-fast),color var(--t-fast)}
+.quick-links a svg{width:22px;height:22px;color:var(--primary)}
+.quick-links a:hover{transform:translateY(-3px);background:var(--primary-soft);border-color:color-mix(in srgb,var(--primary) 20%,transparent);color:var(--primary)}
+.quick-links a:active{transform:scale(.96)}
+
+/* ---------- today's focus ---------- */
+.focus-task{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid color-mix(in srgb,var(--border) 72%,transparent)}
+.focus-task:first-of-type{border-top:0}
+.focus-task>*{min-width:0}
+.focus-task b{display:block;font-weight:600;overflow-wrap:anywhere;line-height:1.3}
+.focus-check{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:var(--primary-soft);color:var(--primary)}
+.focus-check svg{width:17px;height:17px}
+.task-date{flex:none;white-space:nowrap;font-weight:600}
+.add-task-link{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;padding:11px;border-radius:var(--r-sm);
+ border:1.5px dashed var(--border);color:var(--muted);font-size:var(--fs-sm);font-weight:700;text-decoration:none;transition:all var(--t-fast)}
+.add-task-link:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+
+/* ---------- focus timer ---------- */
+.focus-card{text-align:center}
+.focus-card .campus-card-head{text-align:left}
+.timer-illustration{display:grid;place-items:center;margin:2px 0 6px}
+.hourglass-shape{display:grid;place-items:center;width:84px;height:84px;border-radius:50%;color:var(--primary);
+ background:radial-gradient(circle at 30% 30%,var(--surface),var(--primary-soft));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 12%,transparent),0 10px 24px -12px var(--glow)}
+.hourglass-shape svg{width:36px;height:36px;stroke-width:1.6}
+.timer-readout{font-family:var(--font-display);font-weight:800;font-size:clamp(40px,5vw,52px);letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums;margin:6px 0 10px}
+.timer-controls{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;color:var(--muted);font-size:var(--fs-sm);font-weight:600}
+.timer-adjust{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);
+ font-size:20px;line-height:1;font-weight:700;transition:background var(--t-fast),color var(--t-fast),transform var(--t-med) var(--pop)}
+.timer-adjust:hover{background:var(--primary-soft);color:var(--primary)}
+.timer-adjust:active{transform:scale(.9)}
+.timer-start,.timer-reset{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;border-radius:14px;font-weight:700;border:0;
+ transition:transform var(--t-med) var(--ease),box-shadow var(--t-med) var(--ease),filter var(--t-fast),background var(--t-fast)}
+.timer-start{background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 72%,var(--primary2)));color:var(--on-primary);box-shadow:0 8px 18px -8px var(--glow)}
+.timer-start:hover{transform:translateY(-2px);filter:brightness(1.06)}
+.timer-start:active{transform:scale(.97)}
+.timer-reset{margin-top:8px;background:transparent;color:var(--muted)}
+.timer-reset:hover{background:var(--surface2);color:var(--text)}
+
+/* ---------- finance mini (reuses W.finance(), which returns a .card) ---------- */
+.side-mini{padding:0}
+.side-mini>.card{background:none;border:0;box-shadow:none;border-radius:0;overflow:visible;padding:clamp(18px,2vw,24px);animation:none;transform:none!important;backdrop-filter:none}
+.side-mini>.card::before{display:none}
+
+/* ---------- responsive ---------- */
+@media(max-width:1180px){
+ .campus-layout{grid-template-columns:minmax(0,1fr) 300px}
+}
+@media(max-width:1020px){
+ .campus-layout{grid-template-columns:1fr}
+ .campus-side{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+}
+@media(max-width:900px){
+ .campus-layout,.campus-main,.campus-side,.campus-metrics{gap:13px}
+ .campus-card{border-radius:22px;padding:18px}
+ .welcome-card{border-radius:24px;min-height:0;padding:22px}
+}
+@media(max-width:700px){
+ .campus-metrics,.campus-side{grid-template-columns:1fr}
+ .welcome-art{display:none}
+ .quick-links{grid-template-columns:repeat(2,1fr)}
+ .mini-calendar{gap:4px}
+ .mini-day{max-width:38px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+ .campus-main>*,.campus-side>*,.campus-metrics>*,.art-cloud{animation:none!important}
+}
