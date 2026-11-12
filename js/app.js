@@ -33,14 +33,14 @@ const fin=()=>{const m=new Date().toISOString().slice(0,7),tx=D.finance.tx.filte
  const spent=tx.filter(x=>x.type==='expense').reduce((a,x)=>a+x.amount,0),inc=tx.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0);
  const g=D.finance.goals,tg=g.reduce((a,x)=>a+x.target,0),sv=g.reduce((a,x)=>a+x.saved,0);
  return{spent,inc,rem:D.finance.budget-spent,pct:tg?sv/tg*100:0}};
-const todayCls=()=>D.classes.filter(c=>dk(c)===JS[new Date().getDay()]).sort((a,b)=>a.start.localeCompare(b.start));
+const todayCls=()=>{const ds=iso(0),k=JS[new Date().getDay()];return D.classes.filter(c=>(c.schedule_type==='one_time'?d10(c.date)===ds:dk(c)===k)).sort((a,b)=>a.start.localeCompare(b.start))};
 const asgState=a=>a.status!=='done'&&left(a.due)<0?'overdue':a.status;
 // ---------- calendar data helpers (tolerant of "Monday"/"MON" and ISO timestamps) ----------
 const d10=x=>String(x||'').slice(0,10);
 const dk=c=>String(c.day||'').slice(0,3).toLowerCase();
 const ymd=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 const eventsOn=ds=>{const [y,m,d]=ds.split('-').map(Number),k=JS[new Date(y,m-1,d).getDay()];
- return{cls:D.classes.filter(c=>dk(c)===k).sort((a,b)=>String(a.start).localeCompare(String(b.start))),
+ return{cls:D.classes.filter(c=>(c.schedule_type==='one_time'?d10(c.date)===ds:dk(c)===k)).sort((a,b)=>String(a.start).localeCompare(String(b.start))),
   asg:D.assignments.filter(a=>d10(a.due)===ds),exm:D.exams.filter(e=>d10(e.date)===ds)}};
 // ---------- UI helpers ----------
 const card=(h,b,x='')=>`<section class="card ${x}">${h?`<h3>${h}</h3>`:''}${b}</section>`;
@@ -73,8 +73,34 @@ function form(title,fields,vals,ok){
  $('form',m).onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(e.target));
   fields.forEach(f=>{if(f.t==='number')o[f.n]=Number(o[f.n]);else if(typeof o[f.n]==='string'&&f.t!=='password')o[f.n]=o[f.n].trim()});
   ok(o);close();render()}}
-function edit(m,id){const c=M[m],l=c.l(),it=id?l.find(x=>x.id===id):null;
+function edit(m,id){if(m==='cls')return editClass(null,id);const c=M[m],l=c.l(),it=id?l.find(x=>x.id===id):null;
  form(`${t(it?'edit':'add')} ${t(c.t)}`,c.f,it||c.d(),o=>{let x=it;if(x)Object.assign(x,o);else{x={id:uid(),...(c.x?c.x():{}),...o};l.push(x)}sync(it?'update':'create',m,x);toast(t('saved'))})}
+function editClass(selectedDate,id){
+ const l=D.classes,it=id?l.find(x=>x.id===id):null;
+ const type=it?(it.schedule_type||'recurring'):(selectedDate?'one_time':'recurring');
+ const ds=selectedDate||it?.date||iso(0);
+ const day=it?.day||DAYS[(new Date(ds+'T00:00:00').getDay()+6)%7];
+ const val={course:it?.course||'',schedule_type:type,day,date:it?.date||ds,start:it?.start||'09:00',end:it?.end||'11:00',room:it?.room||'',lecturer:it?.lecturer||''};
+ const m=modal(`<h3>${t(it?'edit':'add')} class</h3><form id="class-form">
+ <label class="field">${t('course')}<input name="course" value="${esc(val.course)}" maxlength="20" required></label>
+ <label class="field">Schedule type<select name="schedule_type"><option value="recurring" ${val.schedule_type==='recurring'?'selected':''}>Recurring weekly</option><option value="one_time" ${val.schedule_type==='one_time'?'selected':''}>One-time class</option></select></label>
+ <label class="field" id="class-day-field">Day<select name="day">${DAYS.map(d=>`<option value="${d}" ${val.day===d?'selected':''}>${t(d)}</option>`).join('')}</select></label>
+ <label class="field" id="class-date-field">Date<input name="date" type="date" value="${esc(val.date)}"></label>
+ <div class="grid"><label class="field">${t('start')}<input name="start" type="time" value="${esc(val.start)}" required></label><label class="field">${t('end')}<input name="end" type="time" value="${esc(val.end)}" required></label></div>
+ <label class="field">${t('room')}<input name="room" value="${esc(val.room)}" maxlength="60" required></label>
+ <label class="field">${t('lecturer')}<input name="lecturer" value="${esc(val.lecturer)}" maxlength="80"></label>
+ <div class="row end"><button type="button" class="btn ghost" data-act="close">${t('cancel')}</button><button class="btn">${t('save')}</button></div></form>`);
+ const f=$('#class-form',m),typeEl=f.elements.schedule_type,dayField=$('#class-day-field',f),dateField=$('#class-date-field',f),dayEl=f.elements.day,dateEl=f.elements.date;
+ const updateMode=()=>{const one=typeEl.value==='one_time';dayField.hidden=one;dateField.hidden=!one;dayEl.required=!one;dateEl.required=one;dayEl.disabled=one;dateEl.disabled=!one};
+ typeEl.addEventListener('change',updateMode);updateMode();
+ f.onsubmit=e=>{e.preventDefault();const o=Object.fromEntries(new FormData(f));
+  if(o.schedule_type==='recurring'){o.date='';}else{o.day='';}
+  if(o.start>=o.end)return toast('End time must be later than start time');
+  let x=it;if(x)Object.assign(x,o);else{x={id:uid(),...o};l.push(x)}
+  sync(it?'update':'create','cls',x);toast(t('saved'));close();render();
+ };
+ window.lucide&&lucide.createIcons();
+}
 function ask(fn){modal(`<h3>${t('confirmDelete')}</h3><div class="row end"><button class="btn ghost" data-act="close">${t('cancel')}</button><button class="btn danger" id="yes">${t('delete')}</button></div>`);$('#yes').onclick=()=>{fn();close();render()}}
 // ---------- views ----------
 const st={f:'all',tt:'week',gc:null};
@@ -170,10 +196,11 @@ function dayPopup(ds){const e=eventsOn(ds),total=e.cls.length+e.asg.length+e.exm
  const cls=e.cls.map(c=>`<div class="day-item k-c"><i class="day-bar"></i><div class="grow"><b>${esc(c.course)}</b><small>${esc(c.start)}–${esc(c.end)}${c.room?' · '+esc(c.room):''}${c.lecturer?' · '+esc(c.lecturer):''}</small></div>${ctl('cls',c.id)}</div>`);
  const asg=e.asg.map(a=>`<div class="day-item k-a"><i class="day-bar"></i><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course||'')}</small></div>${badge(asgState(a))}${ctl('assign',a.id)}</div>`);
  const exm=e.exm.map(x=>`<div class="day-item k-e"><i class="day-bar"></i><div class="grow"><b>${esc(x.course)}</b><small>${esc(x.time||'')}${x.venue?' · '+esc(x.venue):''}</small></div>${ctl('exam',x.id)}</div>`);
- modal(`<div class="day-head"><div><small>${total?total+' event'+(total>1?'s':''):'Free day'}</small><h3>${fmt.date(ds,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3></div><button class="icon-btn" data-act="close" aria-label="Close"><i data-lucide="x"></i></button></div>${sec(t('exams'),exm)}${sec(t('assignments'),asg)}${sec('Classes',cls)}${total?'':'<div class="empty"><i data-lucide="coffee"></i><p>Nothing scheduled. Enjoy the free time.</p></div>'}`);
+ modal(`<div class="day-head"><div><small>${total?total+' event'+(total>1?'s':''):'Free day'}</small><h3>${fmt.date(ds,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3></div><button class="icon-btn" data-act="close" aria-label="Close"><i data-lucide="x"></i></button></div>${sec(t('exams'),exm)}${sec(t('assignments'),asg)}${sec('Classes',cls)}${total?'':'<div class="empty"><i data-lucide="coffee"></i><p>Nothing scheduled. Enjoy the free time.</p></div>'}<div class="row end" style="margin-top:14px"><button class="btn" data-act="add-class-date" data-id="${ds}"><i data-lucide="plus"></i> Add class on this date</button></div>`);
  window.lucide&&lucide.createIcons()}
 const acts={
  day:id=>dayPopup(id),
+ 'add-class-date':id=>editClass(id),
  cmonth:id=>{st.cm=+id===0?0:(st.cm||0)+ +id;render()},
  close,
  menu:()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('open')},
