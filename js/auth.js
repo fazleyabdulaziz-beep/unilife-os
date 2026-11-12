@@ -20,10 +20,12 @@ UL.auth = {
         if (key === 'theme') {
           const root = document.documentElement;
           root.dataset.theme = value === 'dark' ? 'dark' : 'light';
+          root.dataset.palette = UL.prefs.palette || 'lavender';
         }
         draw();
       };
 
+      document.documentElement.dataset.palette = UL.prefs.palette || 'lavender';
       const el = document.createElement('div');
       el.className = 'authwrap auth-simple';
       document.body.append(el);
@@ -43,8 +45,8 @@ UL.auth = {
           start: 'Mulakan perjalanan',
           loginTitle: 'Hai, selamat kembali.',
           registerTitle: 'Cipta akaun anda.',
-          loginSub: 'Log masuk untuk sambung perjalanan anda.',
-          registerSub: 'Susun kehidupan kampus anda, satu langkah pada satu masa.',
+          loginSub: 'Kelas, tugasan dan kehidupan kampus — semuanya di satu tempat.',
+          registerSub: 'Kelas, tugasan dan kehidupan kampus — semuanya di satu tempat.',
           name: 'Nama',
           namePlaceholder: 'Nama anda',
           email: 'E-mel',
@@ -68,8 +70,8 @@ UL.auth = {
           start: 'A FRESH START',
           loginTitle: 'Good to see you.',
           registerTitle: 'Create your account.',
-          loginSub: 'Sign in and pick up where you left off.',
-          registerSub: 'A calmer way to organise your campus life.',
+          loginSub: 'Classes, tasks and campus life — all in one place.',
+          registerSub: 'Classes, tasks and campus life — all in one place.',
           name: 'Name',
           namePlaceholder: 'Your name',
           email: 'Email address',
