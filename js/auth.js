@@ -15,7 +15,7 @@ UL.auth={show(){return new Promise(res=>{
       </div>
       <div class="auth-shell">
         <section class="auth-showcase" aria-label="UniLife OS introduction">
-          <div class="auth-brand"><span class="auth-brand-mark"><i data-lucide="graduation-cap"></i></span><span>UniLife <b>OS</b></span></div>
+          <div class="auth-brand"><span class="auth-brand-mark"><img src="assets/icons/icon-192.png" alt="UniLife OS logo"></span><span>UniLife <b>OS</b></span></div>
           <div class="auth-showcase-copy">
             <span class="auth-eyebrow"><i data-lucide="sparkles"></i> YOUR SPACE TO GROW</span>
             <h1>Make room for<br><span>what matters.</span></h1>
@@ -32,7 +32,7 @@ UL.auth={show(){return new Promise(res=>{
           <div class="auth-footnote"><span>STUDY WITH INTENTION</span><span class="auth-footline"></span><span>GROW AT YOUR PACE</span></div>
         </section>
         <section class="auth-panel">
-          <div class="auth-mobile-brand"><span class="auth-brand-mark"><i data-lucide="graduation-cap"></i></span><span>UniLife <b>OS</b></span></div>
+          <div class="auth-mobile-brand"><span class="auth-brand-mark"><img src="assets/icons/icon-192.png" alt="UniLife OS logo"></span><span>UniLife <b>OS</b></span></div>
           <div class="auth-card">
             <div class="auth-card-heading"><span class="auth-card-icon"><i data-lucide="${reg?'user-round-plus':'hand' }"></i></span><span class="auth-step">${reg?'GET STARTED':'WELCOME BACK'}</span></div>
             <h2>${reg?'Create your space':'Good to see you.'}</h2>
