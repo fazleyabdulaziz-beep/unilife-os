@@ -1,3 +1,28 @@
-:root{--bg:#f7f8fa;--surface:#fff;--surface2:#f1f3f6;--text:#16181d;--muted:#6b7280;--border:#e5e7eb;--primary:#4f46e5;--primary-soft:#eef0ff;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.04);--r:14px;--pad:20px;--font:'Inter',system-ui,sans-serif}
-[data-theme=dark]{--bg:#0f1115;--surface:#171a21;--surface2:#1f232c;--text:#eceef2;--muted:#9aa3b2;--border:#272c37;--primary:#8b93ff;--primary-soft:#23264a;--shadow:0 1px 2px rgba(0,0,0,.4)}
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap');
+
+/* Lofi dusk (light) */
+:root{
+  --bg:#f5f0fc;--surface:#fffdff;--surface2:#f1eafb;
+  --text:#2d2640;--muted:#7f77a0;--border:#e7dff6;
+  --primary:#7656ea;--primary2:#ff8fb1;--primary-soft:#ece5ff;--on-primary:#fff;
+  --ok:#35b07e;--warn:#f2a154;--bad:#ec5a7a;
+  --blob1:rgba(255,160,190,.28);--blob2:rgba(140,120,255,.22);--dot:rgba(118,86,234,.10);
+  --glow:rgba(118,86,234,.28);
+  --shadow:0 2px 4px rgba(90,60,160,.05),0 10px 24px rgba(90,60,160,.08);
+  --r:22px;--pad:20px;
+  --font:'Nunito',system-ui,sans-serif;--font-display:'Fredoka','Nunito',system-ui,sans-serif;
+  --pop:cubic-bezier(.34,1.56,.64,1)
+}
+
+/* Lofi night (dark) */
+[data-theme=dark]{
+  --bg:#171429;--surface:#221e3b;--surface2:#2c2749;
+  --text:#f2edff;--muted:#a8a1ca;--border:#362f5c;
+  --primary:#b9a7ff;--primary2:#ffa9c6;--primary-soft:#2f2858;--on-primary:#1c1634;
+  --ok:#6fdcaa;--warn:#ffb877;--bad:#ff7f98;
+  --blob1:rgba(255,130,175,.14);--blob2:rgba(130,110,255,.20);--dot:rgba(185,167,255,.08);
+  --glow:rgba(185,167,255,.30);
+  --shadow:0 2px 4px rgba(0,0,0,.25),0 10px 26px rgba(0,0,0,.28)
+}
+
 [data-density=compact]{--pad:12px}
