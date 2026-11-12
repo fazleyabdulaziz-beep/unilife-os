@@ -33,8 +33,15 @@ const fin=()=>{const m=new Date().toISOString().slice(0,7),tx=D.finance.tx.filte
  const spent=tx.filter(x=>x.type==='expense').reduce((a,x)=>a+x.amount,0),inc=tx.filter(x=>x.type==='income').reduce((a,x)=>a+x.amount,0);
  const g=D.finance.goals,tg=g.reduce((a,x)=>a+x.target,0),sv=g.reduce((a,x)=>a+x.saved,0);
  return{spent,inc,rem:D.finance.budget-spent,pct:tg?sv/tg*100:0}};
-const todayCls=()=>D.classes.filter(c=>c.day===JS[new Date().getDay()]).sort((a,b)=>a.start.localeCompare(b.start));
+const todayCls=()=>D.classes.filter(c=>dk(c)===JS[new Date().getDay()]).sort((a,b)=>a.start.localeCompare(b.start));
 const asgState=a=>a.status!=='done'&&left(a.due)<0?'overdue':a.status;
+// ---------- calendar data helpers (tolerant of "Monday"/"MON" and ISO timestamps) ----------
+const d10=x=>String(x||'').slice(0,10);
+const dk=c=>String(c.day||'').slice(0,3).toLowerCase();
+const ymd=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const eventsOn=ds=>{const [y,m,d]=ds.split('-').map(Number),k=JS[new Date(y,m-1,d).getDay()];
+ return{cls:D.classes.filter(c=>dk(c)===k).sort((a,b)=>String(a.start).localeCompare(String(b.start))),
+  asg:D.assignments.filter(a=>d10(a.due)===ds),exm:D.exams.filter(e=>d10(e.date)===ds)}};
 // ---------- UI helpers ----------
 const card=(h,b,x='')=>`<section class="card ${x}">${h?`<h3>${h}</h3>`:''}${b}</section>`;
 const bar=p=>`<div class="bar"><i style="width:${Math.max(0,Math.min(100,p))}%"></i></div>`;
@@ -86,7 +93,7 @@ const views={
  dashboard(){const h=new Date().getHours(),g=h<12?'gm':h<18?'ga':'ge',u=D.user;
   const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1),offset=(first.getDay()+6)%7,days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
   const cal=DAYS.map(d=>`<span class="mini-day-label">${t(d).slice(0,1)}</span>`).join('')+
-   '<i class="mini-day-blank"></i>'.repeat(offset)+Array.from({length:days},(_,i)=>`<span class="mini-day ${i+1===now.getDate()?'today':''}">${i+1}</span>`).join('');
+   '<i class="mini-day-blank"></i>'.repeat(offset)+Array.from({length:days},(_,i)=>{const ds=ymd(now.getFullYear(),now.getMonth(),i+1),ev=eventsOn(ds),n=ev.cls.length+ev.asg.length+ev.exm.length;return`<button class="mini-day ${i+1===now.getDate()?'today':''} ${n?'has':''}" data-act="day" data-id="${ds}" aria-label="${ds}">${i+1}</button>`}).join('');
   const pending=D.assignments.filter(a=>a.status!=='done').sort((a,b)=>a.due.localeCompare(b.due)).slice(0,3);
   const today=D.tasks.filter(x=>!x.done).slice(0,3);
   const tasks=[...pending.map(a=>({title:a.title,sub:a.course||t('assignments'),date:fmt.date(a.due),id:a.id,kind:'assign'})),...today.map(x=>({title:x.title,sub:t('task'),date:t('today'),id:x.id,kind:'task'}))].slice(0,4);
@@ -116,11 +123,14 @@ const views={
  timetable(){const w=st.tt==='week';
   const tog=`<div class="row"><button class="btn ${w?'':'ghost'}" data-act="tt" data-id="week">${t('week')}</button><button class="btn ${w?'ghost':''}" data-act="tt" data-id="month">${t('month')}</button></div>`;
   let body;
-  if(w)body=`<div class="week">${DAYS.map(d=>card(t(d),D.classes.filter(c=>c.day===d).sort((a,b)=>a.start.localeCompare(b.start)).map(c=>`<div class="cls" data-s="${esc(c.course+c.room+c.lecturer)}"><b>${esc(c.course)}</b>${c.start}–${c.end}<br>${esc(c.room)}${c.lecturer?' · '+esc(c.lecturer):''}<div class="row">${ctl('cls',c.id)}</div></div>`).join('')||'<small>–</small>')).join('')}</div>`;
-  else{const n=new Date(),y=n.getFullYear(),mo=n.getMonth(),first=(new Date(y,mo,1).getDay()+6)%7,len=new Date(y,mo+1,0).getDate();let cells=DAYS.map(d=>`<small>${t(d)}</small>`).join('')+'<span></span>'.repeat(first).replace(/<span><\/span>/g,'<div style="border:0"></div>');
-   for(let d=1;d<=len;d++){const ds=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,k=JS[new Date(y,mo,d).getDay()];
-    cells+=`<div class="${d===n.getDate()?'td':''}">${d}<br>${D.classes.some(c=>c.day===k)?'<span class="dot"></span>':''}${D.assignments.some(a=>a.due===ds)?'<span class="dot a"></span>':''}${D.exams.some(e=>e.date===ds)?'<span class="dot e"></span>':''}</div>`}
-   body=card(n.toLocaleDateString(fmt.loc(),{month:'long',year:'numeric'}),`<div class="cal">${cells}</div>`)}
+  if(w)body=`<div class="week">${DAYS.map(d=>card(t(d),D.classes.filter(c=>dk(c)===d).sort((a,b)=>a.start.localeCompare(b.start)).map(c=>`<div class="cls" data-s="${esc(c.course+c.room+c.lecturer)}"><b>${esc(c.course)}</b>${c.start}–${c.end}<br>${esc(c.room)}${c.lecturer?' · '+esc(c.lecturer):''}<div class="row">${ctl('cls',c.id)}</div></div>`).join('')||'<small>–</small>')).join('')}</div>`;
+  else{const n=new Date(),b=new Date(n.getFullYear(),n.getMonth()+(st.cm||0),1),y=b.getFullYear(),mo=b.getMonth(),first=(b.getDay()+6)%7,len=new Date(y,mo+1,0).getDate();
+   let cells=DAYS.map(d=>`<small>${t(d)}</small>`).join('')+'<span class="cal-blank"></span>'.repeat(first);
+   for(let d=1;d<=len;d++){const ds=ymd(y,mo,d),e=eventsOn(ds),isT=!st.cm&&d===n.getDate();
+    const items=[...e.exm.map(x=>['e',x.course]),...e.asg.map(x=>['a',x.title]),...e.cls.map(x=>['c',x.course])];
+    const chips=items.slice(0,2).map(([k,x])=>`<span class="chip ${k}">${esc(x)}</span>`).join('')+(items.length>2?`<span class="chip more">+${items.length-2}</span>`:'');
+    cells+=`<button class="cal-day ${isT?'td':''}" data-act="day" data-id="${ds}" aria-label="${ds}"><span class="cal-num">${d}</span><span class="cal-dots">${e.cls.length?'<span class="dot"></span>':''}${e.asg.length?'<span class="dot a"></span>':''}${e.exm.length?'<span class="dot e"></span>':''}</span><span class="cal-chips">${chips}</span></button>`}
+   body=card('',`<div class="cal-nav"><button class="icon-btn" data-act="cmonth" data-id="-1" aria-label="Previous month"><i data-lucide="chevron-left"></i></button><h3>${b.toLocaleDateString(fmt.loc(),{month:'long',year:'numeric'})}</h3><button class="icon-btn" data-act="cmonth" data-id="1" aria-label="Next month"><i data-lucide="chevron-right"></i></button><button class="btn ghost cal-today" data-act="cmonth" data-id="0">${t('today')}</button></div><div class="cal">${cells}</div><div class="cal-legend"><span><i class="dot"></i>Class</span><span><i class="dot a"></i>${t('assignments')}</span><span><i class="dot e"></i>${t('exams')}</span></div>`)}
   return head('timetable','cls',tog)+body},
  exams(){const l=[...D.exams].sort((a,b)=>a.date.localeCompare(b.date));
   return head('exams','exam')+`<div class="grid">${l.length?l.map(e=>card(esc(e.course),`<div class="stats">${stat(t('countdown'),left(e.date)+' '+t('days'),left(e.date)<=3?'bad':'')}</div><small>${fmt.date(e.date,{day:'numeric',month:'long',year:'numeric'})} · ${esc(e.time)} · ${esc(e.venue)}</small><p style="margin:10px 0"><b>${t('revision')}:</b> ${esc(e.revision||'–')}</p><div class="row end">${ctl('exam',e.id)}</div>`)).join(''):card('',empty())}</div>`},
@@ -155,7 +165,16 @@ function render(){const r=route();
  $('#sidebar').classList.remove('open');$('#scrim').classList.remove('open');
  window.lucide&&lucide.createIcons()}
 // ---------- actions ----------
+function dayPopup(ds){const e=eventsOn(ds),total=e.cls.length+e.asg.length+e.exm.length;
+ const sec=(title,rows)=>rows.length?`<div class="day-sec"><h4>${title}<span>${rows.length}</span></h4>${rows.join('')}</div>`:'';
+ const cls=e.cls.map(c=>`<div class="day-item k-c"><i class="day-bar"></i><div class="grow"><b>${esc(c.course)}</b><small>${esc(c.start)}–${esc(c.end)}${c.room?' · '+esc(c.room):''}${c.lecturer?' · '+esc(c.lecturer):''}</small></div>${ctl('cls',c.id)}</div>`);
+ const asg=e.asg.map(a=>`<div class="day-item k-a"><i class="day-bar"></i><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course||'')}</small></div>${badge(asgState(a))}${ctl('assign',a.id)}</div>`);
+ const exm=e.exm.map(x=>`<div class="day-item k-e"><i class="day-bar"></i><div class="grow"><b>${esc(x.course)}</b><small>${esc(x.time||'')}${x.venue?' · '+esc(x.venue):''}</small></div>${ctl('exam',x.id)}</div>`);
+ modal(`<div class="day-head"><div><small>${total?total+' event'+(total>1?'s':''):'Free day'}</small><h3>${fmt.date(ds,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3></div><button class="icon-btn" data-act="close" aria-label="Close"><i data-lucide="x"></i></button></div>${sec(t('exams'),exm)}${sec(t('assignments'),asg)}${sec('Classes',cls)}${total?'':'<div class="empty"><i data-lucide="coffee"></i><p>Nothing scheduled. Enjoy the free time.</p></div>'}`);
+ window.lucide&&lucide.createIcons()}
 const acts={
+ day:id=>dayPopup(id),
+ cmonth:id=>{st.cm=+id===0?0:(st.cm||0)+ +id;render()},
  close,
  menu:()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('open')},
  quicktheme:()=>{U.prefs.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';store();apply();render()},
