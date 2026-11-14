@@ -1,0 +1,6 @@
+1. Copy PROFILE_PHOTO_BACKEND.gs into your Apps Script Code.gs project.
+2. Add the saveProfilePhoto action branch inside your existing authenticated action router (instructions are in the .gs file).
+3. Add avatar_url: getProfilePhotoUrl_(user.id) to the user object returned by bootstrap/userOut.
+4. Save and redeploy the Apps Script Web App as a new version.
+
+Privacy: Drive image files are shared as anyone-with-the-link can view so the app can render the avatar across devices. Do not upload sensitive photos.

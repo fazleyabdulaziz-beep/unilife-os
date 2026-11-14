@@ -811,3 +811,10 @@ html[data-theme="dark"] .logo-dark{display:block}
 .brand .logo-light,.brand .logo-dark{width:28px;height:28px;border-radius:0}
 .auth-simple-brand .logo-light,.auth-simple-brand .logo-dark{width:76px;height:76px;max-width:none;object-fit:contain;flex:0 0 auto}
 @media(max-width:600px){.auth-simple-brand .logo-light,.auth-simple-brand .logo-dark{width:76px;height:76px}}
+
+/* Auth brand: render exactly one theme-specific logo. */
+.auth-simple-brand img.logo-light,
+.auth-simple-brand img.logo-dark { display:none !important; }
+html[data-theme="light"] .auth-simple-brand img.logo-light,
+html:not([data-theme="dark"]) .auth-simple-brand img.logo-light { display:block !important; }
+html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !important; }
