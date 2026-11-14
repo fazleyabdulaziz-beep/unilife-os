@@ -118,7 +118,7 @@ UL.auth = {
 
           <main class="auth-simple-shell">
             <div class="auth-simple-brand">
-              <img src="assets/icons/icon-192.png" alt="UniLife OS logo">
+              <img class="logo-light" src="assets/icons/logo-light.png" alt="UniLife OS logo"><img class="logo-dark" src="assets/icons/logo-dark.png" alt="UniLife OS logo">
               <span>UniLife <b>OS</b></span>
             </div>
 

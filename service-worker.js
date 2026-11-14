@@ -1,6 +1,6 @@
 // Bump V on every deploy so clients drop the old app shell.
-const V='unilife-v4',FB='https://www.gstatic.com/firebasejs/10.12.2/';
-const SHELL=['./','index.html','manifest.json','css/themes.css','css/main.css','js/config.js','js/push-config.js','js/data.js','js/api.js','js/i18n.js','js/auth.js','js/importer.js','js/notifications.js','js/app.js','locales/en.json','locales/ms.json','assets/icons/icon-192.png','assets/icons/icon-512.png'];
+const V='unilife-v5',FB='https://www.gstatic.com/firebasejs/10.12.2/';
+const SHELL=['./','index.html','manifest.json','css/themes.css','css/main.css','js/config.js','js/push-config.js','js/data.js','js/api.js','js/i18n.js','js/auth.js','js/importer.js','js/notifications.js','js/app.js','locales/en.json','locales/ms.json','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/logo-light.png','assets/icons/logo-dark.png','favicon.ico','favicon-dark.ico'];
 const CDN=['unpkg.com','cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com','www.gstatic.com'];
 try{importScripts('js/push-config.js')}catch(e){}
 try{importScripts(FB+'firebase-app-compat.js',FB+'firebase-messaging-compat.js');
