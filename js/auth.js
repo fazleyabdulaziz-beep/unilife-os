@@ -214,7 +214,7 @@ UL.auth = {
           btn.querySelector('span').textContent = reg ? copy.creating : copy.signing;
 
           try {
-            const body = { email, password: f.password };
+            const body = {   email,   password: f.password,   timezone: UL.timezone ? UL.timezone.detect() : '' };
             if (reg) {
               const p = UL.prefs;
               body.name = String(f.name || '').trim();
