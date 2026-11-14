@@ -19,7 +19,7 @@ const local=()=>localStorage.setItem('ul_prefs',JSON.stringify(U.prefs));
 const store=()=>{local();clearTimeout(tm);tm=setTimeout(pushPrefs,600)};
 const errMsg=e=>t('err_'+((e&&e.code)||'server'));
 function pushPrefs(){if(!U.api.token())return;const p=U.prefs;
- U.api.call('savePrefs',{font:p.font,theme:p.theme,lang:p.lang,density:p.density,order:p.order,hidden:p.hidden,notif:p.notif,extra:{budget:D.finance.budget,study:D.study,welcomeTitle:p.welcomeTitle,welcomeSubtitle:p.welcomeSubtitle,palette:p.palette}}).catch(e=>toast(errMsg(e)))}
+ U.api.call('savePrefs',{font:p.font,theme:p.theme==='auto'?'system':p.theme,lang:p.lang,density:p.density,order:p.order,hidden:p.hidden,notif:p.notif,extra:{budget:D.finance.budget,study:D.study,welcomeTitle:p.welcomeTitle,welcomeSubtitle:p.welcomeSubtitle,palette:p.palette}}).catch(e=>toast(errMsg(e)))}
 function isNight(){const h=new Date().getHours();return h<6||h>=18}
 function apply(){const p=U.prefs,r=document.documentElement;
  const mode=p.theme==='auto'||p.theme==='system'?(isNight()?'dark':'light'):p.theme;
@@ -183,7 +183,7 @@ const views={
 const CN={assign:'assignments',cls:'classes',exam:'exams',tx:'tx',sg:'sg',course:'courses',hab:'habits',task:'tasks',goal:'goals',hist:'semesters'};
 async function sync(op,m,item){try{await U.api.call(op,{c:CN[m],item})}catch(e){toast(errMsg(e));await load()}}
 function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
- Object.assign(U.prefs,r.prefs,{notif:{...U.prefs.notif,...r.prefs.notif}});if(r.data.welcomeTitle!==undefined)U.prefs.welcomeTitle=r.data.welcomeTitle;if(r.data.welcomeSubtitle!==undefined)U.prefs.welcomeSubtitle=r.data.welcomeSubtitle;local();
+ Object.assign(U.prefs,r.prefs,{notif:{...U.prefs.notif,...r.prefs.notif}});if(U.prefs.theme==='system')U.prefs.theme='auto';if(r.data.welcomeTitle!==undefined)U.prefs.welcomeTitle=r.data.welcomeTitle;if(r.data.welcomeSubtitle!==undefined)U.prefs.welcomeSubtitle=r.data.welcomeSubtitle;local();
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study})}
 async function load(){
  $('#view').innerHTML=`<div class="empty"><i data-lucide="loader"></i><p>${t('loading')}</p></div>`;window.lucide&&lucide.createIcons();
