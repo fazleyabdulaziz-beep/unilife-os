@@ -181,27 +181,33 @@ const views={
 };
 // ---------- server sync ----------
 const CN={assign:'assignments',cls:'classes',exam:'exams',tx:'tx',sg:'sg',course:'courses',hab:'habits',task:'tasks',goal:'goals',hist:'semesters'};
-async function sync(op,m,item){try{await U.api.call(op,{c:CN[m],item})}catch(e){toast(errMsg(e));await }}
+async function sync(op,m,item){try{await U.api.call(op,{c:CN[m],item})}catch(e){toast(errMsg(e))}}
 function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  Object.assign(U.prefs,r.prefs,{notif:{...U.prefs.notif,...r.prefs.notif}});if(U.prefs.theme==='system')U.prefs.theme='auto';if(r.data.welcomeTitle!==undefined)U.prefs.welcomeTitle=r.data.welcomeTitle;if(r.data.welcomeSubtitle!==undefined)U.prefs.welcomeSubtitle=r.data.welcomeSubtitle;local();
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study})}
-async function {
- $('#view').innerHTML=`<div class="empty"><i data-lucide="loader"></i><p>${t('loading')}</p></div>`;window.lucide&&lucide.createIcons();
- try{const r=await U.api.call('bootstrap');hydrate(r);if(U.prefs.lang!==fmt.lang)await fmt.load(U.prefs.lang);apply();render();U.push&&U.push.sync();return true}
- catch(e){if(e.code==='auth')return false;
-  $('#view').innerHTML=`<div class="empty"><p>${errMsg(e)}</p><button class="btn" data-act="retry">${t('retry')}</button></div>`;return true}}
- try {
-  if (U.timezone) {
-    U.timezone.sync(D.user).catch(e =>
-      console.warn('UniLife timezone sync deferred:', e && e.code || e)
-    );
+async function load(){
+  $('#view').innerHTML=`<div class="empty"><i data-lucide="loader"></i><p>${t('loading')}</p></div>`;
+  window.lucide&&lucide.createIcons();
+  try {
+    const r=await U.api.call('bootstrap');
+    hydrate(r);
+    if (U.timezone) {
+      U.timezone.sync(D.user).catch(e =>
+        console.warn('UniLife timezone sync deferred:', e && e.code || e)
+      );
+    }
+    if(U.prefs.lang!==fmt.lang) await fmt.load(U.prefs.lang);
+    apply(); render(); U.push&&U.push.sync();
+    return true;
+  } catch(e) {
+    if(e.code==='auth') return false;
+    $('#view').innerHTML=`<div class="empty"><p>${errMsg(e)}</p><button class="btn" data-act="retry">${t('retry')}</button></div>`;
+    return true;
   }
-} catch (e) {
-  console.warn('UniLife timezone detection unavailable:', e);
 }
 async function boot(){
  if(!U.config.apiUrl){$('#view').innerHTML=`<div class="empty"><p>${t('err_noApi')}</p></div>`;return}
- for(;;){if(U.api.token()&&await )break;localStorage.removeItem('ul_token');await U.auth.show();apply()}}
+ for(;;){if(U.api.token()&&await load())break;localStorage.removeItem('ul_token');await U.auth.show();apply()}}
 // ---------- router / render ----------
 const route=()=>{const r=location.hash.replace('#/','');return views[r]?r:'dashboard'};
 function render(){const r=route();
@@ -247,7 +253,7 @@ const acts={
  tt:id=>{st.tt=id;render()},
  profile:async()=>{const v={};$$('[data-p]').forEach(i=>v[i.dataset.p]=i.value.trim());try{Object.assign(D.user,await U.api.call('updateProfile',v));toast(t('saved'));render()}catch(e){toast(errMsg(e))}},
  pwd:()=>form(t('password'),[{n:'current',l:'pwdCurrent',t:'password'},{n:'next',l:'pwdNew',t:'password'}],{},o=>{U.api.call('changePassword',o).then(()=>toast(t('saved'))).catch(e=>toast(errMsg(e)))}),
- logout:async()=>{try{if(U.push)await U.push.unlink();await U.api.call('logout')}catch(e){}localStorage.removeItem('ul_token');location.re},
+ logout:async()=>{try{if(U.push)await U.push.unlink();await U.api.call('logout')}catch(e){}localStorage.removeItem('ul_token');location.reload()},
  budget:()=>form(t('budget'),[{n:'budget',l:'budget',t:'number',min:0}],{budget:D.finance.budget},o=>{D.finance.budget=o.budget;store()}),
  'save-welcome':()=>{const title=$('[data-welcome="title"]')?.value.trim()||'',subtitle=$('[data-welcome="subtitle"]')?.value.trim()||'';if(title.length>80||subtitle.length>160)return toast('Please shorten your message.');U.prefs.welcomeTitle=title;U.prefs.welcomeSubtitle=subtitle;store();toast(t('saved'));render();},
  import:(_,b)=>U.importer.open(b.dataset.m),
