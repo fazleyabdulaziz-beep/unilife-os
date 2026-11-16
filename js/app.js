@@ -208,7 +208,9 @@ async function load(){
 }
 async function boot(){
  if(!U.config.apiUrl){$('#view').innerHTML=`<div class="empty"><p>${t('err_noApi')}</p></div>`;return}
- for(;;){if(U.api.token()&&await load())break;localStorage.removeItem('ul_token');await U.auth.show();apply()}}
+ let resetRequested = new URLSearchParams(location.search).has('reset');
+ if(resetRequested) localStorage.removeItem('ul_token');
+ for(;;){if(!resetRequested&&U.api.token()&&await load())break;localStorage.removeItem('ul_token');await U.auth.show();resetRequested=false;apply()}}
 // ---------- router / render ----------
 const route=()=>{const r=location.hash.replace('#/','');return views[r]?r:'dashboard'};
 function render(){const r=route();

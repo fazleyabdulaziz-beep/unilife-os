@@ -7,9 +7,11 @@ UL.auth = {
         ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])
       );
 
-      let mode = 'login';
+      let resetToken = new URLSearchParams(location.search).get('reset') || '';
+      let mode = resetToken ? 'reset' : 'login';
       let email = '';
       let busy = false;
+      let notice = '';
 
       const setPreference = async (key, value) => {
         UL.prefs[key] = value;
@@ -38,6 +40,8 @@ UL.auth = {
 
       const draw = (err = '') => {
         const reg = mode === 'register';
+        const forgot = mode === 'forgot';
+        const reset = mode === 'reset';
         const lang = UL.prefs.lang || 'en';
         const dark = document.documentElement.dataset.theme === 'dark';
         const copy = lang === 'ms' ? {
@@ -64,7 +68,15 @@ UL.auth = {
           language: 'Bahasa',
           theme: 'Tema',
           dark: 'Gelap',
-          light: 'Cerah'
+          light: 'Cerah',
+          forgot: 'Lupa kata laluan?', resetTitle: 'Tetapkan kata laluan baharu.',
+          forgotTitle: 'Lupa kata laluan?', forgotSub: 'Masukkan e-mel akaun anda. Kami akan menghantar pautan untuk menetapkan semula kata laluan.',
+          resetSub: 'Pilih kata laluan baharu untuk akaun UniLife OS anda.',
+          newPassword: 'Kata laluan baharu', confirmPassword: 'Sahkan kata laluan',
+          sendReset: 'Hantar pautan reset', savePassword: 'Simpan kata laluan baharu',
+          resetSent: 'Jika akaun wujud untuk e-mel ini, pautan reset telah dihantar. Sila semak peti masuk anda.',
+          resetDone: 'Kata laluan berjaya dikemas kini. Sila log masuk.', backLogin: 'Kembali ke log masuk',
+          passwordMismatch: 'Kata laluan tidak sepadan.'
         } : {
           welcome: 'WELCOME BACK',
           start: 'A FRESH START',
@@ -89,7 +101,15 @@ UL.auth = {
           language: 'Language',
           theme: 'Appearance',
           dark: 'Dark',
-          light: 'Light'
+          light: 'Light',
+          forgot: 'Forgot password?', resetTitle: 'Set a new password.',
+          forgotTitle: 'Forgot your password?', forgotSub: 'Enter your account email. We will send you a link to reset your password.',
+          resetSub: 'Choose a new password for your UniLife OS account.',
+          newPassword: 'New password', confirmPassword: 'Confirm password',
+          sendReset: 'Send reset link', savePassword: 'Save new password',
+          resetSent: 'If an account exists for this email, a reset link has been sent. Please check your inbox.',
+          resetDone: 'Your password has been updated. Please sign in.', backLogin: 'Back to sign in',
+          passwordMismatch: 'Passwords do not match.'
         };
 
         el.innerHTML = `
@@ -125,8 +145,8 @@ UL.auth = {
             <section class="auth-simple-card">
               <div class="auth-simple-heading">
                 <span class="auth-simple-label">${reg ? copy.start : copy.welcome}</span>
-                <h1>${reg ? copy.registerTitle : copy.loginTitle}</h1>
-                <p>${reg ? copy.registerSub : copy.loginSub}</p>
+                <h1>${reg ? copy.registerTitle : forgot ? copy.forgotTitle : reset ? copy.resetTitle : copy.loginTitle}</h1>
+                <p>${forgot ? copy.forgotSub : reset ? copy.resetSub : reg ? copy.registerSub : copy.loginSub}</p>
               </div>
 
               <form class="auth-form" novalidate>
@@ -138,37 +158,40 @@ UL.auth = {
                   </label>
                 ` : ''}
 
-                <label class="auth-field">
+                ${reset ? '' : `<label class="auth-field">
                   <span>${copy.email}</span>
                   <input name="email" type="email" required maxlength="120"
                     autocomplete="email" placeholder="you@example.com"
                     value="${esc(email)}">
-                </label>
+                </label>`}
 
-                <label class="auth-field">
-                  <span>${copy.password}</span>
+                ${forgot ? '' : `<label class="auth-field">
+                  <span>${reset ? copy.newPassword : copy.password}</span>
                   <div class="auth-simple-password">
                     <input name="password" id="auth-password" type="password"
-                      required minlength="${reg ? 10 : 1}" maxlength="128"
-                      autocomplete="${reg ? 'new-password' : 'current-password'}"
-                      placeholder="${copy.passwordPlaceholder}">
+                      required minlength="${reg || reset ? 10 : 1}" maxlength="128"
+                      autocomplete="${reg || reset ? 'new-password' : 'current-password'}"
+                      placeholder="${reset ? copy.newPassword : copy.passwordPlaceholder}">
                     <button type="button" class="auth-eye" data-auth-eye
                       aria-label="Show password"><i data-lucide="eye"></i></button>
                   </div>
-                </label>
+                </label>`}
+                ${reset ? `<label class="auth-field"><span>${copy.confirmPassword}</span><input name="confirmPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password"></label>` : ''}
 
                 ${reg ? `<p class="auth-password-hint">${t('pwdHint')}</p>` : ''}
                 <p class="auth-error" role="alert" aria-live="polite">${esc(err)}</p>
+                <p class="auth-success" role="status" aria-live="polite">${esc(notice)}</p>
 
                 <button class="auth-submit" type="submit">
-                  <span>${reg ? copy.register : copy.login}</span>
+                  <span>${reg ? copy.register : forgot ? copy.sendReset : reset ? copy.savePassword : copy.login}</span>
                   <i data-lucide="arrow-right"></i>
                 </button>
               </form>
 
+              ${!reg && !forgot && !reset ? `<div class="auth-forgot"><a href="#" id="auth-forgot">${copy.forgot}</a></div>` : ''}
               <div class="auth-switch">
-                ${reg ? copy.existing : copy.new}
-                <a href="#" id="auth-switch">${reg ? copy.switchLogin : copy.switchRegister}</a>
+                ${forgot || reset ? '' : reg ? copy.existing : copy.new}
+                <a href="#" id="auth-switch">${forgot || reset ? copy.backLogin : reg ? copy.switchLogin : copy.switchRegister}</a>
               </div>
             </section>
 
@@ -186,12 +209,17 @@ UL.auth = {
         el.querySelector('#auth-switch').onclick = e => {
           e.preventDefault();
           if (busy) return;
-          mode = reg ? 'login' : 'register';
+          mode = (forgot || reset) ? 'login' : reg ? 'login' : 'register';
+          notice = '';
+          if (reset) { resetToken = ''; history.replaceState({}, '', location.pathname + location.hash); }
           draw();
         };
 
+        const forgotLink = el.querySelector('#auth-forgot');
+        if (forgotLink) forgotLink.onclick = e => { e.preventDefault(); if (busy) return; mode = 'forgot'; notice = ''; draw(); };
+
         const eye = el.querySelector('[data-auth-eye]');
-        eye.onclick = () => {
+        if (eye) eye.onclick = () => {
           const input = el.querySelector('#auth-password');
           const show = input.type === 'password';
           input.type = show ? 'text' : 'password';
@@ -205,8 +233,9 @@ UL.auth = {
           e.preventDefault();
           if (busy) return;
           const f = Object.fromEntries(new FormData(form));
-          email = String(f.email || '').trim();
           if (!form.reportValidity()) return;
+          if (!reset) email = String(f.email || '').trim();
+          if (reset && f.password !== f.confirmPassword) { draw(copy.passwordMismatch); return; }
 
           busy = true;
           const btn = form.querySelector('.auth-submit');
@@ -214,15 +243,20 @@ UL.auth = {
           btn.querySelector('span').textContent = reg ? copy.creating : copy.signing;
 
           try {
-            const body = {   email,   password: f.password,   timezone: UL.timezone ? UL.timezone.detect() : '' };
+            if (forgot) {
+              await UL.api.call('requestPasswordReset', { email });
+              busy = false; notice = copy.resetSent; draw(); return;
+            }
+            if (reset) {
+              await UL.api.call('resetPassword', { token: resetToken, password: f.password });
+              busy = false; resetToken = ''; history.replaceState({}, '', location.pathname + location.hash);
+              mode = 'login'; notice = copy.resetDone; draw(); return;
+            }
+            const body = { email, password: f.password, timezone: UL.timezone ? UL.timezone.detect() : '' };
             if (reg) {
               const p = UL.prefs;
               body.name = String(f.name || '').trim();
-              body.prefs = {
-                font: p.font, theme: p.theme, lang: p.lang,
-                density: p.density, order: p.order,
-                hidden: p.hidden, notif: p.notif
-              };
+              body.prefs = { font: p.font, theme: p.theme, lang: p.lang, density: p.density, order: p.order, hidden: p.hidden, notif: p.notif };
             }
             const r = await UL.api.call(mode, body);
             localStorage.setItem('ul_token', r.token);
