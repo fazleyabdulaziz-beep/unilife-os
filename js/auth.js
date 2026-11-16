@@ -12,6 +12,8 @@ UL.auth = {
       let email = '';
       let busy = false;
       let notice = '';
+      let resendUntil = 0;
+      let resendTimer = null;
 
       const setPreference = async (key, value) => {
         UL.prefs[key] = value;
@@ -76,6 +78,7 @@ UL.auth = {
           sendReset: 'Hantar pautan reset', savePassword: 'Simpan kata laluan baharu',
           resetSent: 'Jika akaun wujud untuk e-mel ini, pautan reset telah dihantar. Sila semak peti masuk anda.',
           resetDone: 'Kata laluan berjaya dikemas kini. Sila log masuk.', backLogin: 'Kembali ke log masuk',
+          resendReset: 'Hantar semula pautan', resendWait: 'Hantar semula dalam {seconds}s', invalidEmail: 'Sila masukkan alamat e-mel yang sah.',
           passwordMismatch: 'Kata laluan tidak sepadan.'
         } : {
           welcome: 'WELCOME BACK',
@@ -109,6 +112,7 @@ UL.auth = {
           sendReset: 'Send reset link', savePassword: 'Save new password',
           resetSent: 'If an account exists for this email, a reset link has been sent. Please check your inbox.',
           resetDone: 'Your password has been updated. Please sign in.', backLogin: 'Back to sign in',
+          resendReset: 'Resend reset link', resendWait: 'Resend in {seconds}s', invalidEmail: 'Please enter a valid email address.',
           passwordMismatch: 'Passwords do not match.'
         };
 
@@ -182,8 +186,8 @@ UL.auth = {
                 <p class="auth-error" role="alert" aria-live="polite">${esc(err)}</p>
                 <p class="auth-success" role="status" aria-live="polite">${esc(notice)}</p>
 
-                <button class="auth-submit" type="submit">
-                  <span>${reg ? copy.register : forgot ? copy.sendReset : reset ? copy.savePassword : copy.login}</span>
+                <button class="auth-submit" type="submit" ${forgot && resendUntil > Date.now() ? 'disabled' : ''}>
+                  <span>${reg ? copy.register : forgot ? (resendUntil ? (Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000)) > 0 ? copy.resendWait.replace('{seconds}', Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000))) : copy.resendReset) : copy.sendReset) : reset ? copy.savePassword : copy.login}</span>
                   <i data-lucide="arrow-right"></i>
                 </button>
               </form>
@@ -216,7 +220,7 @@ UL.auth = {
         };
 
         const forgotLink = el.querySelector('#auth-forgot');
-        if (forgotLink) forgotLink.onclick = e => { e.preventDefault(); if (busy) return; mode = 'forgot'; notice = ''; draw(); };
+        if (forgotLink) forgotLink.onclick = e => { e.preventDefault(); if (busy) return; mode = 'forgot'; notice = ''; resendUntil = 0; draw(); };
 
         const eye = el.querySelector('[data-auth-eye]');
         if (eye) eye.onclick = () => {
@@ -235,6 +239,7 @@ UL.auth = {
           const f = Object.fromEntries(new FormData(form));
           if (!form.reportValidity()) return;
           if (!reset) email = String(f.email || '').trim();
+          if (forgot && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { draw(copy.invalidEmail || (lang === 'ms' ? 'Sila masukkan alamat e-mel yang sah.' : 'Please enter a valid email address.')); return; }
           if (reset && f.password !== f.confirmPassword) { draw(copy.passwordMismatch); return; }
 
           busy = true;
@@ -245,7 +250,19 @@ UL.auth = {
           try {
             if (forgot) {
               await UL.api.call('requestPasswordReset', { email });
-              busy = false; notice = copy.resetSent; draw(); return;
+              busy = false; notice = copy.resetSent;
+              resendUntil = Date.now() + 60000;
+              draw();
+              if (resendTimer) clearInterval(resendTimer);
+              resendTimer = setInterval(() => {
+                const resendBtn = el.querySelector('.auth-submit');
+                if (!resendBtn || mode !== 'forgot') { clearInterval(resendTimer); resendTimer = null; return; }
+                const left = Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000));
+                resendBtn.disabled = left > 0;
+                resendBtn.querySelector('span').textContent = left > 0 ? copy.resendWait.replace('{seconds}', left) : copy.resendReset;
+                if (!left) { clearInterval(resendTimer); resendTimer = null; }
+              }, 250);
+              return;
             }
             if (reset) {
               await UL.api.call('resetPassword', { token: resetToken, password: f.password });
