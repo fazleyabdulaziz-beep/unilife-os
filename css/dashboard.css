@@ -219,3 +219,39 @@ button.mini-day{border:0;background:none;color:inherit;font:inherit;font-weight:
 .day-item.k-a .day-bar{background:var(--warn)}.day-item.k-e .day-bar{background:var(--bad)}
 .dlg .empty{padding:28px 12px 12px}
 .dlg .empty svg{width:28px;height:28px;color:var(--primary);margin-bottom:6px}
+
+/* UniLife OS v2.1 — customizable dashboard widgets */
+.dashboard-welcome{margin-bottom:20px}
+.dashboard-widget-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.dashboard-widget{min-width:0;animation:rise var(--t-slow) var(--ease) both}
+.dashboard-widget>.card,.dashboard-widget>.campus-card{height:100%;min-width:0}
+.dashboard-widget.widget-clock .card,.dashboard-widget.widget-notes .card{height:100%}
+.dashboard-widget.widget-clock{grid-column:span 1}
+.dashboard-widget.widget-notes{grid-column:span 1}
+.ul-clock{text-align:center;padding:18px 8px 12px}
+.ul-clock>div{font-family:var(--font-display);font-size:clamp(38px,6vw,58px);font-weight:750;letter-spacing:-.065em;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--primary)}
+.ul-clock small{display:block;margin-top:10px;color:var(--muted);font-size:var(--fs-sm)}
+.notes-widget-list{display:grid;gap:10px;max-height:310px;overflow:auto}
+.note-preview{padding:11px 12px;border:1px solid var(--border);border-radius:14px;background:var(--surface2);min-width:0}
+.note-preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.note-preview-head>b{overflow-wrap:anywhere}
+.note-preview-head>span{display:flex;gap:3px;flex:none}
+.note-preview p{margin:7px 0 0;color:var(--muted);font-size:var(--fs-sm);line-height:1.55;overflow-wrap:anywhere;white-space:normal}
+.note-add-btn{margin-top:12px;width:100%;justify-content:center}
+.widget-manager-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.widget-manager-head h3{margin:0 0 4px}
+.widget-manager-head p{margin:0 0 12px}
+.dlg:has(.widget-manager-head){max-width:560px}
+.dlg>h4{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 0 8px}
+.widget-manager-row,.widget-library-row{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--border)}
+.widget-manager-row>span{display:flex;align-items:center;gap:10px}
+.widget-manager-row>span>svg{width:18px;color:var(--primary)}
+.widget-manager-row .icon-btn:disabled{opacity:.3;cursor:not-allowed}
+.widget-library-row small{display:block;color:var(--muted);margin-top:2px;font-size:var(--fs-xs)}
+.widget-library-row .btn{flex:none}
+.btn.small{min-height:34px;padding:6px 10px;font-size:var(--fs-xs)}
+.dashboard-empty{grid-column:1/-1;text-align:center;padding:36px 20px;border:1px dashed var(--border);border-radius:20px;color:var(--muted)}
+.dashboard-empty>svg{width:32px;height:32px;color:var(--primary);margin-bottom:10px}
+.dashboard-empty b{display:block;color:var(--text)}
+.dashboard-empty p{margin:6px 0 14px}
+@media(max-width:700px){.dashboard-widget-grid{grid-template-columns:1fr;gap:13px}.dashboard-widget.widget-clock,.dashboard-widget.widget-notes{grid-column:auto}.dashboard-welcome{margin-bottom:13px}}
