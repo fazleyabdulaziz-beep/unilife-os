@@ -209,5 +209,17 @@
  "gpaTracker": "GPA tracker",
  "widgetDesc_calendar": "Monthly calendar with class, assignment and exam markers",
  "widgetDesc_todayFocus": "Upcoming work that needs attention",
- "widgetDesc_quickAccess": "Shortcuts to everyday student tools"
+ "widgetDesc_quickAccess": "Shortcuts to everyday student tools",
+ "widgetOptions": "Widget options",
+ "widgetSize": "Widget size",
+ "sizeSmall": "Small",
+ "sizeMedium": "Medium",
+ "sizeLarge": "Large",
+ "noteColor": "Sticky note colour",
+ "noteColor_yellow": "Yellow",
+ "noteColor_pink": "Pink",
+ "noteColor_blue": "Blue",
+ "noteColor_green": "Green",
+ "noteColor_purple": "Purple",
+ "noteColor_orange": "Orange"
 }

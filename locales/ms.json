@@ -209,5 +209,17 @@
  "gpaTracker": "Penjejak GPA",
  "widgetDesc_calendar": "Kalendar bulanan dengan penanda kelas, tugasan dan peperiksaan",
  "widgetDesc_todayFocus": "Tugasan akan datang yang memerlukan perhatian",
- "widgetDesc_quickAccess": "Pautan pantas ke tools pelajar harian"
+ "widgetDesc_quickAccess": "Pautan pantas ke tools pelajar harian",
+ "widgetOptions": "Pilihan widget",
+ "widgetSize": "Saiz widget",
+ "sizeSmall": "Kecil",
+ "sizeMedium": "Sederhana",
+ "sizeLarge": "Besar",
+ "noteColor": "Warna nota pelekat",
+ "noteColor_yellow": "Kuning",
+ "noteColor_pink": "Merah jambu",
+ "noteColor_blue": "Biru",
+ "noteColor_green": "Hijau",
+ "noteColor_purple": "Ungu",
+ "noteColor_orange": "Jingga"
 }
