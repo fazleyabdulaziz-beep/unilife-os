@@ -9,7 +9,7 @@ const DAYS=['mon','tue','wed','thu','fri','sat','sun'],JS=['sun','mon','tue','we
 const GP={'A':4,'A-':3.67,'B+':3.33,'B':3,'B-':2.67,'C+':2.33,'C':2,'F':0};
 const CATS=['food','transport','books','rent','fun','other'];
 // ---------- preferences ----------
-const def={font:'Inter',theme:'auto',palette:'lavender',lang:'en',density:'comfortable',order:['calendar','academic','schedule','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'],hidden:[],welcomeTitle:'Your campus, your pace.',welcomeSubtitle:'A little progress every day adds up. Keep your goals in sight.',notif:{push:false,assignments:true,classes:true,exams:true,finance:true},widgetSizes:{},reminderFrequency:'daily'};
+const def={font:'Inter',theme:'auto',palette:'lavender',lang:'en',density:'comfortable',order:['calendar','academic','schedule','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'],hidden:[],welcomeTitle:'Your campus, your pace.',welcomeSubtitle:'A little progress every day adds up. Keep your goals in sight.',notif:{push:false,assignments:true,classes:true,exams:true,finance:true,classReminderMinutes:[60],assignmentDays:[7,3,1,0],examDays:[7,3,1,0],inAppPopup:true,repeatUntilDismissed:true},widgetSizes:{},reminderFrequency:'daily'};
 let saved={};try{saved=JSON.parse(localStorage.getItem('ul_prefs')||'{}')}catch(e){}
 U.prefs={...def,...saved,theme:(saved.theme==='system'?'auto':(saved.theme||'auto')),notif:{...def.notif,...(saved.notif||{})}};U.prefs.order=(U.prefs.order||[]).filter(w=>w!=='clock');U.prefs.hidden=(U.prefs.hidden||[]).filter(w=>w!=='clock');if(U.prefs.widgetSizes)delete U.prefs.widgetSizes.clock;
 let tm;
@@ -75,38 +75,88 @@ const M={
 const modal=h=>{const m=$('#modal');m.hidden=false;m.innerHTML=`<div class="dlg" role="dialog">${h}</div>`;window.lucide&&lucide.createIcons();return m};
 const close=()=>{$('#modal').hidden=true};
 
-function previewReminderPopup(){
- const lang=U.prefs.lang==='ms';
- const base=new Date();base.setHours(0,0,0,0);
- const dateIn=n=>{const d=new Date(base);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
- const sample=[
-  {kind:'assignment',title:lang?'Hantar tugasan akhir':'Submit final assignment',course:'Web Development',days:0,level:'urgent'},
-  {kind:'exam',title:lang?'Peperiksaan Database Systems':'Database Systems Examination',course:'Database Systems',days:2,level:'high'},
-  {kind:'assignment',title:lang?'Laporan projek berkumpulan':'Group project report',course:'Software Engineering',days:6,level:'upcoming'}
- ];
- const labels={
-  urgent:lang?'SEGERA':'URGENT',
-  high:lang?'KEUTAMAAN TINGGI':'HIGH PRIORITY',
-  upcoming:lang?'AKAN DATANG':'UPCOMING'
+// Unified Reminder Centre: Assignment + Examination only.
+// Class reminders remain controlled separately and visible through Calendar.
+let reminderCentreOpen=false;
+const reminderRepeatMs=()=>({hourly:3600000,daily:86400000,weekly:604800000}[U.prefs.reminderFrequency]||86400000);
+function collectDueReminders(){
+ const n=U.prefs.notif||{},items=[];
+ const add=(type,item,date)=>{
+  if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(String(date)))return;
+  const days=left(date);
+  const offsets=type==='assignment'?(n.assignmentDays||[7,3,1,0]):(n.examDays||[7,3,1,0]);
+  if(days>=0&&!offsets.map(Number).includes(days))return;
+  const id=String(item.id||item.title||date);
+  const key=type+'|'+id+'|'+date;
+  const priority=String(item.priority||'').toLowerCase();
+  let level='upcoming';
+  if(days<=0||priority==='high')level='urgent';
+  else if(days<=3||priority==='medium')level='high';
+  items.push({type,item,date,days,key,level});
  };
- const rows=sample.map(x=>{
+ if(n.assignments!==false)(D.assignments||[]).filter(a=>a.status!=='done').forEach(a=>add('assignment',a,a.due));
+ if(n.exams!==false)(D.exams||[]).forEach(x=>add('exam',x,x.date));
+ const order={urgent:0,high:1,upcoming:2};
+ return items.sort((a,b)=>order[a.level]-order[b.level]||a.days-b.days||a.date.localeCompare(b.date));
+}
+function reminderState(){
+ const uid=(D.user&&(D.user.id||D.user.user_id))||'guest';
+ const key='ul_reminder_centre_state_'+uid;
+ let state={};try{state=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch(e){}
+ return {key,state};
+}
+function reminderLabel(item){
+ const ms=U.prefs.lang==='ms';
+ if(item.level==='urgent')return ms?'SEGERA':'URGENT';
+ if(item.level==='high')return ms?'KEUTAMAAN TINGGI':'HIGH PRIORITY';
+ return ms?'AKAN DATANG':'UPCOMING';
+}
+function showReminderCentre(items,isPreview=false){
+ const ms=U.prefs.lang==='ms';
+ const rows=items.map(x=>{
   const color=x.level==='urgent'?'#dc4545':x.level==='high'?'#d58a20':'#5686d8';
-  const kind=x.kind==='assignment'?(lang?'TUGASAN':'ASSIGNMENT'):(lang?'PEPERIKSAAN':'EXAMINATION');
-  const due=x.days===0?(lang?'Hari ini':'Due today'):(lang?`${x.days} hari lagi`:`${x.days} days left`);
-  return `<div class="item" style="align-items:flex-start;gap:12px;border-left:4px solid ${color};padding:12px;margin:8px 0">
-   <div class="grow" style="min-width:0">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge" style="color:${color};border-color:${color}">${labels[x.level]}</span><small class="muted">${kind}</small></div>
-    <b style="display:block;margin-top:6px">${esc(x.title)}</b>
-    <div class="muted" style="font-size:12px;margin-top:3px">${esc(x.course)}</div>
-    <small class="muted" style="display:block;margin-top:5px">${lang?'Tarikh':'Date'}: ${dateIn(x.days)} · ${due}</small>
-   </div>
-  </div>`;
+  const kind=x.type==='assignment'?(ms?'TUGASAN':'ASSIGNMENT'):(ms?'PEPERIKSAAN':'EXAMINATION');
+  const title=x.type==='assignment'?(x.item.title||kind):(x.item.course||x.item.title||kind);
+  const extra=x.type==='assignment'&&x.item.course?`<div class="muted" style="font-size:12px;margin-top:3px">${esc(x.item.course)}</div>`:'';
+  const when=x.days<0?(ms?`Lewat ${Math.abs(x.days)} hari`:`${Math.abs(x.days)} days overdue`):x.days===0?(ms?'Hari ini':'Due today'):(ms?`${x.days} hari lagi`:`${x.days} days left`);
+  return `<div class="item" style="align-items:flex-start;gap:12px;border-left:4px solid ${color};padding:12px;margin:8px 0"><div class="grow" style="min-width:0"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge" style="color:${color};border-color:${color}">${reminderLabel(x)}</span><small class="muted">${kind}</small></div><b style="display:block;margin-top:6px">${esc(title)}</b>${extra}<small class="muted" style="display:block;margin-top:5px">${ms?'Tarikh':'Date'}: ${esc(x.date)} · ${when}</small></div></div>`;
  }).join('');
- modal(`<div class="day-head"><div><small>${lang?'Pusat Peringatan':'Reminder Centre'}</small><h3>${lang?'Pratonton ujian':'Test preview'}</h3></div><span class="badge">${sample.length}</span></div>
-  <div class="dev-warning" style="margin:10px 0"><i data-lucide="flask-conical"></i><div><b>${lang?'Mod pratonton':'Preview mode'}</b><small>${lang?'Data contoh sahaja. Tiada peringatan sebenar atau rekod dismissal diubah.':'Sample data only. No real reminders or dismissal records are changed.'}</small></div></div>
-  <div style="max-height:55vh;overflow:auto;margin:12px 0">${rows}</div>
-  <div class="row end"><button class="btn" data-act="dev-close-reminder-preview">${lang?'Tutup pratonton':'Close preview'}</button></div>`);
+ const heading=ms?'Pusat Peringatan':'Reminder Centre';
+ const summary=ms?`${items.length} perkara memerlukan perhatian`:`${items.length} item${items.length===1?'':'s'} need your attention`;
+ const testNote=isPreview?`<div class="dev-warning" style="margin:10px 0"><i data-lucide="flask-conical"></i><div><b>${ms?'Mod pratonton':'Preview mode'}</b><small>${ms?'Data contoh sahaja. Tiada data atau rekod dismissal sebenar diubah.':'Sample data only. No real data or dismissal records are changed.'}</small></div></div>`:'';
+ const action=isPreview?'dev-close-reminder-preview':'dismiss-all-due-reminders';
+ const button= isPreview?(ms?'Tutup pratonton':'Close preview'):(ms?'Tutup Semua':'Dismiss All');
+ modal(`<div class="day-head"><div><small>${heading}</small><h3>${summary}</h3></div><span class="badge">${items.length}</span></div>${testNote}<div style="max-height:55vh;overflow:auto;margin:12px 0">${rows}</div>${!isPreview?`<p class="muted" style="font-size:12px">${ms?'Jadual kelas boleh dilihat dalam Calendar.':'Class schedules and notifications remain in Calendar.'}</p>`:''}<div class="row end"><button class="btn" data-act="${action}">${button}</button></div>`);
+ reminderCentreOpen=true;
  window.lucide&&lucide.createIcons();
+}
+function checkDueDatePopup(){
+ const n=U.prefs.notif||{};
+ if(!D.user||n.inAppPopup===false||reminderCentreOpen||!$('#modal').hidden)return;
+ const all=collectDueReminders();
+ if(!all.length)return;
+ const {key,state}=reminderState(),now=Date.now(),repeat=reminderRepeatMs();
+ const active=all.filter(x=>{
+  const last=Number(state[x.key]||0);
+  return !last||now-last>=repeat;
+ });
+ if(active.length)showReminderCentre(active,false);
+}
+function dismissAllDueReminders(){
+ const {key,state}=reminderState(),now=Date.now();
+ collectDueReminders().forEach(x=>state[x.key]=now);
+ try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}
+ reminderCentreOpen=false;close();
+}
+function previewReminderPopup(){
+ const ms=U.prefs.lang==='ms',today=new Date();today.setHours(0,0,0,0);
+ const dateIn=n=>{const d=new Date(today);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+ const samples=[
+  {type:'assignment',item:{title:ms?'Hantar tugasan akhir':'Submit final assignment',course:'Web Development'},date:dateIn(0),days:0,level:'urgent'},
+  {type:'exam',item:{title:ms?'Peperiksaan Database Systems':'Database Systems Examination',course:'Database Systems'},date:dateIn(2),days:2,level:'high'},
+  {type:'assignment',item:{title:ms?'Laporan projek berkumpulan':'Group project report',course:'Software Engineering'},date:dateIn(6),days:6,level:'upcoming'}
+ ];
+ showReminderCentre(samples,true);
 }
 
 function form(title,fields,vals,ok){
@@ -218,14 +268,31 @@ const views={
   if(page==='appearance') content=card(t('themeStudio'),`<p class="muted">${t('themeStudioHint')}</p><div class="theme-gallery">${palettes.map(([id,name,color])=>`<button type="button" class="theme-swatch ${p.palette===id?'selected':''}" data-act="palette" data-id="${id}" aria-pressed="${p.palette===id}"><span class="theme-preview" style="--swatch:${color}"><i></i><i></i><i></i></span><b>${name}</b>${p.palette===id?`<small>${t('selected')}</small>`:''}</button>`).join('')}</div><label class="field">${t('appearance')}<select data-set="theme"><option value="auto" ${p.theme==='auto'?'selected':''}>${t('automaticDayNight')}</option><option value="light" ${p.theme==='light'?'selected':''}>${t('light')}</option><option value="dark" ${p.theme==='dark'?'selected':''}>${t('dark')}</option></select></label><label class="field">${t('density')}${sel('data-set="density"',['comfortable','compact'],p.density)}</label><label class="field">${t('font')}<select data-set="font" style="font-family:'${p.font}',system-ui,sans-serif">${U.config.fonts.map(f=>`<option value="${f}" ${f===p.font?'selected':''}>${f}</option>`).join('')}</select><div class="font-preview" style="font-family:'${p.font}',system-ui,sans-serif"><b>${t('fontPreview')}</b><span>${t('fontPreviewSentence')}</span></div></label>`);
   if(page==='language') content=card(t('language'),`<p class="muted">Choose the language used throughout UniLife OS.</p><label class="field">${t('language')}<select data-set="lang"><option value="en" ${p.lang==='en'?'selected':''}>English</option><option value="ms" ${p.lang==='ms'?'selected':''}>Bahasa Melayu</option></select></label>`);
   if(page==='dashboard') {const welcomeTitle=(p.welcomeTitle||def.welcomeTitle)==='Your campus, your pace.'?t('defaultWelcomeTitle'):(p.welcomeTitle||def.welcomeTitle);const welcomeSubtitle=(p.welcomeSubtitle||def.welcomeSubtitle)==='A little progress every day adds up. Keep your goals in sight.'?t('defaultWelcomeSubtitle'):(p.welcomeSubtitle||def.welcomeSubtitle);content=card(t('dashboardMessage'),`<p class="muted">${t('dashboardMessageHint')}</p><label class="field">${t('headline')}<input data-welcome="title" value="${esc(welcomeTitle)}" maxlength="80"></label><label class="field">${t('supportingSentence')}<input data-welcome="subtitle" value="${esc(welcomeSubtitle)}" maxlength="160"></label><div class="row end"><button class="btn" data-act="save-welcome">${t('saveMessage')}</button><button class="btn ghost" data-act="custom">${t('customize')}</button></div>`)}
-  if(page==='notifications') content=card(t('notifications'),`<p class="muted">Manage push alerts and reminder preferences.</p>${tog('push','enablePush')}${tog('assignments','assignReminders')}${tog('classes','classReminders')}${tog('exams','examReminders')}${tog('finance','financeAlerts')}<label class="field"><span>${t('remindAfterDismiss')}</span><select data-set="reminderFrequency"><option value="hourly" ${(p.reminderFrequency||'daily')==='hourly'?'selected':''}>${t('everyHour')}</option><option value="daily" ${(p.reminderFrequency||'daily')==='daily'?'selected':''}>${t('everyDay')}</option><option value="weekly" ${(p.reminderFrequency||'daily')==='weekly'?'selected':''}>${t('everyWeek')}</option></select></label><small class="muted">${t('repeatFrequencyHint')}</small>${U.push?U.push.panel():''}`);
+  if(page==='notifications') {
+   const checks=(key,items)=>`<div class="reminder-options">${items.map(([value,label])=>`<label class="reminder-option"><input type="checkbox" data-set="notif.${key}" data-value="${value}" ${(n[key]||[]).includes(value)?'checked':''}><span>${label}</span></label>`).join('')}</div>`;
+   const timingGroup=(title,key,items,hint)=>`<div class="reminder-setting"><b>${title}</b>${checks(key,items)}<small class="muted">${hint}</small></div>`;
+   content=card(t('notifications'),`<p class="muted">Manage notification channels, reminder timing and popup repeat behaviour separately.</p>
+   <h3 class="notification-section-title">${t('notificationChannels')}</h3>
+   ${tog('push','enablePush')}${tog('inAppPopup','inAppPopup')}${tog('assignments','assignReminders')}${tog('classes','classReminders')}${tog('exams','examReminders')}${tog('finance','financeAlerts')}
+   <div class="notification-divider"></div>
+   <h3 class="notification-section-title">${t('reminderTiming')}</h3>
+   ${timingGroup(t('classReminderTiming'),'classReminderMinutes',[[15,'15 min'],[30,'30 min'],[45,'45 min'],[60,'1 hour'],[90,'1.5 hours']],t('classTimingHint'))}
+   ${timingGroup(t('assignmentReminderTiming'),'assignmentDays',[[7,'7 days'],[3,'3 days'],[1,'1 day'],[0,'Due day']],t('assignmentTimingHint'))}
+   ${timingGroup(t('examReminderTiming'),'examDays',[[7,'7 days'],[3,'3 days'],[1,'1 day'],[0,'Exam day']],t('examTimingHint'))}
+   <div class="notification-divider"></div>
+   <h3 class="notification-section-title">${t('popupRepeat')}</h3>
+   <p class="muted">${t('popupRepeatHint')}</p>
+   <label class="field"><span>${t('remindAfterDismiss')}</span><select data-set="reminderFrequency"><option value="hourly" ${(p.reminderFrequency||'daily')==='hourly'?'selected':''}>${t('everyHour')}</option><option value="daily" ${(p.reminderFrequency||'daily')==='daily'?'selected':''}>${t('everyDay')}</option><option value="weekly" ${(p.reminderFrequency||'daily')==='weekly'?'selected':''}>${t('everyWeek')}</option></select></label>
+   ${tog('repeatUntilDismissed','repeatUntilDismissed')}
+   <small class="muted">${t('repeatFrequencyHint')}</small>${U.push?U.push.panel():''}`);
+  }
   if(page==='calendar') {setTimeout(()=>{const x=$('#ul-calendar-last-sync');if(x)x.textContent=localStorage.getItem('ul_calendar_last_sync')||t('notSyncedYet')},0);content=card(t('googleCalendar'),`<p class="muted">${t('googleCalendarHint')}</p><div class="item"><span class="grow">${t('connectionStatus')}</span><b id="ul-calendar-status">${t('notChecked')}</b></div><div class="item"><span class="grow">${t('lastSuccessfulSync')}</span><small id="ul-calendar-last-sync">${t('notSyncedYet')}</small></div><div class="row" style="flex-wrap:wrap"><button class="btn" data-act="calendar-connect"><i data-lucide="calendar-plus"></i> ${t('connectGoogle')}</button><button class="btn ghost" data-act="calendar-status"><i data-lucide="refresh-cw"></i> ${t('checkStatus')}</button></div><div class="row" style="flex-wrap:wrap"><button class="btn" data-act="calendar-sync"><i data-lucide="refresh-cw"></i> ${t('syncNow')}</button><button class="btn ghost" data-act="calendar-disconnect">${t('disconnect')}</button></div><small class="muted" id="ul-calendar-message">${t('calendarSyncIncludes')}</small>`)}
   if(page==='developer') content=`<div class="row end"><button class="btn" data-act="developer"><i data-lucide="flask-conical"></i>${t('openDeveloperLab')}</button></div>`;
   return back()+`<div class="settings-detail">${content}</div>`;
  }
 
  ,
- developer(){const phase=document.documentElement.dataset.timephase||'day';const mode=document.documentElement.dataset.theme||'light';const perm=('Notification' in window)?Notification.permission:'unsupported';return `<div class="ph"><div><h1>${t('developerLab')}</h1><small>${t('developerLabSubtitle')}</small></div><button class="btn ghost" data-act="go-settings"><i data-lucide="arrow-left"></i> ${t('settings')}</button></div><div class="dev-lab"><div class="dev-warning"><i data-lucide="flask-conical"></i><div><b>${t('temporaryWorkspace')}</b><small>${t('temporaryWorkspaceHint')}</small></div></div><div class="grid">${card(t('dayNightPreview'),`<p class="muted">${t('dayNightPreviewHint')}</p><div class="dev-status"><span>${t('currentPreview')}</span><b>${phase==='night'?t('nightMoon'):t('daySun')}</b></div><div class="row"><button class="btn" data-act="dev-day">☀ ${t('testDay')}</button><button class="btn" data-act="dev-night">☾ ${t('testNight')}</button><button class="btn ghost" data-act="dev-live">${t('useLiveTime')}</button><button class="btn ghost" data-act="dev-open-panel">${t('backToTools')}</button></div>`)}${card(t('notificationTests'),`<p class="muted">${t('notificationTestsHint')}</p><div class="dev-status"><span>${t('browserPermission')}</span><b>${esc(perm)}</b></div><div class="row"><button class="btn" data-act="dev-local-notif">${t('testLocalNotification')}</button><button class="btn ghost" data-act="pushtest">${t('testServerPush')}</button></div><small class="muted">${t('notificationTestsFootnote')}</small>`)}${card(t('reminderPopupTests'),`<p class="muted">${t('reminderPopupTestsHint')}</p><div class="row"><button class="btn" data-act="dev-preview-reminder"><i data-lucide="bell-ring"></i>${t('previewReminderPopup')}</button></div><small class="muted">${t('reminderPopupTestsFootnote')}</small>`)}${card(t('appDiagnostics'),`<div class="dev-diagnostics"><div><span>${t('appearance')}</span><b>${t(mode==='dark'?'dark':'light')} / ${t(phase==='night'?'night':'day')}</b></div><div><span>${t('selectedPalette')}</span><b>${esc(U.prefs.palette||'lavender')}</b></div><div><span>${t('apiEndpoint')}</span><b>${U.config.apiUrl?t('configured'):t('notConfigured')}</b></div><div><span>${t('loginToken')}</span><b>${U.api.token()?t('present'):t('missing')}</b></div><div><span>${t('serviceWorker')}</span><b id="dev-sw-status">${t('checking')}</b></div><div><span>${t('pushSupport')}</span><b>${U.push&&U.push.supported()?t('supported'):t('unavailable')}</b></div></div><div class="row end"><button class="btn ghost" data-act="dev-refresh">${t('refreshDiagnostics')}</button></div>`)}${card(t('resetTestOverrides'),`<p class="muted">${t('resetTestOverridesHint')}</p><button class="btn ghost" data-act="dev-live">${t('clearTestingOverride')}</button>`)}</div></div>`}
+ developer(){const phase=document.documentElement.dataset.timephase||'day';const mode=document.documentElement.dataset.theme||'light';const perm=('Notification' in window)?Notification.permission:'unsupported';return `<div class="ph"><div><h1>${t('developerLab')}</h1><small>${t('developerLabSubtitle')}</small></div><button class="btn ghost" data-act="go-settings"><i data-lucide="arrow-left"></i> ${t('settings')}</button></div><div class="dev-lab"><div class="dev-warning"><i data-lucide="flask-conical"></i><div><b>${t('temporaryWorkspace')}</b><small>${t('temporaryWorkspaceHint')}</small></div></div><div class="grid">${card(t('dayNightPreview'),`<p class="muted">${t('dayNightPreviewHint')}</p><div class="dev-status"><span>${t('currentPreview')}</span><b>${phase==='night'?t('nightMoon'):t('daySun')}</b></div><div class="row"><button class="btn" data-act="dev-day">☀ ${t('testDay')}</button><button class="btn" data-act="dev-night">☾ ${t('testNight')}</button><button class="btn ghost" data-act="dev-live">${t('useLiveTime')}</button><button class="btn ghost" data-act="dev-open-panel">${t('backToTools')}</button></div>`)}${card(t('notificationTests'),`<p class="muted">${t('notificationTestsHint')}</p><div class="dev-status"><span>${t('browserPermission')}</span><b>${esc(perm)}</b></div><div class="row"><button class="btn" data-act="dev-local-notif">${t('testLocalNotification')}</button><button class="btn ghost" data-act="pushtest">${t('testServerPush')}</button></div><small class="muted">${t('notificationTestsFootnote')}</small>`)}${card(t('reminderPopupTests'),`<p class="muted">${t('reminderPopupTestsHint')}</p><div class="row"><button class="btn" data-act="dev-preview-reminder"><i data-lucide="bell-ring"></i>${t('previewReminderPopup')}</button></div><small class="muted">${t('reminderPopupTestsFootnote')}</small>`) }${card(t('appDiagnostics'),`<div class="dev-diagnostics"><div><span>${t('appearance')}</span><b>${t(mode==='dark'?'dark':'light')} / ${t(phase==='night'?'night':'day')}</b></div><div><span>${t('selectedPalette')}</span><b>${esc(U.prefs.palette||'lavender')}</b></div><div><span>${t('apiEndpoint')}</span><b>${U.config.apiUrl?t('configured'):t('notConfigured')}</b></div><div><span>${t('loginToken')}</span><b>${U.api.token()?t('present'):t('missing')}</b></div><div><span>${t('serviceWorker')}</span><b id="dev-sw-status">${t('checking')}</b></div><div><span>${t('pushSupport')}</span><b>${U.push&&U.push.supported()?t('supported'):t('unavailable')}</b></div></div><div class="row end"><button class="btn ghost" data-act="dev-refresh">${t('refreshDiagnostics')}</button></div>`)}${card(t('resetTestOverrides'),`<p class="muted">${t('resetTestOverridesHint')}</p><button class="btn ghost" data-act="dev-live">${t('clearTestingOverride')}</button>`)}</div></div>`}
 
 };
 // ---------- server sync ----------
@@ -246,7 +313,7 @@ async function load(){
       );
     }
     if(U.prefs.lang!==fmt.lang) await fmt.load(U.prefs.lang);
-    apply(); render(); U.push&&U.push.sync();
+    apply(); render(); U.push&&U.push.sync(); setTimeout(checkDueDatePopup,900);
     return true;
   } catch(e) {
     if(e.code==='auth') return false;
@@ -354,7 +421,8 @@ const acts={
  'dev-open-panel':()=>{location.hash='#/developer'},
  'dev-live':()=>{devTimephase=null;apply();render();toast(t('liveTimeRestored'))},
  'dev-preview-reminder':()=>previewReminderPopup(),
- 'dev-close-reminder-preview':()=>close(),
+ 'dev-close-reminder-preview':()=>{reminderCentreOpen=false;close()},
+ 'dismiss-all-due-reminders':()=>dismissAllDueReminders(),
  'dev-local-notif':async()=>{if(!('Notification' in window))return toast(t('browserNotificationsUnsupported'));let p=Notification.permission;if(p==='default')p=await Notification.requestPermission();if(p!=='granted')return toast(t('notificationPermissionDenied'));try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.ready;await reg.showNotification(t('appTestTitle'),{body:t('localNotificationWorking'),icon:'./assets/icons/icon-192.png',tag:'ul-dev-local-test'});}else new Notification(t('appTestTitle'),{body:t('localNotificationWorking')});toast(t('localNotificationSent'))}catch(e){toast(t('couldNotShowNotification') + ': '+(e.message||e))}},
  'dev-refresh':()=>{const e=$('#dev-sw-status');if(!e)return;if(!('serviceWorker' in navigator)){e.textContent=t('unsupported');return}navigator.serviceWorker.getRegistration().then(r=>{e.textContent=r?(r.active?'Active':'Registered'):t('notRegistered')}).catch(()=>e.textContent=t('unavailable'))},
  new:(_,b)=>edit(b.dataset.m),
@@ -405,6 +473,11 @@ document.addEventListener('change',async e=>{const el=e.target,d=el.dataset;
    if(r.error){el.checked=false;el.disabled=false;return toast(t(r.error))}
    U.prefs.notif.push=true;store();toast(t('pushOn'));return render()}
   if(key==='push'){if(U.push)await U.push.disable();U.prefs.notif.push=false;store();toast(t('pushOff'));return render()}
+  if(['classReminderMinutes','assignmentDays','examDays'].includes(key)){
+   const value=Number(el.dataset.value),arr=Array.isArray(U.prefs.notif[key])?U.prefs.notif[key]:[];
+   U.prefs.notif[key]=v?[...new Set([...arr,value])].sort((a,b)=>b-a):arr.filter(x=>Number(x)!==value);
+   store();return;
+  }
   U.prefs.notif[key]=v;store();return}
  U.prefs[d.set]=v;store();if(d.set==='lang')await fmt.load(v);apply();render()});
 $('#search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();$$('#view [data-s]').forEach(n=>n.hidden=!!q&&!n.dataset.s.toLowerCase().includes(q))});
