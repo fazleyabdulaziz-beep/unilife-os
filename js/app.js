@@ -371,15 +371,213 @@ async function boot(){
  let resetRequested = new URLSearchParams(location.search).has('reset');
  if(resetRequested) localStorage.removeItem('ul_token');
  for(;;){apply();if(!resetRequested&&U.api.token()&&await load())break;localStorage.removeItem('ul_token');await U.auth.show();resetRequested=false;apply()}}
-// ---------- router / render ----------
+
+
+/* =========================================
+   UNIBOT — COMPANION + AI CHAT
+========================================= */
+let uniBotOpen = false;
+let uniBotBusy = false;
+let uniBotHistory = [];
+let uniBotMessages = [
+  { role: 'assistant', content: 'Hey! 👋 I’m UniBot. I can help you with your classes, assignments and university life. What do you need?' }
+];
+
+function uniBotMarkup() {
+  return `
+    <section class="unibot-panel" id="unibot-panel" ${uniBotOpen ? '' : 'hidden'}>
+      <header class="unibot-header">
+        <div class="unibot-header-avatar">🤖</div>
+        <div class="unibot-header-copy">
+          <b>UniBot</b>
+          <small> Your UniLife companion</small>
+        </div>
+        <button data-act="unibot-close" aria-label="Close UniBot">✕</button>
+      </header>
+
+      <div class="unibot-messages" id="unibot-messages">
+        ${uniBotMessages.map(m => `
+          <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}">${esc(m.content)}</div>
+        `).join('')}
+      </div>
+
+      <div class="unibot-typing" id="unibot-typing" hidden>UniBot is thinking...</div>
+
+      <div class="unibot-suggestions">
+        <button data-act="unibot-prompt" data-id="classes">📅 My next class</button>
+        <button data-act="unibot-prompt" data-id="assignments">📝 My assignments</button>
+        <button data-act="unibot-prompt" data-id="help">✨ What can you do?</button>
+      </div>
+
+      <form class="unibot-input" id="unibot-form">
+        <input id="unibot-text" maxlength="1000" autocomplete="off"
+          placeholder="Ask UniBot anything..." ${uniBotBusy ? 'disabled' : ''}>
+        <button type="submit" aria-label="Send" ${uniBotBusy ? 'disabled' : ''}>➤</button>
+      </form>
+    </section>
+
+    <button class="unibot-launcher" data-act="unibot-toggle"
+      aria-label="Open UniBot" aria-expanded="${uniBotOpen}">
+      <div class="unibot-character">
+        <div class="unibot-antenna"></div>
+        <div class="unibot-arm left"></div>
+        <div class="unibot-arm right"></div>
+        <div class="unibot-head">
+          <div class="unibot-face">
+            <i class="unibot-eye"></i><i class="unibot-eye"></i>
+          </div>
+        </div>
+      </div>
+      <span class="unibot-label">UniBot</span>
+    </button>
+  `;
+}
+
+function renderUniBot() {
+  const root = document.getElementById('unibot-root');
+  if (!root) return;
+  root.innerHTML = uniBotMarkup();
+  root.classList.toggle('is-thinking', uniBotBusy);
+
+  const messages = document.getElementById('unibot-messages');
+  if (messages) messages.scrollTop = messages.scrollHeight;
+}
+
+function uniBotContext() {
+  const classes = todayCls().map(c => ({
+    course: c.course,
+    start: c.start,
+    end: c.end,
+    room: c.room || '',
+    lecturer: c.lecturer || ''
+  }));
+
+  const assignments = (D.assignments || [])
+    .filter(a => a.status !== 'done')
+    .sort((a,b) => String(a.due).localeCompare(String(b.due)))
+    .slice(0,8)
+    .map(a => ({
+      title: a.title,
+      due: a.due,
+      course: a.course || ''
+    }));
+
+  return {
+    page: route(),
+    today: iso(0),
+    classes: classes,
+    assignments: assignments
+  };
+}
+
+async function sendUniBot(message) {
+  message = String(message || '').trim();
+  if (!message || uniBotBusy) return;
+
+  uniBotMessages.push({ role: 'user', content: message });
+  uniBotHistory.push({ role: 'user', content: message });
+  uniBotHistory = uniBotHistory.slice(-8);
+
+  uniBotBusy = true;
+  renderUniBot();
+
+  try {
+    const result = await U.api.call('unibotChat', {
+      message,
+      history: uniBotHistory.slice(0,-1),
+      context: uniBotContext()
+    });
+
+    const reply = result && result.reply
+      ? result.reply
+      : 'Sorry, I could not prepare an answer. Please try again.';
+
+    uniBotMessages.push({ role: 'assistant', content: reply });
+    uniBotHistory.push({ role: 'assistant', content: reply });
+    uniBotHistory = uniBotHistory.slice(-8);
+  } catch (error) {
+    uniBotMessages.push({
+      role: 'assistant',
+      content: 'I’m having trouble connecting right now. Please try again in a moment.'
+    });
+    console.warn('UniBot request failed:', error);
+  } finally {
+    uniBotBusy = false;
+    renderUniBot();
+  }
+}
+
+function uniBotQuickPrompt(id) {
+  if (id === 'classes') {
+    const list = todayCls();
+    if (!list.length) {
+      uniBotMessages.push({role:'assistant',content:'You have no classes scheduled for today. Enjoy your free time! 🎉'});
+      renderUniBot();
+      return;
+    }
+    const lines = list.map(c =>
+      `${c.start}–${c.end} · ${c.course}${c.room ? ' · '+c.room : ''}`
+    );
+    uniBotMessages.push({role:'assistant',content:'Here are your classes today:\n'+lines.join('\n')});
+    renderUniBot();
+    return;
+  }
+
+  if (id === 'assignments') {
+    const list = (D.assignments || [])
+      .filter(a => a.status !== 'done')
+      .sort((a,b) => String(a.due).localeCompare(String(b.due)))
+      .slice(0,6);
+
+    uniBotMessages.push({
+      role:'assistant',
+      content:list.length
+        ? 'Your pending assignments:\n'+list.map(a => `${a.title} · Due ${a.due}`).join('\n')
+        : 'You have no pending assignments. Great work! 🎉'
+    });
+    renderUniBot();
+    return;
+  }
+
+  if (id === 'help') {
+    uniBotMessages.push({
+      role:'assistant',
+      content:'I can help you check your classes and assignments, explain your timetable, plan your study time and answer general university questions. You can ask me anything!'
+    });
+    renderUniBot();
+  }
+}
+
+ // ---------- router / render ----------
 const route=()=>{const r=location.hash.replace('#/','');return views[r]?r:'dashboard'};
-function render(){const r=route();
- $('#nav').innerHTML=U.config.nav.map(k=>`<a href="#/${k}" class="${k===r?'on':''}"><i data-lucide="${U.config.icons[k]}"></i><span>${t(k)}</span></a>`).join('');
- $('#bottomnav').innerHTML=['dashboard','assignments','timetable','finance'].map(k=>`<a href="#/${k}" class="${k===r?'on':''}"><i data-lucide="${U.config.icons[k]}"></i>${t(k)}</a>`).join('')+`<button data-act="menu"><i data-lucide="menu"></i>${t('more')}</button>`;
- $('#view').innerHTML=views[r]();$('#search').value='';if(r==='developer')acts['dev-refresh']();
- const topProfile=$('#top-profile');if(topProfile){const av=D.user.avatar_url||D.user.avatarUrl||localStorage.getItem('ul_avatar')||'';const nm=D.user.name||t('student');topProfile.innerHTML=`<button class="top-profile-btn" data-act="profile-menu" aria-label="${t('openProfile')}">${av?`<img src="${av}" alt="">`:`<span>${esc(nm.trim().charAt(0).toUpperCase())}</span>`}<span class="top-profile-name"><b>${esc(nm)}</b><small>${esc(D.user.email||'')}</small></span><i data-lucide="chevron-down"></i></button>`;}
- $('#sidebar').classList.remove('open');$('#scrim').classList.remove('open');
- window.lucide&&lucide.createIcons()}
+
+function render(){
+  const r=route();
+
+  $('#nav').innerHTML=U.config.nav.map(k=>`<a href="#/${k}" class="${k===r?'on':''}"><i data-lucide="${U.config.icons[k]}"></i><span>${t(k)}</span></a>`).join('');
+
+  $('#bottomnav').innerHTML=['dashboard','assignments','timetable','finance'].map(k=>`<a href="#/${k}" class="${k===r?'on':''}"><i data-lucide="${U.config.icons[k]}"></i>${t(k)}</a>`).join('')+`<button data-act="menu"><i data-lucide="menu"></i>${t('more')}</button>`;
+
+  $('#view').innerHTML=views[r]();
+  $('#search').value='';
+
+  if(r==='developer')acts['dev-refresh']();
+
+  const topProfile=$('#top-profile');
+
+  if(topProfile){
+    const av=D.user.avatar_url||D.user.avatarUrl||localStorage.getItem('ul_avatar')||'';
+    const nm=D.user.name||t('student');
+
+    topProfile.innerHTML=`<button class="top-profile-btn" data-act="profile-menu" aria-label="${t('openProfile')}">${av?`<img src="${av}" alt="">`:`<span>${esc(nm.trim().charAt(0).toUpperCase())}</span>`}<span class="top-profile-name"><b>${esc(nm)}</b><small>${esc(D.user.email||'')}</small></span><i data-lucide="chevron-down"></i></button>`;
+  }
+
+  $('#sidebar').classList.remove('open');
+  $('#scrim').classList.remove('open');
+
+  window.lucide&&lucide.createIcons();
+  renderUniBot();
+}
 // ---------- actions ----------
 function dayPopup(ds){const e=eventsOn(ds),total=e.cls.length+e.asg.length+e.exm.length;
  const sec=(title,rows)=>rows.length?`<div class="day-sec"><h4>${title}<span>${rows.length}</span></h4>${rows.join('')}</div>`:'';
@@ -501,10 +699,34 @@ const acts={
  'note-add':()=>noteEditor(),
  'note-edit':id=>noteEditor(id),
  'note-delete':id=>ask(async()=>{try{await U.api.call('delete',{c:'notes',item:{id}});D.notes=D.notes.filter(n=>n.id!==id);toast(t('deleted'));render()}catch(e){toast(errMsg(e))}}),
- custom:()=>{const visible=U.prefs.order.filter(w=>!U.prefs.hidden.includes(w));const available=['academic','schedule','calendar','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'].filter(w=>!visible.includes(w));return modal(`<div class="widget-manager-head"><div><h3>${t('customize')}</h3><p class="muted">${t('widgetManagerHint')}</p></div><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><h4>${t('activeWidgets')}</h4>${visible.map((w,i)=>`<div class="widget-manager-row"><span class="grow"><i data-lucide="${({academic:'graduation-cap',schedule:'calendar-days',calendar:'calendar-range',assignments:'clipboard-list',exams:'timer',finance:'wallet',productivity:'target',todayFocus:'list-checks',quickAccess:'command',notes:'notebook-pen'})[w]}"></i><b>${t(WN[w]||w)}</b></span><button class="icon-btn" data-act="mv" data-id="${i}" data-d="-1" ${i===0?'disabled':''} aria-label="${t('moveUp')}">↑</button><button class="icon-btn" data-act="mv" data-id="${i}" data-d="1" ${i===visible.length-1?'disabled':''} aria-label="${t('moveDown')}">↓</button><button class="icon-btn danger" data-act="widget-remove" data-id="${w}" aria-label="${t('removeWidget')}"><i data-lucide="x"></i></button></div>`).join('')||`<p class="muted">${t('noWidgets')}</p>`}<h4 class="widget-library-title">${t('widgetLibrary')}</h4><div class="widget-library">${available.map(w=>`<div class="widget-library-row"><span class="grow"><b>${t(WN[w]||w)}</b><small>${t('widgetDesc_'+w)}</small></span><button class="btn small" data-act="widget-add" data-id="${w}"><i data-lucide="plus"></i>${t('add')}</button></div>`).join('')||`<p class="muted">${t('allWidgetsAdded')}</p>`}</div><div class="row end" style="margin-top:16px"><button class="btn" data-act="close">${t('done')}</button></div>`) }
+ custom:()=>{const visible=U.prefs.order.filter(w=>!U.prefs.hidden.includes(w));const available=['academic','schedule','calendar','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'].filter(w=>!visible.includes(w));return modal(`<div class="widget-manager-head"><div><h3>${t('customize')}</h3><p class="muted">${t('widgetManagerHint')}</p></div><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><h4>${t('activeWidgets')}</h4>${visible.map((w,i)=>`<div class="widget-manager-row"><span class="grow"><i data-lucide="${({academic:'graduation-cap',schedule:'calendar-days',calendar:'calendar-range',assignments:'clipboard-list',exams:'timer',finance:'wallet',productivity:'target',todayFocus:'list-checks',quickAccess:'command',notes:'notebook-pen'})[w]}"></i><b>${t(WN[w]||w)}</b></span><button class="icon-btn" data-act="mv" data-id="${i}" data-d="-1" ${i===0?'disabled':''} aria-label="${t('moveUp')}">↑</button><button class="icon-btn" data-act="mv" data-id="${i}" data-d="1" ${i===visible.length-1?'disabled':''} aria-label="${t('moveDown')}">↓</button><button class="icon-btn danger" data-act="widget-remove" data-id="${w}" aria-label="${t('removeWidget')}"><i data-lucide="x"></i></button></div>`).join('')||`<p class="muted">${t('noWidgets')}</p>`}<h4 class="widget-library-title">${t('widgetLibrary')}</h4><div class="widget-library">${available.map(w=>`<div class="widget-library-row"><span class="grow"><b>${t(WN[w]||w)}</b><small>${t('widgetDesc_'+w)}</small></span><button class="btn small" data-act="widget-add" data-id="${w}"><i data-lucide="plus"></i>${t('add')}</button></div>`).join('')||`<p class="muted">${t('allWidgetsAdded')}</p>`}</div><div class="row end" style="margin-top:16px"><button class="btn" data-act="close">${t('done')}</button></div>`)},
  
+ 'unibot-toggle':()=>{
+   uniBotOpen=!uniBotOpen;
+   renderUniBot();
+   if(uniBotOpen) setTimeout(()=>$('#unibot-text')?.focus(),100);
+ },
+ 'unibot-close':()=>{
+   uniBotOpen=false;
+   renderUniBot();
+ },
+ 'unibot-prompt':id=>uniBotQuickPrompt(id),
+
 };
 document.addEventListener('click',e=>{if(!e.target.closest('.widget-tools'))$$('.widget-menu').forEach(x=>x.hidden=true);if(!e.target.closest('.sticky-note-tools'))$$('.sticky-note-menu').forEach(x=>x.hidden=true);const b=e.target.closest('[data-act]');if(b&&acts[b.dataset.act])acts[b.dataset.act](b.dataset.id,b,e);else if(e.target.id==='modal')close()});
+
+document.addEventListener('submit',e=>{
+  if(e.target.id!=='unibot-form') return;
+  e.preventDefault();
+
+  const input=$('#unibot-text');
+  const message=input?.value.trim();
+  if(!message) return;
+
+  input.value='';
+  sendUniBot(message);
+});
+
 document.addEventListener('change',async e=>{const el=e.target,d=el.dataset;
  if(el.id==='avatar-file'&&el.files&&el.files[0]){const f=el.files[0];if(!/^image\/(png|jpeg|webp)$/.test(f.type))return toast(t('chooseImageFormat'));if(f.size>4*1024*1024)return toast(t('imageTooLarge'));const reader=new FileReader();reader.onload=async()=>{try{const img=new Image();img.onload=async()=>{try{const c=document.createElement('canvas'),max=320,scale=Math.min(1,max/Math.max(img.width,img.height));c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const dataUrl=c.toDataURL('image/jpeg',.78);const result=await U.api.call('saveProfilePhoto',{dataUrl});const url=result.avatar_url||result.avatarUrl||result.url;if(!url)throw{code:'server'};D.user.avatar_url=url;localStorage.removeItem('ul_avatar');toast(t('profilePhotoSaved'));render()}catch(err){toast(errMsg(err))}};img.onerror=()=>toast(t('couldNotReadImage'));img.src=reader.result}catch(err){toast(errMsg(err))}};reader.readAsDataURL(f);return;}
  if(d.view){st[d.view]=el.value;return render()}
