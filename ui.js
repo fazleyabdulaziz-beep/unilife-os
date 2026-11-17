@@ -3,7 +3,7 @@
  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
  let remaining=25*60, initial=25*60, running=false, interval=null;
  const paint=()=>{const el=document.getElementById('focus-time');if(el)el.textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
-  const b=document.querySelector('[data-act="timer-toggle"]');if(b)b.textContent=running?'Pause focus':'Start focus'};
+  const b=document.querySelector('[data-act="timer-toggle"]');if(b)b.textContent=UL.i18n.t(running?'pauseFocus':'startFocus')};
  const stop=()=>{running=false;if(interval)clearInterval(interval);interval=null;paint()};
  document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;

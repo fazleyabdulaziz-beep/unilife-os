@@ -819,10 +819,5 @@ html[data-theme="light"] .auth-simple-brand img.logo-light,
 html:not([data-theme="dark"]) .auth-simple-brand img.logo-light { display:block !important; }
 html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !important; }
 
-/* Forgot/reset password additions */
-.auth-simple .auth-forgot{text-align:right;margin-top:14px;font-size:12px}
-.auth-simple .auth-forgot a{color:var(--accent,#7778c5);font-weight:700;text-decoration:none}
-.auth-simple .auth-forgot a:hover{text-decoration:underline}
-.auth-simple .auth-success{margin:0;color:#26966f;font-size:12px;line-height:1.5}
-.auth-simple .auth-field input{min-height:48px;width:100%;border:1px solid var(--line,#e5e5ee);border-radius:10px;padding:0 13px;background:var(--surface,#fff);color:inherit;font:inherit}
-.auth-simple .auth-field input:focus{outline:2px solid color-mix(in srgb,var(--accent,#7778c5) 25%,transparent);border-color:var(--accent,#7778c5)}
+/* Phase 4: live font preference preview */
+.font-preview{display:grid;gap:4px;margin-top:9px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text)}.font-preview b{font-size:13px}.font-preview span{font-size:13px;color:var(--muted)}

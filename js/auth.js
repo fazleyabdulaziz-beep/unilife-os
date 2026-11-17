@@ -20,7 +20,7 @@ UL.auth = {
         try {
           localStorage.setItem('ul_prefs', JSON.stringify(UL.prefs));
         } catch (_) {}
-        if (key === 'lang') await UL.i18n.load(value);
+        if (key === 'lang') { localStorage.setItem('ul_auth_lang_override', value); await UL.i18n.load(value); }
         if (key === 'theme') {
           const root = document.documentElement;
           root.dataset.theme = value === 'dark' ? 'dark' : 'light';
@@ -79,7 +79,7 @@ UL.auth = {
           resetSent: 'Jika akaun wujud untuk e-mel ini, pautan reset telah dihantar. Sila semak peti masuk anda.',
           resetDone: 'Kata laluan berjaya dikemas kini. Sila log masuk.', backLogin: 'Kembali ke log masuk',
           resendReset: 'Hantar semula pautan', resendWait: 'Hantar semula dalam {seconds}s', invalidEmail: 'Sila masukkan alamat e-mel yang sah.',
-          passwordMismatch: 'Kata laluan tidak sepadan.'
+          passwordMismatch: 'Kata laluan tidak sepadan.', showPassword: 'Papar kata laluan', hidePassword: 'Sembunyikan kata laluan'
         } : {
           welcome: 'WELCOME BACK',
           start: 'A FRESH START',
@@ -113,7 +113,7 @@ UL.auth = {
           resetSent: 'If an account exists for this email, a reset link has been sent. Please check your inbox.',
           resetDone: 'Your password has been updated. Please sign in.', backLogin: 'Back to sign in',
           resendReset: 'Resend reset link', resendWait: 'Resend in {seconds}s', invalidEmail: 'Please enter a valid email address.',
-          passwordMismatch: 'Passwords do not match.'
+          passwordMismatch: 'Passwords do not match.', showPassword: 'Show password', hidePassword: 'Hide password'
         };
 
         el.innerHTML = `
@@ -177,7 +177,7 @@ UL.auth = {
                       autocomplete="${reg || reset ? 'new-password' : 'current-password'}"
                       placeholder="${reset ? copy.newPassword : copy.passwordPlaceholder}">
                     <button type="button" class="auth-eye" data-auth-eye
-                      aria-label="Show password"><i data-lucide="eye"></i></button>
+                      aria-label="${copy.showPassword}"><i data-lucide="eye"></i></button>
                   </div>
                 </label>`}
                 ${reset ? `<label class="auth-field"><span>${copy.confirmPassword}</span><input name="confirmPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password"></label>` : ''}
@@ -228,7 +228,7 @@ UL.auth = {
           const show = input.type === 'password';
           input.type = show ? 'text' : 'password';
           eye.innerHTML = `<i data-lucide="${show ? 'eye-off' : 'eye'}"></i>`;
-          eye.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+          eye.setAttribute('aria-label', show ? copy.hidePassword : copy.showPassword);
           icons();
         };
 
