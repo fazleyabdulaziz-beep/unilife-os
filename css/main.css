@@ -842,3 +842,13 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 .settings-detail{max-width:780px;margin:0 auto}
 .settings-detail .card{animation:rise var(--t-slow) var(--ease) both}
 @media(max-width:600px){.settings-home{gap:14px}.settings-group{border-radius:16px;padding:9px 13px}.settings-row{min-height:62px}.settings-subhead{margin-top:4px}.settings-detail .card{padding:16px}}
+
+/* Notification settings: reminder timing and dismissed-popup repeat are separate systems. */
+.notification-section-title{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:750;margin:18px 0 8px}
+.notification-divider{height:1px;background:var(--border);margin:18px 0}
+.reminder-setting{padding:12px 0;border-top:1px solid var(--border);display:grid;gap:9px}
+.reminder-setting>b{font-size:14px}
+.reminder-options{display:flex;flex-wrap:wrap;gap:8px}
+.reminder-option{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);font-size:13px;cursor:pointer}
+.reminder-option input{width:16px;min-height:16px;margin:0;accent-color:var(--primary)}
+.reminder-setting .muted{font-size:12px;line-height:1.45}

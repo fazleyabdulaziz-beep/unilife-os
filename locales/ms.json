@@ -362,5 +362,17 @@
   "everyHour": "Setiap jam",
   "everyDay": "Setiap hari",
   "everyWeek": "Setiap minggu",
-  "repeatFrequencyHint": "Kekerapan ini digunakan untuk peringatan dalam aplikasi ketika UniLife OS dibuka."
+  "repeatFrequencyHint": "Kekerapan ini digunakan untuk peringatan dalam aplikasi ketika UniLife OS dibuka.",
+  "notificationChannels": "Saluran notifikasi",
+  "reminderTiming": "Masa peringatan",
+  "classReminderTiming": "Masa peringatan kelas",
+  "assignmentReminderTiming": "Masa peringatan tugasan",
+  "examReminderTiming": "Masa peringatan peperiksaan",
+  "classTimingHint": "Pilih berapa lama sebelum kelas peringatan pertama dihantar.",
+  "assignmentTimingHint": "Pilih berapa hari sebelum tarikh akhir peringatan pertama dihantar.",
+  "examTimingHint": "Pilih berapa hari sebelum peperiksaan peringatan pertama dihantar.",
+  "popupRepeat": "Ulangan popup selepas dismiss",
+  "popupRepeatHint": "Tetapan ini hanya menentukan bila popup dalam aplikasi muncul semula selepas ditutup. Ia tidak mengubah masa peringatan pertama.",
+  "inAppPopup": "Popup peringatan dalam aplikasi",
+  "repeatUntilDismissed": "Terus ulang sehingga ditutup"
 }
