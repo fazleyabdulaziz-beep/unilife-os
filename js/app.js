@@ -206,7 +206,52 @@ const W={
  productivity:()=>{const i=(new Date().getDay()+6)%7,hd=D.habits.reduce((a,h)=>a+h.days.filter(Boolean).length,0),ht=D.habits.length*7;
   return card(t('productivity'),`<div class="stats">${stat(t('study'),D.study[i]+' h')}${stat(t('habits'),ht?Math.round(hd/ht*100)+'%':'–')}${stat(t('weekly'),D.study.reduce((a,b)=>a+b,0)+' h')}</div>`+chart(D.study,DAYS.map(t)))},
  calendar:()=>{const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1),offset=(first.getDay()+6)%7,days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();const cal=DAYS.map(d=>`<span class="mini-day-label">${t(d).slice(0,1)}</span>`).join('')+'<i class="mini-day-blank"></i>'.repeat(offset)+Array.from({length:days},(_,i)=>{const ds=ymd(now.getFullYear(),now.getMonth(),i+1),ev=eventsOn(ds),n=ev.cls.length+ev.asg.length+ev.exm.length;return`<button class="mini-day ${i+1===now.getDate()?'today':''} ${n?'has':''}" data-act="day" data-id="${ds}" aria-label="${ds}">${i+1}</button>`}).join('');return `<section class="campus-card calendar-card"><div class="campus-card-head"><div><h3>${now.toLocaleDateString(fmt.loc(),{month:'long',year:'numeric'})}</h3><small>${t('calendarSubtitle')}</small></div><a href="#/timetable">${t('timetable')}</a></div><div class="mini-calendar">${cal}</div></section>`},
- todayFocus:()=>{const pending=D.assignments.filter(a=>a.status!=='done').sort((a,b)=>a.due.localeCompare(b.due)).slice(0,3),today=D.tasks.filter(x=>!x.done).slice(0,3),tasks=[...pending.map(a=>({title:a.title,sub:a.course||t('assignments'),date:fmt.date(a.due)})),...today.map(x=>({title:x.title,sub:t('task'),date:t('today')}))].slice(0,4);return card(t('todaysFocus'),`<div class="notes-widget-list">${tasks.map(x=>`<div class="item"><div class="grow"><b>${esc(x.title)}</b><small>${esc(x.sub)} · ${esc(x.date)}</small></div></div>`).join('')||`<p class="muted">${t('noFocusItems')}</p>`}</div><a class="welcome-link" href="#/assignments">${t('manageTasks')}</a>`)},
+ todayFocus:()=>{
+ const pending=D.assignments
+  .filter(a=>a.status!=='done')
+  .sort((a,b)=>a.due.localeCompare(b.due))
+  .slice(0,3)
+  .map(a=>({
+   id:a.id,
+   act:'done',
+   title:a.title,
+   sub:a.course||t('assignments'),
+   date:fmt.date(a.due)
+  }));
+
+ const today=D.tasks
+  .filter(x=>!x.done)
+  .slice(0,3)
+  .map(x=>({
+   id:x.id,
+   act:'task',
+   title:x.title,
+   sub:t('task'),
+   date:t('today')
+  }));
+
+ const tasks=[...pending,...today].slice(0,4);
+
+ return card(t('todaysFocus'),
+  `<div class="notes-widget-list">
+   ${tasks.map(x=>`
+    <div class="item">
+     <button class="chk"
+      data-act="${x.act}"
+      data-id="${esc(x.id)}"
+      aria-label="${t('done')}">
+      <i data-lucide="check"></i>
+     </button>
+     <div class="grow">
+      <b>${esc(x.title)}</b>
+      <small>${esc(x.sub)} · ${esc(x.date)}</small>
+     </div>
+    </div>
+   `).join('')||`<p class="muted">${t('noFocusItems')}</p>`}
+  </div>
+  <a class="welcome-link" href="#/assignments">${t('manageTasks')}</a>`
+ );
+},
  quickAccess:()=>card(t('quickAccess'),`<div class="quick-links"><a href="#/assignments"><i data-lucide="notebook-pen"></i><span>${t('assignments')}</span></a><a href="#/timetable"><i data-lucide="calendar-days"></i><span>${t('timetable')}</span></a><a href="#/academics"><i data-lucide="graduation-cap"></i><span>${t('gpaTracker')}</span></a><a href="#/finance"><i data-lucide="wallet"></i><span>${t('finance')}</span></a></div>`),
  notes:()=>card(t('quickNotes'),`<div class="notes-launcher"><div class="notes-launcher-icon"><i data-lucide="sticky-note"></i></div><div class="notes-launcher-copy"><b>${t('stickyNotesTitle')}</b><small>${(D.notes||[]).length} · ${t('notesSaved')}</small></div><button class="btn note-add-btn" data-act="note-add"><i data-lucide="plus"></i>${t('addNote')}</button></div>`)
 };
