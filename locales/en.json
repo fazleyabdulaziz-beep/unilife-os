@@ -367,7 +367,7 @@
   "classReminderPopupHint": "This reminder will keep appearing until you dismiss it.",
   "dismissReminder": "Dismiss reminder",
   "reminderPopupTests": "Reminder Popup Tests",
-  "reminderPopupTestsHint": "Preview the combined Assignment + Examination Reminder Centre without changing your real data.",
+  "reminderPopupTestsHint": "Preview the combined Assignment + Examination Reminder Centre using sample items only.",
   "previewReminderPopup": "Preview Reminder Popup",
-  "reminderPopupTestsFootnote": "Uses sample items only. It will not dismiss or modify your actual reminders."
+  "reminderPopupTestsFootnote": "This preview will not change real assignments, exams, or dismissal records."
 }

@@ -367,7 +367,7 @@
   "classReminderPopupHint": "Peringatan ini akan muncul semula sehingga anda menutupnya.",
   "dismissReminder": "Tutup peringatan",
   "reminderPopupTests": "Ujian Popup Peringatan",
-  "reminderPopupTestsHint": "Pratonton Pusat Peringatan gabungan Tugasan + Peperiksaan tanpa mengubah data sebenar.",
+  "reminderPopupTestsHint": "Pratonton Pusat Peringatan gabungan Tugasan + Peperiksaan menggunakan contoh sahaja.",
   "previewReminderPopup": "Pratonton Popup Peringatan",
-  "reminderPopupTestsFootnote": "Hanya menggunakan contoh. Ia tidak akan menutup atau mengubah peringatan sebenar."
+  "reminderPopupTestsFootnote": "Pratonton ini tidak mengubah tugasan, peperiksaan atau rekod dismissal sebenar."
 }
