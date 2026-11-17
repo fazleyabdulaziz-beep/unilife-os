@@ -821,3 +821,6 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 
 /* Phase 4: live font preference preview */
 .font-preview{display:grid;gap:4px;margin-top:9px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text)}.font-preview b{font-size:13px}.font-preview span{font-size:13px;color:var(--muted)}
+
+/* Notification settings */
+.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:4px 12px;margin:4px 0 14px}.card h4{margin:16px 0 6px;font-size:.94rem}.card h4:first-of-type{margin-top:8px}

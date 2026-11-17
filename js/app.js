@@ -9,9 +9,10 @@ const DAYS=['mon','tue','wed','thu','fri','sat','sun'],JS=['sun','mon','tue','we
 const GP={'A':4,'A-':3.67,'B+':3.33,'B':3,'B-':2.67,'C+':2.33,'C':2,'F':0};
 const CATS=['food','transport','books','rent','fun','other'];
 // ---------- preferences ----------
-const def={font:'Inter',theme:'auto',palette:'lavender',lang:'en',density:'comfortable',order:['calendar','academic','schedule','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'],hidden:[],welcomeTitle:'Your campus, your pace.',welcomeSubtitle:'A little progress every day adds up. Keep your goals in sight.',notif:{push:false,assignments:true,classes:true,exams:true,finance:true},widgetSizes:{}};
+const def={font:'Inter',theme:'auto',palette:'lavender',lang:'en',density:'comfortable',order:['calendar','academic','schedule','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'],hidden:[],welcomeTitle:'Your campus, your pace.',welcomeSubtitle:'A little progress every day adds up. Keep your goals in sight.',notif:{push:false,assignments:true,classes:true,exams:true,finance:true,classReminderMinutes:[60],assignmentDays:[7,3,1,0],examDays:[7,3,1,0],inAppPopup:true,repeatUntilDismissed:true},widgetSizes:{}};
 let saved={};try{saved=JSON.parse(localStorage.getItem('ul_prefs')||'{}')}catch(e){}
-U.prefs={...def,...saved,theme:(saved.theme==='system'?'auto':(saved.theme||'auto')),notif:{...def.notif,...(saved.notif||{})}};U.prefs.order=(U.prefs.order||[]).filter(w=>w!=='clock');U.prefs.hidden=(U.prefs.hidden||[]).filter(w=>w!=='clock');if(U.prefs.widgetSizes)delete U.prefs.widgetSizes.clock;
+U.prefs={...def,...saved,theme:(saved.theme==='system'?'auto':(saved.theme||'auto')),notif:{...def.notif,...(saved.notif||{})}};
+for(const k of ['classReminderMinutes','assignmentDays','examDays'])if(!Array.isArray(U.prefs.notif[k]))U.prefs.notif[k]=def.notif[k].slice();U.prefs.order=(U.prefs.order||[]).filter(w=>w!=='clock');U.prefs.hidden=(U.prefs.hidden||[]).filter(w=>w!=='clock');if(U.prefs.widgetSizes)delete U.prefs.widgetSizes.clock;
 let tm;
 // Temporary developer-only preview override; never persisted.
 let devTimephase=null;
@@ -115,8 +116,8 @@ const W={
  academic:()=>card(t('academics'),`<div class="stats">${stat(t('gpa'),gpa(D.courses).toFixed(2))}${stat(t('cgpa'),cgpa().toFixed(2))}${stat(t('credits'),credits())}</div><small>${t('progress')} · ${Math.round(credits()/D.user.totalCredits*100)}%</small>${bar(credits()/D.user.totalCredits*100)}`),
  schedule:()=>{const l=todayCls();return card(t('today'),l.length?l.map(c=>`<div class="item"><span class="time">${c.start}</span><div class="grow"><b>${esc(c.course)}</b><small>${esc(c.room)} · ${c.start}–${c.end}</small></div></div>`).join(''):`<p class="muted">${t('noClasses')}</p>`)},
  assignments:()=>{const a=D.assignments,p=a.filter(x=>x.status!=='done'),od=p.filter(x=>left(x.due)<0),up=p.filter(x=>left(x.due)>=0).sort((x,y)=>x.due.localeCompare(y.due)).slice(0,3);
-  return card(t('assignments'),`<div class="stats">${stat(t('pending'),p.length)}${stat(t('done'),a.length-p.length)}${stat(t('overdue'),od.length,'bad')}</div>`+up.map(x=>`<div class="item"><div class="grow"><b>${esc(x.title)}</b><small>${esc(x.course)} · ${fmt.date(x.due)}</small></div>${badge(x.priority)}</div>`).join(''))},
- exams:()=>card(t('exams'),D.exams.length?[...D.exams].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<div class="item"><div class="grow"><b>${esc(e.course)}</b><small>${fmt.date(e.date)} · ${esc(e.time)} · ${esc(e.venue)}</small></div><b class="${left(e.date)<=3?'bad':''}">${left(e.date)} ${t('days')}</b></div>`).join(''):empty()),
+  return card(t('assignments'),`<div class="stats">${stat(t('pending'),p.length)}${stat(t('done'),a.length-p.length)}${stat(t('overdue'),od.length,'bad')}</div>`+up.map(x=>`<div class="item"><div class="grow"><b>${esc(x.title)}</b><small>${esc(x.course)} · ${fmt.date(x.due)}${left(x.due)>=0&&left(x.due)<10?` · ${left(x.due)} ${t('daysLeft')}`:''}</small></div>${badge(x.priority)}</div>`).join(''))},
+ exams:()=>card(t('exams'),D.exams.length?[...D.exams].sort((a,b)=>a.date.localeCompare(b.date)).map(e=>`<div class="item"><div class="grow"><b>${esc(e.course)}</b><small>${fmt.date(e.date)} · ${esc(e.time)} · ${esc(e.venue)}${left(e.date)>=0&&left(e.date)<10?` · ${left(e.date)} ${t('daysLeft')}`:''}</small></div><b class="${left(e.date)<10?'bad':''}">${left(e.date)} ${t('days')}</b></div>`).join(''):empty()),
  finance:()=>{const f=fin();return card(t('finance'),`<div class="stats">${stat(t('budget'),fmt.money(D.finance.budget))}${stat(t('expenses'),fmt.money(f.spent))}${stat(t('balance'),fmt.money(f.rem),f.rem<0?'bad':'ok')}</div><small>${t('savings')} · ${Math.round(f.pct)}%</small>${bar(f.pct)}`)},
  productivity:()=>{const i=(new Date().getDay()+6)%7,hd=D.habits.reduce((a,h)=>a+h.days.filter(Boolean).length,0),ht=D.habits.length*7;
   return card(t('productivity'),`<div class="stats">${stat(t('study'),D.study[i]+' h')}${stat(t('habits'),ht?Math.round(hd/ht*100)+'%':'–')}${stat(t('weekly'),D.study.reduce((a,b)=>a+b,0)+' h')}</div>`+chart(D.study,DAYS.map(t)))},
@@ -151,7 +152,7 @@ const views={
  academics(){const cr=curCr();
   return head('academics','course')+`<div class="grid">${card(t('calc'),`<div class="stats">${stat(t('gpa'),gpa(D.courses).toFixed(2))}${stat(t('cgpa'),cgpa().toFixed(2))}${stat(t('credits'),credits())}</div>${bar(credits()/D.user.totalCredits*100)}`)}${card(t('history'),chart([...D.history.map(h=>h.gpa),gpa(D.courses)].map(v=>+v.toFixed(2)),[...D.history.map(h=>h.sem),'•'])+D.history.map(h=>`<div class="item" data-s="${esc(h.sem)}"><div class="grow"><b>${esc(h.sem)}</b><small>${h.credits} · GPA ${h.gpa}</small></div>${ctl('hist',h.id)}</div>`).join('')+`<button class="btn ghost" data-act="new" data-m="hist"><i data-lucide="plus"></i>${t('add')}</button>`)}${card(t('courseItem'),`<div class="scroll"><table><tr><th>${t('code')}</th><th>${t('name')}</th><th>${t('credit')}</th><th>${t('grade')}</th><th></th></tr>${D.courses.map(c=>`<tr data-s="${esc(c.code+c.name)}"><td>${esc(c.code)}</td><td>${esc(c.name)}</td><td>${c.credit}</td><td>${esc(c.grade)}</td><td class="row">${ctl('course',c.id)}</td></tr>`).join('')}</table></div>`,'wide')}</div>`},
  assignments(){const f=st.f,l=D.assignments.map(a=>({...a,s:asgState(a)})).filter(a=>f==='all'||a.s===f).sort((a,b)=>a.due.localeCompare(b.due));
-  return head('assignments','assign',sel('data-view="f"',['all','pending','inprogress','done','overdue'],f))+card('',l.length?l.map(a=>`<div class="item" data-s="${esc(a.title+a.course)}"><button class="chk ${a.status==='done'?'on':''}" data-act="done" data-id="${a.id}" aria-label="${t('done')}"><i data-lucide="check"></i></button><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course)} · ${fmt.date(a.due)}${a.notes?' · '+esc(a.notes):''}</small></div>${badge(a.priority)}${badge(a.s)}${ctl('assign',a.id)}</div>`).join(''):empty())},
+  return head('assignments','assign',sel('data-view="f"',['all','pending','inprogress','done','overdue'],f))+card('',l.length?l.map(a=>`<div class="item" data-s="${esc(a.title+a.course)}"><button class="chk ${a.status==='done'?'on':''}" data-act="done" data-id="${a.id}" aria-label="${t('done')}"><i data-lucide="check"></i></button><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course)} · ${fmt.date(a.due)}${left(a.due)>=0&&left(a.due)<10?` · ${left(a.due)} ${t('daysLeft')}`:''}${a.notes?' · '+esc(a.notes):''}</small></div>${badge(a.priority)}${badge(a.s)}${ctl('assign',a.id)}</div>`).join(''):empty())},
  timetable(){const w=st.tt==='week';
   const tog=`<div class="row"><button class="btn ${w?'':'ghost'}" data-act="tt" data-id="week">${t('week')}</button><button class="btn ${w?'ghost':''}" data-act="tt" data-id="month">${t('month')}</button></div>`;
   let body;
@@ -165,7 +166,7 @@ const views={
    body=card('',`<div class="cal-nav"><button class="icon-btn" data-act="cmonth" data-id="-1" aria-label="${t('previousMonth')}"><i data-lucide="chevron-left"></i></button><h3>${b.toLocaleDateString(fmt.loc(),{month:'long',year:'numeric'})}</h3><button class="icon-btn" data-act="cmonth" data-id="1" aria-label="${t('nextMonth')}"><i data-lucide="chevron-right"></i></button><button class="btn ghost cal-today" data-act="cmonth" data-id="0">${t('today')}</button></div><div class="cal">${cells}</div><div class="cal-legend"><span><i class="dot"></i>${t('classes')}</span><span><i class="dot a"></i>${t('assignments')}</span><span><i class="dot e"></i>${t('exams')}</span></div>`)}
   return head('timetable','cls',tog)+body},
  exams(){const l=[...D.exams].sort((a,b)=>a.date.localeCompare(b.date));
-  return head('exams','exam')+`<div class="grid">${l.length?l.map(e=>card(esc(e.course),`<div class="stats">${stat(t('countdown'),left(e.date)+' '+t('days'),left(e.date)<=3?'bad':'')}</div><small>${fmt.date(e.date,{day:'numeric',month:'long',year:'numeric'})} · ${esc(e.time)} · ${esc(e.venue)}</small><p style="margin:10px 0"><b>${t('revision')}:</b> ${esc(e.revision||'–')}</p><div class="row end">${ctl('exam',e.id)}</div>`)).join(''):card('',empty())}</div>`},
+  return head('exams','exam')+`<div class="grid">${l.length?l.map(e=>card(esc(e.course),`<div class="stats">${stat(t('countdown'),left(e.date)+' '+t('days'),left(e.date)<10?'bad':'')}</div><small>${fmt.date(e.date,{day:'numeric',month:'long',year:'numeric'})} · ${esc(e.time)} · ${esc(e.venue)}</small><p style="margin:10px 0"><b>${t('revision')}:</b> ${esc(e.revision||'–')}</p><div class="row end">${ctl('exam',e.id)}</div>`)).join(''):card('',empty())}</div>`},
  finance(){const f=fin();
   return head('finance','tx',`<button class="btn ghost" data-act="budget">${t('budget')}</button>`)+`<div class="grid">${card(t('budget'),`<div class="stats">${stat(t('budget'),fmt.money(D.finance.budget))}${stat(t('expenses'),fmt.money(f.spent))}${stat(t('balance'),fmt.money(f.rem),f.rem<0?'bad':'ok')}</div>${bar(f.spent/D.finance.budget*100)}<small>${t('income')}: ${fmt.money(f.inc)}</small>`)}${card(t('sGoal'),D.finance.goals.map(g=>`<div class="item"><div class="grow"><b>${esc(g.title)}</b><small>${fmt.money(g.saved)} / ${fmt.money(g.target)}</small>${bar(g.saved/g.target*100)}</div>${ctl('sg',g.id)}</div>`).join('')+`<button class="btn ghost" data-act="new" data-m="sg"><i data-lucide="plus"></i>${t('add')}</button>`)}${card(t('transaction'),[...D.finance.tx].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="item" data-s="${esc(x.cat)}"><div class="grow"><b>${t(x.cat)}</b><small>${fmt.date(x.date)}</small></div><b class="${x.type==='income'?'ok':''}">${x.type==='income'?'+':'−'}${fmt.money(x.amount)}</b>${ctl('tx',x.id)}</div>`).join('')||empty(),'wide')}</div>`},
  productivity(){const i=(new Date().getDay()+6)%7;
@@ -182,7 +183,7 @@ const views={
    ${card(t('themeStudio'),`<p class="muted">${t('themeStudioHint')}</p><div class="theme-gallery">${palettes.map(([id,name,color])=>`<button type="button" class="theme-swatch ${p.palette===id?'selected':''}" data-act="palette" data-id="${id}" aria-pressed="${p.palette===id}"><span class="theme-preview" style="--swatch:${color}"><i></i><i></i><i></i></span><b>${name}</b>${p.palette===id?`<small>${t('selected')}</small>`:''}</button>`).join('')}</div><label class="field">${t('appearance')}<select data-set="theme"><option value="auto" ${p.theme==='auto'?'selected':''}>${t('automaticDayNight')}</option><option value="light" ${p.theme==='light'?'selected':''}>${t('light')}</option><option value="dark" ${p.theme==='dark'?'selected':''}>${t('dark')}</option></select></label><label class="field">${t('density')}${sel('data-set="density"',['comfortable','compact'],p.density)}</label><label class="field">${t('font')}<select data-set="font" style="font-family:'${p.font}',system-ui,sans-serif">${U.config.fonts.map(f=>`<option value="${f}" ${f===p.font?'selected':''} style="font-family:'${f}',system-ui,sans-serif">${f}</option>`).join('')}</select><div class="font-preview" style="font-family:'${p.font}',system-ui,sans-serif"><b>${t('fontPreview')}</b><span>${t('fontPreviewSentence')}</span></div></label>`)}
    ${card(t('profile'),`<div class="profile-editor"><img class="profile-preview" src="${avatar||''}" alt="" onerror="this.style.display='none'" style="${avatar?'':'display:none'}"><div class="profile-fallback" style="${avatar?'display:none':''}">${esc((u.name||'U').trim().charAt(0).toUpperCase())}</div><div class="grow"><b>${esc(u.name||t('student'))}</b><small>${esc(u.email||'')}</small><label class="btn ghost profile-upload"><i data-lucide="image-plus"></i> ${t('changePhoto')}<input id="avatar-file" type="file" accept="image/png,image/jpeg,image/webp" hidden></label></div></div>${[['name','student'],['university','university'],['semester','semester'],['year','year']].map(([k,l])=>`<label class="field">${t(l)}<input data-p="${k}" value="${esc(u[k])}" maxlength="80"></label>`).join('')}<div class="row"><button class="btn" data-act="profile">${t('save')}</button><button class="btn ghost" data-act="pwd">${t('password')}</button><button class="btn ghost" data-act="logout">${t('logout')}</button></div>`)}
    ${card(t('language'),`<label class="field">${t('language')}<select data-set="lang"><option value="en" ${p.lang==='en'?'selected':''}>English</option><option value="ms" ${p.lang==='ms'?'selected':''}>Bahasa Melayu</option></select></label>`)}
-   ${card(t('notifications'),tog('push','enablePush')+tog('assignments','assignReminders')+tog('classes','classReminders')+tog('exams','examReminders')+tog('finance','financeAlerts')+(U.push?U.push.panel():''))}
+   ${card(t('notificationSettings'),`<p class="muted">${t('notificationSettingsHint')}</p><h4>${t('deliveryOptions')}</h4>${tog('push','enablePush')}${tog('inAppPopup','inAppPopup')}${tog('repeatUntilDismissed','repeatUntilDismissed')}<h4>${t('classReminders')}</h4>${tog('classes','classReminders')}<p class="muted">${t('classReminderHint')}</p><div class="choice-grid">${[15,30,45,60,90].map(v=>`<label class="item"><span class="grow">${v} ${t('minutesBefore')}</span><input type="checkbox" style="width:22px;min-height:22px" data-set="notif.classReminderMinutes" value="${v}" ${n.classReminderMinutes.includes(v)?'checked':''}></label>`).join('')}</div><h4>${t('assignReminders')}</h4>${tog('assignments','assignReminders')}<p class="muted">${t('assignmentReminderHint')}</p><div class="choice-grid">${[7,3,1,0].map(v=>`<label class="item"><span class="grow">${v===0?t('dueDate'):v+' '+t('daysBefore')}</span><input type="checkbox" style="width:22px;min-height:22px" data-set="notif.assignmentDays" value="${v}" ${n.assignmentDays.includes(v)?'checked':''}></label>`).join('')}</div><h4>${t('examReminders')}</h4>${tog('exams','examReminders')}<p class="muted">${t('examReminderHint')}</p><div class="choice-grid">${[7,3,1,0].map(v=>`<label class="item"><span class="grow">${v===0?t('examDay'):v+' '+t('daysBefore')}</span><input type="checkbox" style="width:22px;min-height:22px" data-set="notif.examDays" value="${v}" ${n.examDays.includes(v)?'checked':''}></label>`).join('')}</div><h4>${t('financeAlerts')}</h4>${tog('finance','financeAlerts')}${U.push?U.push.panel():''}`)}
    ${card(t('googleCalendar'),`<p class="muted">${t('googleCalendarHint')}</p><div class="item"><span class="grow">${t('connectionStatus')}</span><b id="ul-calendar-status">${t('notChecked')}</b></div><div class="item"><span class="grow">${t('lastSuccessfulSync')}</span><small id="ul-calendar-last-sync">${t('notSyncedYet')}</small></div><div class="row" style="flex-wrap:wrap"><button class="btn" data-act="calendar-connect"><i data-lucide="calendar-plus"></i> ${t('connectGoogle')}</button><button class="btn ghost" data-act="calendar-status"><i data-lucide="refresh-cw"></i> ${t('checkStatus')}</button></div><div class="row" style="flex-wrap:wrap"><button class="btn" data-act="calendar-sync"><i data-lucide="refresh-cw"></i> ${t('syncNow')}</button><button class="btn ghost" data-act="calendar-disconnect">${t('disconnect')}</button></div><small class="muted" id="ul-calendar-message">${t('calendarSyncIncludes')}</small>`)}
    ${card(t('developerLab'),`<p class="muted">${t('developerLabHint')}</p><div class="row end"><button class="btn ghost" data-act="developer"><i data-lucide="flask-conical"></i> ${t('openDeveloperLab')}</button></div>`)}
   </div>`}
@@ -232,11 +233,39 @@ function render(){const r=route();
  $('#sidebar').classList.remove('open');$('#scrim').classList.remove('open');
  window.lucide&&lucide.createIcons()}
 // ---------- actions ----------
+// In-app class reminder: show from 60 minutes before class until dismissed.
+let activeClassPopupKey='';
+function checkClassPopup(){
+ if(!D.user||!D.user.id||!U.prefs.notif.classes||!U.prefs.notif.inAppPopup||!D.classes.length)return;
+ const now=new Date(),today=ymd(now.getFullYear(),now.getMonth(),now.getDate()),dow=JS[now.getDay()];
+ let dismissed={};try{dismissed=JSON.parse(localStorage.getItem('ul_class_dismissed_'+D.user.id)||'{}')||{}}catch(e){}
+ const upcoming=D.classes.map(c=>{
+  const date=c.schedule_type==='one_time'?d10(c.date):((dk(c)===dow)?today:'');
+  if(!date||!/^\d{2}:\d{2}$/.test(c.start||''))return null;
+  const start=new Date(date+'T'+c.start+':00');const mins=Math.floor((start-now)/60000);
+  const offsets=U.prefs.notif.classReminderMinutes||[60];
+  const due=offsets.some(off=>mins<=off&&mins>Math.max(0,off-2));
+  return mins>0&&due?{c,date,mins,key:String(c.id)+'|'+date}:null;
+ }).filter(Boolean).sort((a,b)=>a.mins-b.mins);
+ const shownKey='ul_class_shown_'+D.user.id;let shown={};try{shown=JSON.parse(localStorage.getItem(shownKey)||'{}')||{}}catch(e){}
+ const next=upcoming.find(x=>!dismissed[x.key]&&(U.prefs.notif.repeatUntilDismissed||!shown[x.key]));
+ if(!next){if(activeClassPopupKey&&$('#modal').hidden===false){/* keep an already-open reminder until user dismisses */}return;}
+ if(activeClassPopupKey===next.key&&!$('#modal').hidden)return;
+ if(!$('#modal').hidden)return;
+ activeClassPopupKey=next.key;
+ if(!U.prefs.notif.repeatUntilDismissed){shown[next.key]=Date.now();try{localStorage.setItem(shownKey,JSON.stringify(shown))}catch(e){}}
+ modal(`<div class="day-head"><div><small>${t('classReminderTitle')}</small><h3>${esc(next.c.course)}</h3></div><span class="badge">${next.mins} ${t('minutesLeft')}</span></div><p>${esc(next.c.start)}–${esc(next.c.end)}${next.c.room?' · '+esc(next.c.room):''}</p><p class="muted">${t('classReminderPopupHint')}</p><div class="row end"><button class="btn" data-act="dismiss-class-reminder" data-id="${esc(next.key)}">${t('dismissReminder')}</button></div>`);
+ window.lucide&&lucide.createIcons();
+}
+function dismissClassReminder(key){
+ try{const k='ul_class_dismissed_'+D.user.id,o=JSON.parse(localStorage.getItem(k)||'{}')||{};o[key]=Date.now();localStorage.setItem(k,JSON.stringify(o));}catch(e){}
+ activeClassPopupKey='';close();
+}
 function dayPopup(ds){const e=eventsOn(ds),total=e.cls.length+e.asg.length+e.exm.length;
  const sec=(title,rows)=>rows.length?`<div class="day-sec"><h4>${title}<span>${rows.length}</span></h4>${rows.join('')}</div>`:'';
  const cls=e.cls.map(c=>`<div class="day-item k-c"><i class="day-bar"></i><div class="grow"><b>${esc(c.course)}</b><small>${esc(c.start)}–${esc(c.end)}${c.room?' · '+esc(c.room):''}${c.lecturer?' · '+esc(c.lecturer):''}</small></div>${ctl('cls',c.id)}</div>`);
- const asg=e.asg.map(a=>`<div class="day-item k-a"><i class="day-bar"></i><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course||'')}</small></div>${badge(asgState(a))}${ctl('assign',a.id)}</div>`);
- const exm=e.exm.map(x=>`<div class="day-item k-e"><i class="day-bar"></i><div class="grow"><b>${esc(x.course)}</b><small>${esc(x.time||'')}${x.venue?' · '+esc(x.venue):''}</small></div>${ctl('exam',x.id)}</div>`);
+ const asg=e.asg.map(a=>`<div class="day-item k-a"><i class="day-bar"></i><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course||'')}${left(ds)>=0&&left(ds)<10?' · '+left(ds)+' '+t('daysLeft'):''}</small></div>${badge(asgState(a))}${ctl('assign',a.id)}</div>`);
+ const exm=e.exm.map(x=>`<div class="day-item k-e"><i class="day-bar"></i><div class="grow"><b>${esc(x.course)}</b><small>${esc(x.time||'')}${x.venue?' · '+esc(x.venue):''}${left(ds)>=0&&left(ds)<10?' · '+left(ds)+' '+t('daysLeft'):''}</small></div>${ctl('exam',x.id)}</div>`);
  modal(`<div class="day-head"><div><small>${total?`${total} ${t(total===1?'event':'events')}`:t('freeDay')}</small><h3>${fmt.date(ds,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3></div><button class="icon-btn" data-act="close" aria-label="${t('close')}"><i data-lucide="x"></i></button></div>${sec(t('exams'),exm)}${sec(t('assignments'),asg)}${sec(t('classes'),cls)}${total?'':`<div class="empty"><i data-lucide="coffee"></i><p>${t('freeDayMessage')}</p></div>`}<div class="row end" style="margin-top:14px"><button class="btn" data-act="add-class-date" data-id="${ds}"><i data-lucide="plus"></i>${t('addClassOnDate')}</button></div>`);
  window.lucide&&lucide.createIcons()}
 function noteEditor(id){
@@ -309,6 +338,7 @@ const acts={
  palette:id=>{U.prefs.palette=id;store();apply();render();toast(t('themeUpdated'));},
  'profile-menu':()=>modal(`<div class="profile-pop"><div class="row"><b>${t('account')}</b><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><p>${esc(D.user.name||t('student'))}</p><small>${esc(D.user.email||'')}</small><div class="row" style="margin-top:14px"><button class="btn" data-act="go-settings">${t('profileAndSettings')}</button><button class="btn ghost" data-act="logout">${t('logout')}</button></div></div>`),
  'go-settings':()=>{close();location.hash='#/settings';},
+ 'dismiss-class-reminder':id=>dismissClassReminder(id),
  developer:()=>{location.hash='#/developer'},
  'dev-day':()=>{devTimephase='day';apply();location.hash='#/dashboard'},
  'dev-night':()=>{devTimephase='night';apply();location.hash='#/dashboard'},
@@ -357,6 +387,12 @@ document.addEventListener('change',async e=>{const el=e.target,d=el.dataset;
  if(!d.set)return;const v=el.type==='checkbox'?el.checked:el.value;
  if(d.set.startsWith('notif.')){
   const key=d.set.slice(6);
+  if(['classReminderMinutes','assignmentDays','examDays'].includes(key)){
+   const allowed={classReminderMinutes:[15,30,45,60,90],assignmentDays:[7,3,1,0],examDays:[7,3,1,0]}[key];
+   const value=Number(el.value);let arr=Array.isArray(U.prefs.notif[key])?U.prefs.notif[key].slice():[];
+   if(v){if(allowed.includes(value)&&!arr.includes(value))arr.push(value)}else arr=arr.filter(x=>x!==value);
+   U.prefs.notif[key]=arr.sort((a,b)=>b-a);store();return render();
+  }
   if(key==='push'&&v){ // permission prompt must start from this click
    el.disabled=true;
    const r=U.push?await U.push.enable():{error:'pushFail'};
@@ -370,5 +406,5 @@ addEventListener('hashchange',render);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 U.M=M;U.ui={modal,close,toast,esc,t,load};U.CN=CN;
 (async()=>{try{await fmt.load(U.prefs.lang)}catch(e){document.body.innerHTML='<p style="padding:24px">Serve this folder over HTTP (e.g. <code>python3 -m http.server</code>) so locale files can load.</p>';return}
- apply();await boot()})();
+ apply();await boot();setInterval(checkClassPopup,15000);setTimeout(checkClassPopup,2500)})();
 })();

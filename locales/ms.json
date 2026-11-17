@@ -348,5 +348,22 @@
   "startFocus": "Mula fokus",
   "pauseFocus": "Jeda fokus",
   "day": "Siang",
-  "night": "Malam"
+  "night": "Malam",
+  "notificationSettings": "Tetapan Notifikasi",
+  "notificationSettingsHint": "Pilih cara dan masa UniLife OS mengingatkan anda. Perubahan disimpan secara automatik.",
+  "deliveryOptions": "Pilihan penghantaran",
+  "inAppPopup": "Papar pop-up kelas dalam aplikasi",
+  "repeatUntilDismissed": "Ulang pop-up sehingga ditutup",
+  "classReminderHint": "Pilih masa peringatan sebelum kelas bermula.",
+  "minutesBefore": "minit sebelum",
+  "assignmentReminderHint": "Pilih bilangan hari sebelum tarikh akhir tugasan.",
+  "examReminderHint": "Pilih bilangan hari sebelum peperiksaan.",
+  "daysBefore": "hari sebelum",
+  "dueDate": "Pada tarikh akhir",
+  "examDay": "Pada hari peperiksaan",
+  "daysLeft": "hari lagi",
+  "classReminderTitle": "Kelas akan datang",
+  "minutesLeft": "minit lagi",
+  "classReminderPopupHint": "Peringatan ini akan muncul semula sehingga anda menutupnya.",
+  "dismissReminder": "Tutup peringatan"
 }

@@ -348,5 +348,22 @@
   "startFocus": "Start focus",
   "pauseFocus": "Pause focus",
   "day": "Day",
-  "night": "Night"
+  "night": "Night",
+  "notificationSettings": "Notification Settings",
+  "notificationSettingsHint": "Choose how and when UniLife OS reminds you. Changes are saved automatically.",
+  "deliveryOptions": "Delivery options",
+  "inAppPopup": "Show in-app class popup",
+  "repeatUntilDismissed": "Repeat popup until dismissed",
+  "classReminderHint": "Choose when to receive class reminders before the start time.",
+  "minutesBefore": "minutes before",
+  "assignmentReminderHint": "Choose the days before an assignment deadline.",
+  "examReminderHint": "Choose the days before an examination.",
+  "daysBefore": "days before",
+  "dueDate": "On the due date",
+  "examDay": "On exam day",
+  "daysLeft": "days left",
+  "classReminderTitle": "Upcoming class",
+  "minutesLeft": "minutes left",
+  "classReminderPopupHint": "This reminder will keep appearing until you dismiss it.",
+  "dismissReminder": "Dismiss reminder"
 }
