@@ -261,6 +261,46 @@ function dismissClassReminder(key){
  try{const k='ul_class_dismissed_'+D.user.id,o=JSON.parse(localStorage.getItem(k)||'{}')||{};o[key]=Date.now();localStorage.setItem(k,JSON.stringify(o));}catch(e){}
  activeClassPopupKey='';close();
 }
+
+// In-app assignment and examination deadline reminders.
+let activeDuePopupKey='';
+function checkDueDatePopup(){
+ if(!D.user||!D.user.id||!U.prefs.notif.inAppPopup)return;
+ const n=U.prefs.notif||{},uid=D.user.id;
+ const candidates=[];
+ if(n.assignments){
+  (D.assignments||[]).filter(a=>a.status!=='done'&&/^\d{4}-\d{2}-\d{2}$/.test(String(a.due||''))).forEach(a=>{
+   const days=left(a.due),offsets=n.assignmentDays||[7,3,1,0];
+   if(days>=0&&offsets.includes(days))candidates.push({type:'assignment',item:a,date:a.due,days,key:'assignment|'+a.id+'|'+a.due});
+  });
+ }
+ if(n.exams){
+  (D.exams||[]).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(String(x.date||''))).forEach(x=>{
+   const days=left(x.date),offsets=n.examDays||[7,3,1,0];
+   if(days>=0&&offsets.includes(days))candidates.push({type:'exam',item:x,date:x.date,days,key:'exam|'+x.id+'|'+x.date});
+  });
+ }
+ candidates.sort((a,b)=>a.days-b.days||a.date.localeCompare(b.date));
+ let dismissed={},shown={};
+ try{dismissed=JSON.parse(localStorage.getItem('ul_due_dismissed_'+uid)||'{}')||{};}catch(e){}
+ try{shown=JSON.parse(localStorage.getItem('ul_due_shown_'+uid)||'{}')||{};}catch(e){}
+ const next=candidates.find(x=>!dismissed[x.key]&&(n.repeatUntilDismissed||!shown[x.key]));
+ if(!next)return;
+ if(activeDuePopupKey===next.key&&!$('#modal').hidden)return;
+ if(!$('#modal').hidden)return;
+ activeDuePopupKey=next.key;
+ if(!n.repeatUntilDismissed){shown[next.key]=Date.now();try{localStorage.setItem('ul_due_shown_'+uid,JSON.stringify(shown));}catch(e){}}
+ const title=next.type==='assignment'?next.item.title:(next.item.course||t('exams'));
+ const label=next.type==='assignment'?t('assignments'):t('exams');
+ const course=next.item.course&&next.type==='assignment'?`<p class="muted">${esc(next.item.course)}</p>`:'';
+ const daysText=next.days===0?(U.prefs.lang==='ms'?'Tarikh akhir hari ini':'Due today'):`${next.days} ${t('daysLeft')}`;
+ modal(`<div class="day-head"><div><small>${esc(label)}</small><h3>${esc(title)}</h3></div><span class="badge">${esc(daysText)}</span></div>${course}<p>${U.prefs.lang==='ms'?'Tarikh':'Date'}: ${esc(next.date)}</p><p class="muted">${U.prefs.lang==='ms'?'Peringatan ini akan muncul semula sehingga anda menutupnya.':'This reminder will keep appearing until you dismiss it.'}</p><div class="row end"><button class="btn" data-act="dismiss-due-reminder" data-id="${esc(next.key)}">${t('dismissReminder')}</button></div>`);
+ window.lucide&&lucide.createIcons();
+}
+function dismissDueReminder(key){
+ try{const k='ul_due_dismissed_'+D.user.id,o=JSON.parse(localStorage.getItem(k)||'{}')||{};o[key]=Date.now();localStorage.setItem(k,JSON.stringify(o));}catch(e){}
+ activeDuePopupKey='';close();
+}
 function dayPopup(ds){const e=eventsOn(ds),total=e.cls.length+e.asg.length+e.exm.length;
  const sec=(title,rows)=>rows.length?`<div class="day-sec"><h4>${title}<span>${rows.length}</span></h4>${rows.join('')}</div>`:'';
  const cls=e.cls.map(c=>`<div class="day-item k-c"><i class="day-bar"></i><div class="grow"><b>${esc(c.course)}</b><small>${esc(c.start)}–${esc(c.end)}${c.room?' · '+esc(c.room):''}${c.lecturer?' · '+esc(c.lecturer):''}</small></div>${ctl('cls',c.id)}</div>`);
@@ -339,6 +379,7 @@ const acts={
  'profile-menu':()=>modal(`<div class="profile-pop"><div class="row"><b>${t('account')}</b><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><p>${esc(D.user.name||t('student'))}</p><small>${esc(D.user.email||'')}</small><div class="row" style="margin-top:14px"><button class="btn" data-act="go-settings">${t('profileAndSettings')}</button><button class="btn ghost" data-act="logout">${t('logout')}</button></div></div>`),
  'go-settings':()=>{close();location.hash='#/settings';},
  'dismiss-class-reminder':id=>dismissClassReminder(id),
+ 'dismiss-due-reminder':id=>dismissDueReminder(id),
  developer:()=>{location.hash='#/developer'},
  'dev-day':()=>{devTimephase='day';apply();location.hash='#/dashboard'},
  'dev-night':()=>{devTimephase='night';apply();location.hash='#/dashboard'},
@@ -406,5 +447,5 @@ addEventListener('hashchange',render);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 U.M=M;U.ui={modal,close,toast,esc,t,load};U.CN=CN;
 (async()=>{try{await fmt.load(U.prefs.lang)}catch(e){document.body.innerHTML='<p style="padding:24px">Serve this folder over HTTP (e.g. <code>python3 -m http.server</code>) so locale files can load.</p>';return}
- apply();await boot();setInterval(checkClassPopup,15000);setTimeout(checkClassPopup,2500)})();
+ apply();await boot();setInterval(()=>{checkClassPopup();checkDueDatePopup()},15000);setTimeout(()=>{checkClassPopup();checkDueDatePopup()},2500)})();
 })();
