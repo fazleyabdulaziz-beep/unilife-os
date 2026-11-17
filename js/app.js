@@ -178,7 +178,7 @@ function editClass(selectedDate,id){
  <label class="field" id="class-day-field">Day<select name="day">${DAYS.map(d=>`<option value="${d}" ${val.day===d?'selected':''}>${t(d)}</option>`).join('')}</select></label>
  <label class="field" id="class-date-field">Date<input name="date" type="date" value="${esc(val.date)}"></label>
  <div class="grid"><label class="field">${t('start')}<input name="start" type="time" value="${esc(val.start)}" required></label><label class="field">${t('end')}<input name="end" type="time" value="${esc(val.end)}" required></label></div>
- <label class="field">${t('room')}<input name="room" value="${esc(val.room)}" maxlength="60" required></label>
+ <label class="field">${t('room')} <span class="muted">(optional)</span><input name="room" value="${esc(val.room)}" maxlength="60" placeholder="No venue specified"></label>
  <label class="field">${t('lecturer')}<input name="lecturer" value="${esc(val.lecturer)}" maxlength="80"></label>
  <div class="row end"><button type="button" class="btn ghost" data-act="close">${t('cancel')}</button><button class="btn">${t('save')}</button></div></form>`);
  const f=$('#class-form',m),typeEl=f.elements.schedule_type,dayField=$('#class-day-field',f),dateField=$('#class-date-field',f),dayEl=f.elements.day,dateEl=f.elements.date;

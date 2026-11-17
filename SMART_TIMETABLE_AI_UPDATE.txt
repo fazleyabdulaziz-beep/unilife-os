@@ -1,0 +1,1 @@
+Smart Timetable AI added. See SMART_TIMETABLE_AI_SETUP.md for Groq configuration and deployment instructions.

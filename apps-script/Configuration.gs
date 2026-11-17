@@ -56,7 +56,7 @@ const V7 = mk(function(v){if(!Array.isArray(v)||v.length!==7)throw fail('invalid
 const COLL = {
   courses:{sheet:'Courses',f:{code:S(20,1),name:S(120,1),credit:N(1,12),grade:E(['A','A-','B+','B','B-','C+','C','F'])}},
   classes:{sheet:'Timetable',f:{
-    course:S(80,1),day:VDAY,start:VT,end:VT,room:S(60,1),lecturer:S(80,0),
+    course:S(80,1),day:VDAY,start:VT,end:VT,room:S(60,0),lecturer:S(80,0),
     schedule_type:mk(function(v){if(['recurring','one_time'].indexOf(v)<0)throw fail('invalid');return v},'s',false,'recurring'),
     date:VDO
   }},

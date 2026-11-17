@@ -1,0 +1,23 @@
+LATEST UNILIFE OS PACKAGE
+
+Base package: user-uploaded UniLife-OS-Notification-Systems-Separated-Complete(1).zip
+
+Included:
+- Existing separated Notification Settings preserved (channels, category toggles, reminder timing, popup repeat settings).
+- Reminder Centre combines Assignment + Examination only.
+- Class reminders are excluded from the Reminder Centre and remain in Calendar.
+- Priority grouping: Urgent, High Priority, Upcoming.
+- Dismiss All for the current eligible reminder list.
+- Developer Lab > Reminder Popup Tests > Preview Reminder Popup.
+- Preview uses sample records only and does not mutate real data or dismissal state.
+
+Dismissal storage:
+- Uses browser localStorage, scoped by signed-in user.
+- Repeat interval uses the existing hourly/daily/weekly preference.
+
+Files changed from supplied package:
+- unilife-os 2.0/js/app.js
+- unilife-os 2.0/locales/en.json
+- unilife-os 2.0/locales/ms.json
+
+Backend files, Google Calendar integration files, service worker, and existing separated notification settings are preserved from the supplied complete ZIP.

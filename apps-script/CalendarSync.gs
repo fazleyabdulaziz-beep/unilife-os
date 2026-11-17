@@ -106,7 +106,7 @@ function calendarBuildClassEvent_(item, timezone) {
   }
 
   var event = {
-    summary: 'Class: ' + item.course,
+    summary: 'Class: ' + item.course + (item.lecturer ? ' — ' + item.lecturer : ''),
     location: item.room || '',
     description:
       'Created by UniLife OS\n' +

@@ -1,0 +1,12 @@
+UniLife OS — FocusMate-inspired redesign
+
+Replace these files in your existing project:
+- index.html
+- ui.js
+- css/main.css
+- css/themes.css
+- js/app.js
+
+Keep all your other existing js/ files, config.js, favicon, backend and Apps Script deployment unchanged.
+This redesign changes the dashboard presentation and adds a working local Pomodoro timer. It preserves the existing data/API/auth code in app.js.
+Test locally first before publishing to GitHub Pages.

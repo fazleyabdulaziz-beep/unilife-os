@@ -1,0 +1,12 @@
+UniLife OS — Interface Density & Font Preferences Fix
+
+Fixed:
+- Frontend uses "auto" as the UI label for automatic day/night appearance.
+- Backend preference validation expects "system", not "auto".
+- Saving any preference (including font and interface density) sent "auto" to the backend,
+  causing the generic "invalid" response.
+- The frontend now translates "auto" -> "system" when saving preferences.
+- When loading saved preferences, "system" is translated back to "auto" for the UI.
+
+No Google Apps Script backend changes are required for this specific mismatch.
+Deploy the updated frontend folder to GitHub Pages.

@@ -80,25 +80,28 @@ UL.importer={
  },
  errorMessage(e){const map={aiConfig:'AI service is not configured yet. Add GROQ_API_KEY in Apps Script Script Properties.',aiLimit:'AI usage limit reached. Please try again later.',aiBusy:'Please wait a few seconds before trying again.',aiFailed:'AI could not process this timetable. Please try a clearer file.',auth:'Please log in again.'};return map[e&&e.code]||e&&e.message||'Something went wrong.'},
  reviewAI(result){
-  const ui=UL.ui,days=['mon','tue','wed','thu','fri','sat','sun'];
-  this.aiDraft=(result.classes||[]).slice(0,100).map(x=>({course:String(x.course||'').slice(0,80),day:String(x.day||'').slice(0,3).toLowerCase(),start:String(x.start||''),end:String(x.end||''),room:String(x.room||''),lecturer:String(x.lecturer||''),schedule_type:x.schedule_type==='one_time'?'one_time':'recurring',date:String(x.date||''),confidence:x.confidence||'',notes:String(x.notes||'')}));
+  const ui=UL.ui;
+  this.aiDraft=(result.classes||[]).slice(0,100).map(x=>({
+   course:String(x.course||'').slice(0,80),
+   start:String(x.start||''),end:String(x.end||''),
+   room:String(x.room||''),lecturer:String(x.lecturer||''),
+   date:String(x.date||''),confidence:x.confidence||'',notes:String(x.notes||'')
+  }));
   this.aiWarnings=Array.isArray(result.warnings)?result.warnings:[];
   this.renderAIReview();
  },
  renderAIReview(){
-  const ui=UL.ui,days=['mon','tue','wed','thu','fri','sat','sun'],draft=this.aiDraft||[];
-  const warnings=this.aiWarnings||[];
+  const ui=UL.ui,draft=this.aiDraft||[],warnings=this.aiWarnings||[];
   const rows=draft.map((x,i)=>`<div class="ai-class-row" data-ai-row="${i}">
    <div class="ai-row-top"><b>Class ${i+1}</b><label class="ai-include"><input type="checkbox" data-ai-include="${i}" checked> Include</label></div>
-   <label class="field">Subject / course<input data-ai-field="course" data-ai-i="${i}" maxlength="80" value="${ui.esc(x.course)}" placeholder="Course name or code"></label>
-   <div class="ai-fields-2"><label class="field">Schedule type<select data-ai-field="schedule_type" data-ai-i="${i}"><option value="recurring" ${x.schedule_type==='recurring'?'selected':''}>Weekly recurring</option><option value="one_time" ${x.schedule_type==='one_time'?'selected':''}>Specific date</option></select></label>
-   <label class="field">Day<select data-ai-field="day" data-ai-i="${i}"><option value="">Select day</option>${days.map(d=>`<option value="${d}" ${x.day===d?'selected':''}>${d.toUpperCase()}</option>`).join('')}</select></label></div>
-   <div class="ai-fields-2"><label class="field">Date (one-time)<input type="date" data-ai-field="date" data-ai-i="${i}" value="${ui.esc(x.date)}"></label><label class="field">Venue<input data-ai-field="room" data-ai-i="${i}" maxlength="60" value="${ui.esc(x.room)}" placeholder="Room"></label></div>
-   <div class="ai-fields-2"><label class="field">Start<input type="time" data-ai-field="start" data-ai-i="${i}" value="${ui.esc(x.start)}"></label><label class="field">End<input type="time" data-ai-field="end" data-ai-i="${i}" value="${ui.esc(x.end)}"></label></div>
-   <label class="field">Lecturer<input data-ai-field="lecturer" data-ai-i="${i}" maxlength="80" value="${ui.esc(x.lecturer)}" placeholder="Optional"></label>
+   <label class="field">Class name / subject<input data-ai-field="course" data-ai-i="${i}" maxlength="80" value="${ui.esc(x.course)}" placeholder="Course name or code" required></label>
+   <label class="field">Class date<input type="date" data-ai-field="date" data-ai-i="${i}" value="${ui.esc(x.date)}" required><small class="muted">Day of the week is detected automatically from this date.</small></label>
+   <div class="ai-fields-2"><label class="field">Start time<input type="time" data-ai-field="start" data-ai-i="${i}" value="${ui.esc(x.start)}" required></label><label class="field">End time<input type="time" data-ai-field="end" data-ai-i="${i}" value="${ui.esc(x.end)}" required></label></div>
+   <label class="field">Venue / room <span class="muted">(optional)</span><input data-ai-field="room" data-ai-i="${i}" maxlength="60" value="${ui.esc(x.room)}" placeholder="No venue specified"></label>
+   <label class="field">Lecturer <span class="muted">(optional)</span><input data-ai-field="lecturer" data-ai-i="${i}" maxlength="80" value="${ui.esc(x.lecturer)}" placeholder="Lecturer name"></label>
    ${x.notes?`<small class="muted">AI note: ${ui.esc(x.notes)}</small>`:''}
   </div>`).join('');
-  const box=ui.modal(`<div class="ai-import-head"><div><span class="ai-kicker"><i data-lucide="sparkles"></i> AI EXTRACTION RESULT</span><h3>Review detected classes</h3><p class="muted">Check every class carefully. Nothing is saved until you confirm.</p></div><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div>
+  const box=ui.modal(`<div class="ai-import-head"><div><span class="ai-kicker"><i data-lucide="sparkles"></i> AI EXTRACTION RESULT</span><h3>Review detected classes</h3><p class="muted">Date, class name and time are required. Weekday is calculated automatically; venue is optional. Nothing is saved until you confirm.</p></div><button class="icon-btn" data-act="close" aria-label="Close"><i data-lucide="x"></i></button></div>
    ${warnings.length?`<div class="ai-warning"><b>AI notes</b><ul>${warnings.map(w=>`<li>${ui.esc(w)}</li>`).join('')}</ul></div>`:''}
    <div class="ai-review-list">${rows}</div>
    <div id="ai-validation" class="ai-validation"></div>
@@ -109,24 +112,23 @@ UL.importer={
   window.lucide&&lucide.createIcons();
  },
  async importAI(box){
-  const ui=UL.ui,days=['mon','tue','wed','thu','fri','sat','sun'],items=[],errors=[],duplicates=[],conflicts=[];
+  const ui=UL.ui,items=[],errors=[],duplicates=[],conflicts=[];
   box.querySelectorAll('[data-ai-field]').forEach(el=>{const i=+el.dataset.aiI;this.aiDraft[i][el.dataset.aiField]=el.value});
   const included=[...box.querySelectorAll('[data-ai-include]:checked')].map(el=>+el.dataset.aiInclude);
+  const validDate=v=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(v))return false;const d=new Date(v+'T00:00:00Z');return !isNaN(d)&&d.toISOString().slice(0,10)===v};
   included.forEach(i=>{
-   const x=this.aiDraft[i],o={course:x.course.trim(),day:x.schedule_type==='recurring'?x.day:'',start:x.start,end:x.end,room:x.room.trim(),lecturer:x.lecturer.trim(),schedule_type:x.schedule_type,date:x.schedule_type==='one_time'?x.date:''};
-   if(!o.course||o.course.length>80)errors.push(`Class ${i+1}: course name is required.`);
+   const x=this.aiDraft[i],o={course:x.course.trim(),day:'',start:x.start,end:x.end,room:x.room.trim(),lecturer:x.lecturer.trim(),schedule_type:'one_time',date:x.date};
+   if(!o.course||o.course.length>80)errors.push(`Class ${i+1}: class name is required.`);
+   if(!validDate(o.date))errors.push(`Class ${i+1}: enter a valid class date.`);
    if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(o.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(o.end)||o.start>=o.end)errors.push(`Class ${i+1}: check start and end time.`);
-   if(o.schedule_type==='recurring'&&days.indexOf(o.day)<0)errors.push(`Class ${i+1}: choose a valid weekday.`);
-   if(o.schedule_type==='one_time'&&(!/^\d{4}-\d{2}-\d{2}$/.test(o.date)||isNaN(new Date(o.date+'T00:00:00Z'))||new Date(o.date+'T00:00:00Z').toISOString().slice(0,10)!==o.date))errors.push(`Class ${i+1}: choose a valid class date.`);
-   if(!o.room)errors.push(`Class ${i+1}: enter a venue / room.`);
    if(errors.some(e=>e.startsWith(`Class ${i+1}:`)))return;
-   const sig=z=>[z.course.toLowerCase(),z.schedule_type,z.day||z.date,z.start,z.end,(z.room||'').toLowerCase()].join('|');
-   if((UL.data.classes||[]).some(c=>sig(c)===sig(o))){duplicates.push(i+1);return}
+   const sig=z=>[z.course.toLowerCase(),z.date,z.start,z.end].join('|');
+   if((UL.data.classes||[]).some(c=>c.schedule_type==='one_time'&&sig(c)===sig(o))){duplicates.push(i+1);return}
    items.push(o);
   });
   for(let i=0;i<items.length;i++)for(let j=i+1;j<items.length;j++){
-   const a=items[i],b=items[j],same=a.schedule_type===b.schedule_type&&(a.schedule_type==='recurring'?a.day===b.day:a.date===b.date);
-   if(same&&a.start<b.end&&b.start<a.end)conflicts.push(`Possible time conflict: ${a.course} and ${b.course}`);
+   const a=items[i],b=items[j];
+   if(a.date===b.date&&a.start<b.end&&b.start<a.end)conflicts.push(`Possible time conflict on ${a.date}: ${a.course} and ${b.course}`);
   }
   const validation=box.querySelector('#ai-validation');
   if(errors.length){validation.innerHTML=`<div class="ai-error"><b>Please fix these issues:</b><ul>${errors.map(x=>`<li>${ui.esc(x)}</li>`).join('')}</ul></div>`;return}
@@ -138,4 +140,5 @@ UL.importer={
    ui.close();ui.toast(`${result.count||items.length} classes added to your timetable${duplicates.length?`; ${duplicates.length} duplicates skipped`:''}.`);await ui.load();
   }catch(e){save.disabled=false;save.classList.remove('busy');validation.innerHTML=`<div class="ai-error">${ui.esc(this.errorMessage(e))}</div>`}
  }
+
 };

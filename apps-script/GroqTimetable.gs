@@ -31,15 +31,14 @@ function analyzeTimetableWithGroq_(uid, data) {
   var prompt = [
     'You are a precise university timetable extraction engine. Read the supplied timetable image(s) and/or lecturer text.',
     'Return ONLY valid JSON with this exact top-level shape: {"classes":[],"warnings":[]}.',
-    'Each class object must contain: course, day, start, end, room, lecturer, schedule_type, date, confidence, notes.',
-    'course: subject name or course code, maximum 80 characters.',
-    'day: one of mon,tue,wed,thu,fri,sat,sun. Use empty string for one_time classes.',
+    'Each class object must contain: course, date, start, end, room, lecturer, confidence, notes.',
+    'course: class or subject name, maximum 80 characters; preserve the subject name and course code when both are visible.',
+    'date: mandatory actual calendar date in YYYY-MM-DD. Do not return weekday names instead of dates.',
     'start and end: 24-hour HH:mm. If unclear, return empty string; never guess.',
-    'schedule_type: recurring only when the source clearly describes a weekly repeating class without a finite date range. Use one_time for an explicitly dated session.',
-    'For monthly/weekend schedules or classes with a stated date range, expand into one_time rows for each actual date that can be determined. Do not invent dates.',
-    'For recurring classes, set date to empty string and provide day. For one_time classes, set day to empty string and provide date as YYYY-MM-DD.',
-    'room and lecturer may be empty strings if unavailable. confidence must be a number from 0 to 1. notes should explain uncertainty briefly.',
-    'If a date, subject or time is ambiguous, do not fabricate it. Put a concise explanation in warnings and leave the uncertain field empty.',
+    'Create one one-time class session row for every actual dated class in the source. Expand weekly or weekday-based classes into individual dates only when the source provides a clear date range or explicit session dates.',
+    'Do not return day or schedule_type fields. UniLife OS calculates the weekday from the actual date.',
+    'room and lecturer may be empty strings if unavailable. A missing room or venue must never prevent extraction. confidence must be a number from 0 to 1. notes should explain uncertainty briefly.',
+    'If a date, subject or time is ambiguous, do not fabricate it. Put a concise explanation in warnings and leave the uncertain field empty; such a row will require user correction before import.',
     'Do not include Markdown fences or any text outside the JSON object.',
     text ? 'Additional lecturer text:\n' + text : ''
   ].join('\n');
@@ -97,18 +96,15 @@ function analyzeTimetableWithGroq_(uid, data) {
   var classes = Array.isArray(parsed.classes) ? parsed.classes.slice(0, GROQ_TIMETABLE.MAX_CLASSES) : [];
   classes = classes.map(function(item) {
     item = item && typeof item === 'object' ? item : {};
-    var day = groqNormalizeDay_(item.day);
-    var type = item.schedule_type === 'one_time' || item.date ? 'one_time' : 'recurring';
-    var date = groqNormalizeDate_(item.date);
     return {
       course: groqText_(item.course, 80),
-      day: type === 'recurring' ? day : '',
+      day: '',
       start: groqNormalizeTime_(item.start),
       end: groqNormalizeTime_(item.end),
       room: groqText_(item.room, 60),
       lecturer: groqText_(item.lecturer, 80),
-      schedule_type: type,
-      date: type === 'one_time' ? date : '',
+      schedule_type: 'one_time',
+      date: groqNormalizeDate_(item.date),
       confidence: Math.max(0, Math.min(1, Number(item.confidence) || 0)),
       notes: groqText_(item.notes, 240)
     };
