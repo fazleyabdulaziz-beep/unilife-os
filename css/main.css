@@ -852,3 +852,15 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 .reminder-option{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--border);border-radius:12px;background:var(--surface2);font-size:13px;cursor:pointer}
 .reminder-option input{width:16px;min-height:16px;margin:0;accent-color:var(--primary)}
 .reminder-setting .muted{font-size:12px;line-height:1.45}
+
+
+/* Smart Timetable AI importer */
+.ai-import-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}
+.ai-import-head h3{margin:5px 0 6px}.ai-kicker{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.12em;font-weight:800;color:var(--primary)}
+.ai-kicker svg{width:14px;height:14px}.ai-upload{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 16px;border:1.5px dashed var(--border);border-radius:16px;background:var(--surface2);cursor:pointer;text-align:center;margin:14px 0 8px}
+.ai-upload>svg{width:30px;height:30px;color:var(--primary)}.ai-upload span,.ai-file-names{font-size:12px;color:var(--muted)}.ai-upload input{max-width:100%;font-size:12px;margin-top:4px}
+.ai-or{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.1em}.ai-or:before,.ai-or:after{content:"";height:1px;background:var(--border);flex:1}
+.ai-privacy{display:flex;gap:8px;align-items:flex-start;font-size:11px;color:var(--muted);margin:12px 0}.ai-privacy svg{width:15px;height:15px;flex:none;color:var(--ok)}.ai-status{min-height:18px;margin-top:10px}
+.ai-review-list{display:grid;gap:12px;max-height:58vh;overflow:auto;padding:2px}.ai-class-row{border:1px solid var(--border);border-radius:15px;padding:14px;background:var(--surface2)}.ai-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.ai-include{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}.ai-include input{width:16px;min-height:16px}
+.ai-fields-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ai-class-row .field{margin-bottom:9px}.ai-class-row input,.ai-class-row select{width:100%;min-width:0}.ai-warning,.ai-error{border-radius:12px;padding:12px 14px;margin:10px 0;font-size:12px}.ai-warning{background:color-mix(in srgb,var(--warn) 12%,var(--surface));color:var(--text)}.ai-error{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--text)}.ai-warning ul,.ai-error ul{margin:6px 0 0 18px}.ai-validation:empty{display:none}
+@media(max-width:520px){.ai-fields-2{grid-template-columns:1fr 1fr}.ai-class-row{padding:11px}.ai-review-list{max-height:54vh}}

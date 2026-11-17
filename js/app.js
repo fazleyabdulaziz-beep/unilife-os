@@ -283,7 +283,7 @@ const views={
  assignments(){const f=st.f,l=D.assignments.map(a=>({...a,s:asgState(a)})).filter(a=>f==='all'||a.s===f).sort((a,b)=>a.due.localeCompare(b.due));
   return head('assignments','assign',sel('data-view="f"',['all','pending','inprogress','done','overdue'],f))+card('',l.length?l.map(a=>`<div class="item" data-s="${esc(a.title+a.course)}"><button class="chk ${a.status==='done'?'on':''}" data-act="done" data-id="${a.id}" aria-label="${t('done')}"><i data-lucide="check"></i></button><div class="grow"><b>${esc(a.title)}</b><small>${esc(a.course)} · ${fmt.date(a.due)}${a.notes?' · '+esc(a.notes):''}</small></div>${badge(a.priority)}${badge(a.s)}${ctl('assign',a.id)}</div>`).join(''):empty())},
  timetable(){const w=st.tt==='week';
-  const tog=`<div class="row"><button class="btn ${w?'':'ghost'}" data-act="tt" data-id="week">${t('week')}</button><button class="btn ${w?'ghost':''}" data-act="tt" data-id="month">${t('month')}</button></div>`;
+  const tog=`<div class="row"><button class="btn ${w?'':'ghost'}" data-act="tt" data-id="week">${t('week')}</button><button class="btn ${w?'ghost':''}" data-act="tt" data-id="month">${t('month')}</button><button class="btn ghost" data-act="ai-timetable"><i data-lucide="sparkles"></i>AI Import</button></div>`;
   let body;
   if(w)body=`<div class="week">${DAYS.map(d=>card(t(d),D.classes.filter(c=>dk(c)===d).sort((a,b)=>a.start.localeCompare(b.start)).map(c=>`<div class="cls" data-s="${esc(c.course+c.room+c.lecturer)}"><b>${esc(c.course)}</b>${c.start}–${c.end}<br>${esc(c.room)}${c.lecturer?' · '+esc(c.lecturer):''}<div class="row">${ctl('cls',c.id)}</div></div>`).join('')||`<small>${t('noClasses')}</small>`)).join('')}</div>`;
   else{const n=new Date(),b=new Date(n.getFullYear(),n.getMonth()+(st.cm||0),1),y=b.getFullYear(),mo=b.getMonth(),first=(b.getDay()+6)%7,len=new Date(y,mo+1,0).getDate();
@@ -485,6 +485,7 @@ const acts={
  budget:()=>form(t('budget'),[{n:'budget',l:'budget',t:'number',min:0}],{budget:D.finance.budget},o=>{D.finance.budget=o.budget;store()}),
  'save-welcome':()=>{const title=$('[data-welcome="title"]')?.value.trim()||'',subtitle=$('[data-welcome="subtitle"]')?.value.trim()||'';if(title.length>80||subtitle.length>160)return toast(t('shortenMessage'));U.prefs.welcomeTitle=title;U.prefs.welcomeSubtitle=subtitle;store();toast(t('saved'));render();},
  import:(_,b)=>U.importer.open(b.dataset.m),
+ 'ai-timetable':()=>U.importer.openAI(),
  retry:()=>boot(),
  pushtest:async()=>{try{await U.api.call('pushTest');toast(t('pushSent'))}catch(e){toast(errMsg(e))}},
  install:async()=>{await U.push.install();render()},
