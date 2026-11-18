@@ -1,0 +1,16 @@
+UNILIFE OS 2.0 — UniBot Greeting + Workspace Layout Update
+
+Changes:
+- UniBot greeting is generated once per page load. Refreshing the browser creates a fresh greeting; normal in-app navigation does not repeat it.
+- Removed the robot emoji/avatar from the chat panel header.
+- Increased the centered chat panel dimensions slightly and refined spacing, message bubbles, controls and suggestion chips.
+- Desktop navigation is now a single floating menu bubble. Clicking it opens the existing navigation drawer; clicking the backdrop closes it.
+- Desktop workspace/dashboard uses the available width instead of being constrained by the permanently visible sidebar.
+- Mobile navigation remains unchanged.
+
+Files changed:
+- index.html
+- js/app.js
+- css/main.css
+
+No Apps Script backend changes are required.

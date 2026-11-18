@@ -950,3 +950,43 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 @media(prefers-reduced-motion:reduce) {
   .unibot-character,.unibot-eye,.unibot-cap-tassel,.unibot-greeting,.unibot-panel,.unibot-character:after { animation:none!important; }
 }
+
+
+/* =========================================
+   LAYOUT UPDATE — compact menu bubble + wider workspace
+========================================= */
+.desktop-menu-bubble{display:none}
+@media(min-width:901px){
+  /* Keep navigation out of the way until the user asks for it. */
+  .sidebar{position:fixed;z-index:31;left:12px;top:12px;bottom:12px;height:auto;margin:0;width:260px;transform:translateX(calc(-100% - 24px));transition:transform .32s cubic-bezier(.2,.8,.2,1);box-shadow:var(--shadow-lg)}
+  .sidebar.open{transform:translateX(0)}
+  .scrim{display:block;position:fixed;inset:0;z-index:30;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .25s ease}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .desktop-menu-bubble{position:fixed;display:grid;place-items:center;left:18px;top:18px;z-index:29;width:46px;height:46px;border:1px solid var(--glass-border);border-radius:16px;background:var(--glass);color:var(--primary);box-shadow:var(--shadow);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);cursor:pointer;transition:transform .2s ease,background .2s ease}
+  .desktop-menu-bubble:hover{transform:translateY(-2px);background:var(--surface)}
+  .desktop-menu-bubble svg{width:20px;height:20px}
+  .topbar{padding-left:78px}
+  #view{max-width:none;width:100%;padding-left:clamp(24px,3vw,52px);padding-right:clamp(24px,3vw,52px)}
+  .dashboard-canvas{width:100%;max-width:none}
+}
+
+/* UniBot chat: a little larger, cleaner header, more breathing room. */
+.unibot-panel{width:min(500px,calc(100vw - 32px));height:min(680px,calc(100dvh - 40px));border-radius:25px;}
+.unibot-header{min-height:66px;padding:16px 18px;gap:12px;background:linear-gradient(115deg,color-mix(in srgb,#8d7bea 18%,var(--surface)),color-mix(in srgb,#68c9d5 15%,var(--surface)));color:var(--text);border-bottom:1px solid var(--border)}
+.unibot-header-copy b{font-size:16px;letter-spacing:-.02em}
+.unibot-header-copy small{font-size:11px;color:var(--muted);opacity:1}
+.unibot-header button{width:34px;height:34px;border:1px solid var(--border);background:color-mix(in srgb,var(--surface) 78%,transparent);color:var(--text);border-radius:11px}
+.unibot-messages{padding:20px;gap:13px}
+.unibot-message{max-width:88%;padding:12px 14px;font-size:13.5px;line-height:1.6;border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
+.unibot-message.bot{border-bottom-left-radius:6px;box-shadow:0 4px 14px rgba(30,30,70,.035)}
+.unibot-message.user{border-color:transparent;box-shadow:0 5px 14px color-mix(in srgb,var(--primary) 18%,transparent)}
+.unibot-suggestions{padding:2px 18px 13px;gap:8px}
+.unibot-suggestions button{padding:8px 12px;font-size:11.5px;border-radius:999px;transition:background .18s,border-color .18s,transform .18s}
+.unibot-suggestions button:hover{background:var(--primary-soft);border-color:var(--primary);transform:translateY(-1px)}
+.unibot-input{padding:14px 16px 16px;gap:10px;background:var(--surface);}
+.unibot-input input{min-height:48px;padding:12px 15px;border-radius:15px;font-size:13.5px}
+.unibot-input button{width:48px;min-width:48px;border-radius:15px;font-size:18px;box-shadow:0 5px 14px color-mix(in srgb,var(--primary) 22%,transparent)}
+@media(max-width:900px){
+  .desktop-menu-bubble{display:none!important}
+  .unibot-panel{width:calc(100vw - 20px);height:min(620px,calc(100dvh - 28px))}
+}

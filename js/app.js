@@ -381,6 +381,7 @@ let uniBotBusy = false;
 let uniBotHistory = [];
 let uniBotGreeting = null;
 let uniBotGreetingSpoken = false;
+let uniBotGreetingInitialized = false;
 let uniBotMessages = [];
 
 function uniBotLanguage() { return U.prefs.lang === 'ms' ? 'ms' : 'en'; }
@@ -488,8 +489,9 @@ function uniBotStopVoice() {
 }
 function initUniBotGreeting() {
   const prefs = uniBotPrefs();
-  if (!prefs.autoGreeting || sessionStorage.getItem('ul_unibot_greeted')) return;
-  sessionStorage.setItem('ul_unibot_greeted', '1');
+  // Once per page load: refresh creates a fresh greeting, SPA navigation does not repeat it.
+  if (uniBotGreetingInitialized || !prefs.autoGreeting) return;
+  uniBotGreetingInitialized = true;
   uniBotGreeting = uniBotGreetingForNow();
   renderUniBot();
   if (prefs.voiceEnabled) {
@@ -510,7 +512,6 @@ function uniBotMarkup() {
     ${uniBotOpen ? '<button class="unibot-chat-backdrop" data-act="unibot-close" aria-label="Close UniBot chat"></button>' : ''}
     <section class="unibot-panel" id="unibot-panel" ${uniBotOpen ? '' : 'hidden'}>
       <header class="unibot-header">
-        <div class="unibot-header-avatar">🤖</div>
         <div class="unibot-header-copy"><b>UniBot</b><small>${uniBotText('Your UniLife companion','Teman UniLife anda')}</small></div>
         <button data-act="unibot-voice-toggle" aria-label="Toggle voice" title="${prefs.voiceEnabled ? 'Mute voice' : 'Enable voice'}"><i data-lucide="${prefs.voiceEnabled ? 'volume-2' : 'volume-x'}"></i></button>
         <button data-act="unibot-auto-speak-toggle" aria-label="Toggle automatic replies" title="${prefs.autoSpeak ? 'Automatic speech on' : 'Automatic speech off'}"><i data-lucide="${prefs.autoSpeak ? 'audio-lines' : 'message-square'}"></i></button>
