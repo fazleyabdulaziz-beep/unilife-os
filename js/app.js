@@ -473,6 +473,32 @@ function uniBotVoiceLocale() {
   // UniBot always follows Settings > Language; it never mixes languages.
   return uniBotLocale();
 }
+// Convert Qwen's Markdown-style output into clean plain text for both chat display and speech.
+function uniBotPlainText(value) {
+  let text = String(value == null ? '' : value);
+  // Remove fenced code markers while keeping the code content readable.
+  text = text.replace(/```[a-zA-Z0-9_-]*\s*([\s\S]*?)```/g, '$1');
+  // Keep link labels, not raw URLs; discard image syntax.
+  text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+  text = text.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1');
+  // Remove Markdown headings, quote markers and list prefixes.
+  text = text.replace(/^\s{0,3}#{1,6}\s+/gm, '');
+  text = text.replace(/^\s*>\s?/gm, '');
+  text = text.replace(/^\s*[-+*]\s+/gm, '');
+  text = text.replace(/^\s*\d+[.)]\s+/gm, '');
+  // Remove emphasis, strike-through and inline-code delimiters.
+  text = text.replace(/\*\*(.*?)\*\*/gs, '$1');
+  text = text.replace(/__(.*?)__/gs, '$1');
+  text = text.replace(/\*(.*?)\*/gs, '$1');
+  text = text.replace(/_(.*?)_/gs, '$1');
+  text = text.replace(/~~(.*?)~~/gs, '$1');
+  text = text.replace(/`([^`]*)`/g, '$1');
+  // Strip any unmatched formatting characters Qwen may leave behind.
+  text = text.replace(/[\*_~`]+/g, '');
+  // Normalize whitespace without flattening useful paragraph/list breaks.
+  text = text.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
 function uniBotSpeakSegments(segments) {
   const prefs = uniBotPrefs();
   if (!prefs.voiceEnabled || !uniBotVoiceAvailable()) return false;
@@ -519,7 +545,8 @@ function uniBotDetectTextLanguage(text) {
 }
 function uniBotSpeakText(text) {
   // Chat replies speak in the language they are written in; greetings still use Settings language.
-  return uniBotSpeakSegments([{ text: String(text || ''), lang: uniBotDetectTextLanguage(text) }]);
+  const clean = uniBotPlainText(text);
+  return uniBotSpeakSegments([{ text: clean, lang: uniBotDetectTextLanguage(clean) }]);
 }
 function uniBotSpeechRecognitionClass() {
   return window.SpeechRecognition || window.webkitSpeechRecognition || null;
@@ -647,7 +674,7 @@ function uniBotMarkup() {
       <div class="unibot-messages" id="unibot-messages">
         ${(uniBotMessages.length ? uniBotMessages : [{role:'assistant',content:uniBotInitialMessage()}]).map((m, i) => `
           <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}">
-            <span>${esc(m.content)}</span>
+            <span>${esc(uniBotPlainText(m.content))}</span>
             ${m.role !== 'user' ? `<button class="unibot-speak-message" data-act="unibot-speak-message" data-id="${i}" title="Listen"><i data-lucide="volume-2"></i></button>` : ''}
           </div>
         `).join('')}

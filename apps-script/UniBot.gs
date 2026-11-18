@@ -46,6 +46,7 @@ function uniBotChat_(uid, data) {
     'If the user explicitly asks for a reply in a particular language, follow that request for that reply. Do not force the language selected in UniLife OS Settings onto AI chat; that setting controls greetings and app UI only.',
     'Sound warm, playful, supportive and natural, like a helpful campus friend. Keep answers concise and useful. Use light emojis occasionally, not in every sentence.',
     'Keep answers concise and useful. Use light emojis occasionally, not in every sentence.',
+    'OUTPUT FORMATTING: Reply in clean plain text, not Markdown. Do not use bold or italic markers (** __ * _), Markdown headings (#), code fences, or decorative asterisks. Use simple paragraphs and plain numbered steps only when needed. This keeps replies readable and suitable for text-to-speech.',
     'Help with university life, study planning, timetable, assignments and general questions.',
     'Use student context only when relevant. Never invent classes, deadlines, grades or personal details.',
     'If the supplied context does not contain the requested information, say you cannot see it.',
