@@ -261,7 +261,7 @@ function stickyNotesMarkup(){
  const maxBottom=notes.reduce((m,n)=>Math.max(m,(Number(n.y)||0)+(Number(n.height)||220)),560);
  return `<div class="sticky-notes-layer" aria-label="${t('stickyNotesTitle')}">${notes.map((n,i)=>{
   const c=NOTE_COLORS[n.color]||NOTE_COLORS.yellow;
-  const x=Number(n.x)||24+(i%3)*24,y=Number(n.y)||250+Math.floor(i/3)*24;
+  const x=Number.isFinite(Number(n.x))&&n.x!==''?Number(n.x):24+(i%3)*24,y=Number.isFinite(Number(n.y))&&n.y!==''?Number(n.y):250+Math.floor(i/3)*24;
   const w=Number(n.width)||250,h=Number(n.height)||230;
   return `<article class="sticky-note" data-sticky-note="${esc(n.id)}" data-id="${esc(n.id)}" style="--note-bg:${c.bg};--note-ink:${c.ink};left:${x}px;top:${y}px;width:${w}px;height:${h}px;">
    <header class="sticky-note-head" data-note-drag="1"><span class="sticky-note-grip"><i data-lucide="grip-horizontal"></i></span><b>${esc(n.title)}</b>
@@ -343,9 +343,33 @@ const views={
 // ---------- server sync ----------
 const CN={assign:'assignments',cls:'classes',exam:'exams',tx:'tx',sg:'sg',course:'courses',hab:'habits',task:'tasks',goal:'goals',hist:'semesters'};
 async function sync(op,m,item){try{await U.api.call(op,{c:CN[m],item})}catch(e){toast(errMsg(e))}}
+function stickyLayoutStorageKey(){
+ const uid=(D.user&&(D.user.id||D.user.user_id))||'guest';
+ return 'ul_sticky_note_layout_'+uid;
+}
+function readStickyLayouts(){
+ try{return JSON.parse(localStorage.getItem(stickyLayoutStorageKey())||'{}')||{}}catch(_){return {}}
+}
+function restoreStickyLayouts(notes){
+ const saved=readStickyLayouts();
+ return (notes||[]).map(note=>{
+  const local=saved[String(note.id)];
+  if(!local)return note;
+  const localTime=Date.parse(local.savedAt||'')||0;
+  const serverTime=Date.parse(note.updated_at||'')||0;
+  // Server wins when it has a newer saved layout (e.g. another device).
+  if(localTime<=serverTime)return note;
+  return Object.assign({},note,{x:local.x,y:local.y,width:local.width,height:local.height});
+ });
+}
+function rememberStickyLayout(note,layout,savedAt){
+ const saved=readStickyLayouts();
+ saved[String(note.id)]=Object.assign({},layout,{savedAt:savedAt});
+ try{localStorage.setItem(stickyLayoutStorageKey(),JSON.stringify(saved));}catch(e){console.warn('Unable to cache sticky-note position',e);}
+}
 function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  const authLang=localStorage.getItem('ul_auth_lang_override');Object.assign(U.prefs,r.prefs,{notif:{...U.prefs.notif,...r.prefs.notif}});if(authLang==='en'||authLang==='ms'){U.prefs.lang=authLang;localStorage.removeItem('ul_auth_lang_override');setTimeout(pushPrefs,0)}U.prefs.order=(U.prefs.order||[]).filter(w=>w!=='clock');U.prefs.hidden=(U.prefs.hidden||[]).filter(w=>w!=='clock');if(U.prefs.widgetSizes)delete U.prefs.widgetSizes.clock;if(U.prefs.theme==='system')U.prefs.theme='auto';if(r.data.welcomeTitle!==undefined)U.prefs.welcomeTitle=r.data.welcomeTitle;if(r.data.welcomeSubtitle!==undefined)U.prefs.welcomeSubtitle=r.data.welcomeSubtitle;if(r.data.reminderFrequency)U.prefs.reminderFrequency=r.data.reminderFrequency;U.prefs.widgetSizes=r.data.widgetSizes||U.prefs.widgetSizes||{};delete U.prefs.widgetSizes.clock;local();
- Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study,notes:d.notes||[]})}
+ Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study,notes:restoreStickyLayouts(d.notes||[])})}
 async function load(){
   $('#view').innerHTML=`<div class="empty"><i data-lucide="loader"></i><p>${t('loading')}</p></div>`;
   window.lucide&&lucide.createIcons();
@@ -699,10 +723,21 @@ function noteEditor(id){
 let stickyPointer=null;
 function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
 async function saveStickyLayout(note,el){
- const canvas=$('#dashboard-canvas');if(!canvas||!note||!el)return;
- const x=Math.round(parseFloat(el.style.left)||0),y=Math.round(parseFloat(el.style.top)||0),width=Math.round(el.offsetWidth),height=Math.round(el.offsetHeight);
- Object.assign(note,{x,y,width,height});
- try{await U.api.call('update',{c:'notes',item:{id:note.id,x,y,width,height,updated_at:new Date().toISOString()}})}catch(e){toast(errMsg(e))}
+ if(!note||!el)return;
+ const x=Math.round(Number.parseFloat(el.style.left)||0);
+ const y=Math.round(Number.parseFloat(el.style.top)||0);
+ const width=Math.round(el.offsetWidth),height=Math.round(el.offsetHeight);
+ const savedAt=new Date().toISOString();
+ const layout={x,y,width,height};
+ Object.assign(note,layout,{updated_at:savedAt});
+ // Save locally first so a refresh cannot discard the drag if the network/API is slow.
+ rememberStickyLayout(note,layout,savedAt);
+ try{
+  await U.api.call('update',{c:'notes',item:{id:note.id,x,y,width,height,updated_at:savedAt}});
+ }catch(e){
+  console.warn('Sticky-note layout was kept locally; server sync failed:',e);
+  toast(t('savedLocally')||'Position saved on this device; server sync failed');
+ }
 }
 document.addEventListener('pointerdown',e=>{
  const noteEl=e.target.closest('.sticky-note');if(!noteEl)return;
@@ -713,13 +748,13 @@ document.addEventListener('pointerdown',e=>{
  if(!mode)return;
  e.preventDefault();const canvas=$('#dashboard-canvas');const canvasRect=canvas.getBoundingClientRect();
  stickyPointer={mode,note,noteEl,startX:e.clientX,startY:e.clientY,left:parseFloat(noteEl.style.left)||0,top:parseFloat(noteEl.style.top)||0,width:noteEl.offsetWidth,height:noteEl.offsetHeight,canvasWidth:canvas.clientWidth,canvasRect};
- noteEl.classList.add('is-interacting');try{e.target.setPointerCapture(e.pointerId)}catch(_){}
+ noteEl.classList.add('is-interacting');try{noteEl.setPointerCapture(e.pointerId)}catch(_){}
 });
 document.addEventListener('pointermove',e=>{
  if(!stickyPointer)return;const p=stickyPointer,dx=e.clientX-p.startX,dy=e.clientY-p.startY;
  if(p.mode==='move'){
   const maxX=Math.max(0,p.canvasWidth-p.noteEl.offsetWidth);
-  p.noteEl.style.left=clamp(p.left+dx,0,maxX)+'px';p.noteEl.style.top=Math.max(0,p.top+dy)+'px';
+  p.noteEl.style.left=clamp(p.left+dx,0,maxX)+'px';p.noteEl.style.top=clamp(p.top+dy,0,5000)+'px';
  }else{
   p.noteEl.style.width=clamp(p.width+dx,200,520)+'px';p.noteEl.style.height=clamp(p.height+dy,160,620)+'px';
  }
