@@ -1050,3 +1050,41 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 @media(prefers-reduced-motion:reduce){
   .student-loading,.loading-book,.loading-spark,.loading-leaf,.student-loading-message,.student-loading-track span{animation:none!important}
 }
+
+
+/* UniBot welcomes the user while the dashboard loads, then returns to its launcher dock. */
+#unibot-root.is-welcome-stage{
+  position:fixed!important;inset:0!important;right:0!important;bottom:0!important;left:0!important;top:0!important;
+  width:100vw;height:100vh;height:100dvh;display:grid;place-items:center;
+  z-index:500;pointer-events:none;background:radial-gradient(ellipse at center,rgba(232,211,177,.18),transparent 58%);
+}
+#unibot-root.is-welcome-stage .unibot-launcher{
+  pointer-events:none;position:relative;left:auto;top:auto;right:auto;bottom:auto;
+  width:112px;height:128px;transform:scale(1.12);cursor:default;
+}
+#unibot-root.is-welcome-stage .unibot-panel,
+#unibot-root.is-welcome-stage .unibot-chat-backdrop{display:none!important}
+.unibot-welcome-bubble{
+  position:absolute;left:50%;top:calc(50% - 174px);transform:translateX(-50%);
+  width:min( min(88vw,390px), calc(100vw - 32px));padding:17px 20px 16px;
+  border:1px solid rgba(207,177,133,.42);border-radius:22px;
+  background:var(--surface, #fff);color:var(--text, #242424);
+  box-shadow:0 14px 42px rgba(65,48,30,.12);text-align:center;
+  display:flex;flex-direction:column;gap:7px;animation:unibotWelcomePop .55s cubic-bezier(.2,.8,.2,1) both;
+}
+.unibot-welcome-bubble:after{
+  content:"";position:absolute;left:50%;bottom:-8px;width:15px;height:15px;
+  background:var(--surface,#fff);border-right:1px solid rgba(207,177,133,.42);
+  border-bottom:1px solid rgba(207,177,133,.42);transform:translateX(-50%) rotate(45deg);
+}
+.unibot-welcome-bubble b{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.unibot-welcome-bubble span{font-size:13px;line-height:1.5;color:var(--muted,#777)}
+.unibot-welcome-bubble span.message-in{animation:studentMessageIn .35s ease both}
+@keyframes unibotWelcomePop{from{opacity:0;transform:translate(-50%,8px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@media(max-width:600px){
+  #unibot-root.is-welcome-stage .unibot-launcher{transform:scale(1.18)}
+  .unibot-welcome-bubble{top:calc(50% - 165px);padding:15px 16px;border-radius:19px}
+}
+@media(prefers-reduced-motion:reduce){
+  .unibot-welcome-bubble{animation:none}
+}

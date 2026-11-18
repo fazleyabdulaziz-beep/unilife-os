@@ -373,57 +373,62 @@ function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
 let dashboardLoadingTimer = null;
 let dashboardLoadingIndex = 0;
 
-function dashboardLoadingMarkup(){
-  const isMalay = (U.prefs && U.prefs.lang || localStorage.getItem('ul_auth_lang_override') || 'en') === 'ms';
-  const messages = isMalay
-    ? ['Menyediakan ruang belajar untuk hari ini…','Menyusun jadual dan tugasan anda…','Mengemas kini nota dan peringatan…','Sekejap ya, kami sedang siapkan semuanya…']
-    : ['Getting your study space ready…','Organising your classes and assignments…','Gathering your notes and reminders…','Almost there, getting everything in place…'];
-  const title = isMalay ? 'Hai, selamat kembali!' : 'Hey, welcome back!';
-  const subtitle = isMalay ? 'Ambil nafas. Kita buat sedikit demi sedikit.' : 'Take a breath. We’ll make progress one step at a time.';
-  return `<section class="student-loading" role="status" aria-live="polite">
-    <div class="student-loading-card">
-      <div class="student-loading-art" aria-hidden="true">
-        <span class="loading-spark spark-one">✦</span><span class="loading-spark spark-two">✧</span>
-        <div class="loading-book"><span>📖</span></div>
-        <span class="loading-leaf">🌱</span>
-      </div>
-      <p class="student-loading-kicker">UNILIFE OS</p>
-      <h2>${title}</h2>
-      <p class="student-loading-subtitle">${subtitle}</p>
-      <div class="student-loading-message" id="student-loading-message">${messages[0]}</div>
-      <div class="student-loading-track" aria-hidden="true"><span></span></div>
-      <p class="student-loading-footnote">${isMalay ? 'Terima kasih kerana menunggu' : 'Thanks for hanging in there'}</p>
-    </div>
-  </section>`;
-}
-
 function startDashboardLoading(){
   stopDashboardLoading();
   dashboardLoadingIndex = 0;
-  const view = $('#view');
-  if(!view) return;
-  view.innerHTML = dashboardLoadingMarkup();
-  const isMalay = (U.prefs && U.prefs.lang || localStorage.getItem('ul_auth_lang_override') || 'en') === 'ms';
-  const messages = isMalay
-    ? ['Menyediakan ruang belajar untuk hari ini…','Menyusun jadual dan tugasan anda…','Mengemas kini nota dan peringatan…','Sekejap ya, kami sedang siapkan semuanya…']
-    : ['Getting your study space ready…','Organising your classes and assignments…','Gathering your notes and reminders…','Almost there, getting everything in place…'];
+  uniBotWelcomeLoading = true;
+  renderUniBot();
+  const root = document.getElementById('unibot-root');
+  if(root) root.classList.add('is-welcome-stage');
   dashboardLoadingTimer = setInterval(()=>{
-    dashboardLoadingIndex = (dashboardLoadingIndex + 1) % messages.length;
-    const message = $('#student-loading-message');
+    dashboardLoadingIndex = (dashboardLoadingIndex + 1) % 4;
+    const message = document.getElementById('unibot-welcome-message');
     if(message){
       message.classList.remove('message-in');
-      message.textContent = messages[dashboardLoadingIndex];
+      message.textContent = uniBotWelcomeMessages()[dashboardLoadingIndex];
       void message.offsetWidth;
       message.classList.add('message-in');
     }
-  }, 2400);
+  }, 2600);
 }
 
-function stopDashboardLoading(){
+function uniBotWelcomeMessages(){
+  return uniBotLanguage() === 'ms'
+    ? ['Selamat kembali! Kami sedang menyediakan dashboard anda…','Menyusun jadual dan kelas anda…','Menyemak tugasan dan peringatan…','Hampir siap! UniBot sedang mengemas semuanya…']
+    : ['Welcome back! We’re preparing your dashboard…','Getting your classes and timetable ready…','Checking your assignments and reminders…','Almost there! UniBot is getting things ready…'];
+}
+
+async function stopDashboardLoading(){
   if(dashboardLoadingTimer){
     clearInterval(dashboardLoadingTimer);
     dashboardLoadingTimer = null;
   }
+  if(!uniBotWelcomeLoading) return;
+  const root = document.getElementById('unibot-root');
+  const launcher = root && root.querySelector('.unibot-launcher');
+  uniBotWelcomeLoading = false;
+  if(!root || !launcher){
+    root && root.classList.remove('is-welcome-stage');
+    return;
+  }
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduceMotion && launcher.animate){
+    const rect = launcher.getBoundingClientRect();
+    const targetX = window.innerWidth - Math.max(18, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-right')) || 18) - rect.width/2;
+    const targetY = window.innerHeight - Math.max(18, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 18) - rect.height/2;
+    const dx = targetX - (rect.left + rect.width/2);
+    const dy = targetY - (rect.top + rect.height/2);
+    try {
+      await launcher.animate(
+        [{ transform:'translate(0,0) scale(1.12)' }, { transform:`translate(${dx}px,${dy}px) scale(.78)` }],
+        { duration:850, easing:'cubic-bezier(.2,.75,.25,1)', fill:'forwards' }
+      ).finished;
+    } catch(e) {}
+  }
+  root.classList.remove('is-welcome-stage');
+  launcher.style.transform = '';
+  uniBotApplyPosition();
+  renderUniBot();
 }
 
 async function load(){
@@ -437,11 +442,11 @@ async function load(){
       );
     }
     if(U.prefs.lang!==fmt.lang) await fmt.load(U.prefs.lang);
-    stopDashboardLoading();
+    await stopDashboardLoading();
     apply(); render(); U.push&&U.push.sync(); setTimeout(checkDueDatePopup,900);
     return true;
   } catch(e) {
-    stopDashboardLoading();
+    await stopDashboardLoading();
     if(e.code==='auth') return false;
     $('#view').innerHTML=`<div class="empty"><p>${errMsg(e)}</p><button class="btn" data-act="retry">${t('retry')}</button></div>`;
     return true;
@@ -467,6 +472,7 @@ let uniBotMessages = [];
 let uniBotRecognition = null;
 let uniBotListening = false;
 let uniBotMicTranscript = '';
+let uniBotWelcomeLoading = false;
 
 function uniBotLanguage() { return U.prefs.lang === 'ms' ? 'ms' : 'en'; }
 function uniBotLocale() { return uniBotLanguage() === 'ms' ? 'ms-MY' : 'en-SG'; }
@@ -713,7 +719,8 @@ function initUniBotGreeting() {
 function uniBotMarkup() {
   const prefs = uniBotPrefs();
   return `
-    ${uniBotGreeting && !uniBotOpen ? `
+    ${uniBotWelcomeLoading ? `<aside class="unibot-welcome-bubble" role="status" aria-live="polite"><b>UniBot 👋</b><span id="unibot-welcome-message">${esc(uniBotWelcomeMessages()[dashboardLoadingIndex] || uniBotWelcomeMessages()[0])}</span></aside>` : ''}
+    ${uniBotGreeting && !uniBotOpen && !uniBotWelcomeLoading ? `
       <aside class="unibot-greeting" role="status">
         <button class="unibot-greeting-close" data-act="unibot-dismiss-greeting" aria-label="Dismiss greeting">×</button>
         <b>${esc(uniBotGreeting.text)}</b>
@@ -767,7 +774,8 @@ function renderUniBot() {
   const root = document.getElementById('unibot-root');
   if (!root) return;
   root.innerHTML = uniBotMarkup();
-  uniBotApplyPosition();
+  root.classList.toggle('is-welcome-stage', uniBotWelcomeLoading);
+  if(!uniBotWelcomeLoading) uniBotApplyPosition();
   root.classList.toggle('is-thinking', uniBotBusy);
   const messages = document.getElementById('unibot-messages');
   if (messages) messages.scrollTop = messages.scrollHeight;
