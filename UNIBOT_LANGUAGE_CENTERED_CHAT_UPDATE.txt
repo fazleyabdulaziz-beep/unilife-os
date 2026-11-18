@@ -1,0 +1,14 @@
+UniBot Language + Centered Chat Update
+
+1. UniBot now follows the user's UniLife OS Settings > Language preference.
+   - English setting: English greeting, quick prompts, speech and AI responses.
+   - Bahasa Melayu setting: Bahasa Melayu greeting, quick prompts, speech and AI responses.
+   - The greeting and TTS no longer combine English and Malay in one message.
+2. The Apps Script UniBot prompt enforces the selected language for AI responses.
+3. Clicking the floating UniBot opens the chat in the centre of the screen with a dimmed backdrop.
+4. Clicking the backdrop or close button closes the chat. The floating mascot remains draggable and its saved position is unchanged.
+
+Deployment:
+- Replace frontend files in GitHub Pages.
+- Update apps-script/UniBot.gs in the existing Apps Script project and deploy a new Web App version.
+- No additional API or paid voice service is required; speech uses the device/browser voices.

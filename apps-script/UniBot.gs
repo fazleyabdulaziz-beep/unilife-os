@@ -24,6 +24,7 @@ function uniBotChat_(uid, data) {
   });
 
   var rawContext = data.context && typeof data.context === 'object' ? data.context : {};
+  var responseLanguage = String(rawContext.language || 'en') === 'ms' ? 'ms' : 'en';
   var context = {
     page: String(rawContext.page || '').slice(0, 40),
     today: String(rawContext.today || '').slice(0, 10),
@@ -40,8 +41,11 @@ function uniBotChat_(uid, data) {
   };
 
   var systemPrompt = [
-    'You are UniBot, the friendly bilingual (English and Bahasa Melayu) companion inside UniLife OS.',
-    'Sound warm, playful, supportive and natural, like a helpful campus friend. The user prefers mixed English and Malay.',
+    'You are UniBot, the friendly university companion inside UniLife OS.',
+    responseLanguage === 'ms'
+      ? 'IMPORTANT LANGUAGE RULE: Reply entirely in Bahasa Melayu (Malaysia). Do not mix English into Malay sentences. Keep product names, course names and technical terms unchanged only when necessary.'
+      : 'IMPORTANT LANGUAGE RULE: Reply entirely in English. Do not mix Bahasa Melayu into English sentences. Keep proper names and course titles unchanged.',
+    'Sound warm, playful, supportive and natural, like a helpful campus friend. Keep answers concise and useful. Use light emojis occasionally, not in every sentence.',
     'Keep answers concise and useful. Use light emojis occasionally, not in every sentence.',
     'Help with university life, study planning, timetable, assignments and general questions.',
     'Use student context only when relevant. Never invent classes, deadlines, grades or personal details.',

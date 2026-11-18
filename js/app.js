@@ -381,9 +381,17 @@ let uniBotBusy = false;
 let uniBotHistory = [];
 let uniBotGreeting = null;
 let uniBotGreetingSpoken = false;
-let uniBotMessages = [
-  { role: 'assistant', content: 'Hey! 👋 I’m UniBot. I can help you with your classes, assignments and university life. What do you need?' }
-];
+let uniBotMessages = [];
+
+function uniBotLanguage() { return U.prefs.lang === 'ms' ? 'ms' : 'en'; }
+function uniBotLocale() { return uniBotLanguage() === 'ms' ? 'ms-MY' : 'en-SG'; }
+function uniBotText(en, ms) { return uniBotLanguage() === 'ms' ? ms : en; }
+function uniBotInitialMessage() {
+  return uniBotText(
+    'Hey! 👋 I’m UniBot. I can help you with your classes, assignments and university life. What do you need?',
+    'Hai! 👋 Saya UniBot. Saya boleh bantu dengan kelas, tugasan dan kehidupan universiti anda. Apa yang boleh saya bantu?'
+  );
+}
 
 const uniBotDefaultPrefs = { voiceEnabled: true, autoSpeak: true, autoGreeting: true, speechRate: 1 };
 const uniBotPrefs = () => {
@@ -398,40 +406,44 @@ function uniBotName() {
   return String(D.user && D.user.name || 'there').trim().split(/\s+/)[0] || 'there';
 }
 function uniBotGreetingForNow() {
+  const lang = uniBotLanguage();
+  const timezone = (D.user && D.user.timezone) || 'Asia/Singapore';
   const hour = Number(new Intl.DateTimeFormat('en', {
-    hour: '2-digit', hourCycle: 'h23', timeZone: (D.user && D.user.timezone) || 'Asia/Singapore'
+    hour: '2-digit', hourCycle: 'h23', timeZone: timezone
   }).format(new Date()));
   const name = uniBotName();
   let greeting;
-  if (hour >= 5 && hour < 12) greeting = { en: `Good morning, ${name}!`, ms: 'Dah breakfast? Jom kita mulakan hari dengan semangat!' };
-  else if (hour >= 12 && hour < 18) greeting = { en: `Good afternoon, ${name}!`, ms: 'How is your day going? Ada apa-apa yang UniBot boleh bantu?' };
-  else if (hour >= 18 && hour < 22) greeting = { en: `Good evening, ${name}!`, ms: 'Jom check apa yang masih perlu disiapkan hari ini.' };
-  else greeting = { en: `Still awake, ${name}?`, ms: 'Jangan lupa rehat juga okay. Esok kita sambung lagi!' };
+  if (lang === 'ms') {
+    if (hour >= 5 && hour < 12) greeting = `Selamat pagi, ${name}! Dah bersedia untuk mulakan hari ini?`;
+    else if (hour >= 12 && hour < 18) greeting = `Selamat tengah hari, ${name}! Apa khabar hari ini?`;
+    else if (hour >= 18 && hour < 22) greeting = `Selamat petang, ${name}! Jom semak perkara yang perlu disiapkan hari ini.`;
+    else greeting = `Masih berjaga, ${name}? Jangan lupa berehat. Esok kita sambung semula!`;
+  } else {
+    if (hour >= 5 && hour < 12) greeting = `Good morning, ${name}! Ready to make today a productive one?`;
+    else if (hour >= 12 && hour < 18) greeting = `Good afternoon, ${name}! How is your day going?`;
+    else if (hour >= 18 && hour < 22) greeting = `Good evening, ${name}! Let's check what you still need to finish today.`;
+    else greeting = `Still awake, ${name}? Remember to get some rest. We can continue tomorrow!`;
+  }
 
   let contextLine = '';
   try {
     const classes = todayCls();
-    if (classes && classes.length) {
-      const next = classes.find(c => String(c.start || '') >= new Date().toTimeString().slice(0,5));
-      if (next) contextLine = ` Your next class is ${next.course} at ${next.start}.`;
-    }
+    const now = new Intl.DateTimeFormat('en-GB', {hour:'2-digit',minute:'2-digit',hourCycle:'h23',timeZone:timezone}).format(new Date());
+    const next = classes.find(c => String(c.start || '') >= now);
+    if (next) contextLine = lang === 'ms'
+      ? ` Kelas seterusnya ialah ${next.course} pada pukul ${next.start}.`
+      : ` Your next class is ${next.course} at ${next.start}.`;
   } catch (e) { /* timetable may not be available on every route */ }
 
-  return {
-    text: greeting.en + ' ' + greeting.ms + contextLine,
-    speech: [
-      { text: greeting.en, lang: 'en-SG' },
-      { text: greeting.ms, lang: 'ms-MY' },
-      ...(contextLine ? [{ text: contextLine, lang: 'en-SG' }] : [])
-    ]
-  };
+  const fullText = greeting + contextLine;
+  return { text: fullText, speech: [{ text: fullText, lang: uniBotLocale() }] };
 }
 function uniBotVoiceAvailable() {
   return !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
 }
 function uniBotVoiceLocale() {
-  // Follow the language selected in UniLife OS Settings > Language.
-  return U.prefs.lang === 'ms' ? 'ms-MY' : 'en-SG';
+  // UniBot always follows Settings > Language; it never mixes languages.
+  return uniBotLocale();
 }
 function uniBotSpeakSegments(segments) {
   const prefs = uniBotPrefs();
@@ -439,8 +451,9 @@ function uniBotSpeakSegments(segments) {
   try {
     window.speechSynthesis.cancel();
     const locale = uniBotVoiceLocale();
-    const text = (segments || []).filter(x => x && String(x.text || '').trim()).map(x => String(x.text).trim()).join(' ');
-    const queue = text ? [{ text, lang: locale }] : [];
+    const queue = (segments || []).filter(x => x && String(x.text || '').trim()).map(x => ({
+      text: String(x.text).trim(), lang: locale
+    }));
     const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
     queue.forEach((part, index) => {
       const utterance = new SpeechSynthesisUtterance(String(part.text).trim());
@@ -491,35 +504,35 @@ function uniBotMarkup() {
     ${uniBotGreeting && !uniBotOpen ? `
       <aside class="unibot-greeting" role="status">
         <button class="unibot-greeting-close" data-act="unibot-dismiss-greeting" aria-label="Dismiss greeting">×</button>
-        <b>${esc(uniBotGreeting.speech[0].text)}</b>
-        <span>${esc(uniBotGreeting.speech.slice(1).map(x=>x.text).join(' '))}</span>
+        <b>${esc(uniBotGreeting.text)}</b>
         ${!uniBotGreetingSpoken && prefs.voiceEnabled ? `<button class="unibot-enable-voice" data-act="unibot-speak-greeting"><i data-lucide="volume-2"></i> Tap to hear UniBot</button>` : ''}
       </aside>` : ''}
+    ${uniBotOpen ? '<button class="unibot-chat-backdrop" data-act="unibot-close" aria-label="Close UniBot chat"></button>' : ''}
     <section class="unibot-panel" id="unibot-panel" ${uniBotOpen ? '' : 'hidden'}>
       <header class="unibot-header">
         <div class="unibot-header-avatar">🤖</div>
-        <div class="unibot-header-copy"><b>UniBot</b><small>Your UniLife companion</small></div>
+        <div class="unibot-header-copy"><b>UniBot</b><small>${uniBotText('Your UniLife companion','Teman UniLife anda')}</small></div>
         <button data-act="unibot-voice-toggle" aria-label="Toggle voice" title="${prefs.voiceEnabled ? 'Mute voice' : 'Enable voice'}"><i data-lucide="${prefs.voiceEnabled ? 'volume-2' : 'volume-x'}"></i></button>
         <button data-act="unibot-auto-speak-toggle" aria-label="Toggle automatic replies" title="${prefs.autoSpeak ? 'Automatic speech on' : 'Automatic speech off'}"><i data-lucide="${prefs.autoSpeak ? 'audio-lines' : 'message-square'}"></i></button>
         <button data-act="unibot-greeting-toggle" aria-label="Toggle greetings" title="${prefs.autoGreeting ? 'Automatic greeting on' : 'Automatic greeting off'}"><i data-lucide="${prefs.autoGreeting ? 'message-circle' : 'message-circle-off'}"></i></button>
         <button data-act="unibot-close" aria-label="Close UniBot">✕</button>
       </header>
       <div class="unibot-messages" id="unibot-messages">
-        ${uniBotMessages.map((m, i) => `
+        ${(uniBotMessages.length ? uniBotMessages : [{role:'assistant',content:uniBotInitialMessage()}]).map((m, i) => `
           <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}">
             <span>${esc(m.content)}</span>
             ${m.role !== 'user' ? `<button class="unibot-speak-message" data-act="unibot-speak-message" data-id="${i}" title="Listen"><i data-lucide="volume-2"></i></button>` : ''}
           </div>
         `).join('')}
       </div>
-      <div class="unibot-typing" id="unibot-typing" ${uniBotBusy ? '' : 'hidden'}>UniBot is thinking...</div>
+      <div class="unibot-typing" id="unibot-typing" ${uniBotBusy ? '' : 'hidden'}>${uniBotText('UniBot is thinking...','UniBot sedang berfikir...')}</div>
       <div class="unibot-suggestions">
-        <button data-act="unibot-prompt" data-id="classes">📅 My next class</button>
-        <button data-act="unibot-prompt" data-id="assignments">📝 My assignments</button>
-        <button data-act="unibot-prompt" data-id="help">✨ What can you do?</button>
+        <button data-act="unibot-prompt" data-id="classes">📅 ${uniBotText('My next class','Kelas seterusnya')}</button>
+        <button data-act="unibot-prompt" data-id="assignments">📝 ${uniBotText('My assignments','Tugasan saya')}</button>
+        <button data-act="unibot-prompt" data-id="help">✨ ${uniBotText('What can you do?','Apa yang boleh dibuat?')}</button>
       </div>
       <form class="unibot-input" id="unibot-form">
-        <input id="unibot-text" maxlength="1000" autocomplete="off" placeholder="Ask UniBot anything..." ${uniBotBusy ? 'disabled' : ''}>
+        <input id="unibot-text" maxlength="1000" autocomplete="off" placeholder="${uniBotText('Ask UniBot anything...','Tanya UniBot apa sahaja...')}" ${uniBotBusy ? 'disabled' : ''}>
         <button type="submit" aria-label="Send" ${uniBotBusy ? 'disabled' : ''}>➤</button>
       </form>
     </section>
@@ -603,27 +616,34 @@ async function sendUniBot(message) {
   uniBotBusy = true; renderUniBot();
   try {
     const result = await U.api.call('unibotChat', {
-      message, history:uniBotHistory.slice(0,-1), context:uniBotContext()
+      message, history:uniBotHistory.slice(0,-1), context:{...uniBotContext(), language:uniBotLanguage()}
     });
-    const reply = result && result.reply ? result.reply : 'Sorry, I could not prepare an answer. Please try again.';
+    const reply = result && result.reply ? result.reply : uniBotText('Sorry, I could not prepare an answer. Please try again.','Maaf, saya tidak dapat menyediakan jawapan. Sila cuba lagi.');
     uniBotMessages.push({role:'assistant',content:reply});
     uniBotHistory.push({role:'assistant',content:reply});
     uniBotHistory = uniBotHistory.slice(-8);
     if (uniBotPrefs().autoSpeak) uniBotSpeakText(reply);
   } catch (error) {
-    uniBotMessages.push({role:'assistant',content:'I’m having trouble connecting right now. Please try again in a moment.'});
+    uniBotMessages.push({role:'assistant',content:uniBotText('I’m having trouble connecting right now. Please try again in a moment.','Saya menghadapi masalah sambungan sekarang. Sila cuba sebentar lagi.')});
     console.warn('UniBot request failed:', error);
   } finally { uniBotBusy=false; renderUniBot(); }
 }
 function uniBotQuickPrompt(id) {
+  const ms = uniBotLanguage() === 'ms';
   let content = '';
   if (id === 'classes') {
     const list = todayCls();
-    content = list.length ? 'Here are your classes today:\n'+list.map(c=>`${c.start}–${c.end} · ${c.course}${c.room?' · '+c.room:''}`).join('\n') : 'You have no classes scheduled for today. Enjoy your free time! 🎉';
+    content = list.length
+      ? (ms ? 'Ini jadual kelas anda hari ini:\n' : 'Here are your classes today:\n') + list.map(c=>`${c.start}–${c.end} · ${c.course}${c.room?' · '+c.room:''}`).join('\n')
+      : (ms ? 'Anda tiada kelas dijadualkan hari ini. Nikmati masa lapang anda! 🎉' : 'You have no classes scheduled for today. Enjoy your free time! 🎉');
   } else if (id === 'assignments') {
     const list=(D.assignments||[]).filter(a=>a.status!=='done').sort((a,b)=>String(a.due).localeCompare(String(b.due))).slice(0,6);
-    content=list.length?'Your pending assignments:\n'+list.map(a=>`${a.title} · Due ${a.due}`).join('\n'):'You have no pending assignments. Great work! 🎉';
-  } else content='I can help you check your classes and assignments, explain your timetable, plan your study time and answer general university questions. You can ask me anything!';
+    content=list.length
+      ? (ms ? 'Senarai tugasan yang belum selesai:\n' : 'Your pending assignments:\n')+list.map(a=>`${a.title} · ${ms?'Tarikh akhir':'Due'} ${a.due}`).join('\n')
+      : (ms ? 'Anda tiada tugasan tertunggak. Syabas! 🎉' : 'You have no pending assignments. Great work! 🎉');
+  } else content=ms
+    ? 'Saya boleh bantu semak kelas dan tugasan, menerangkan jadual, merancang masa belajar dan menjawab soalan berkaitan kehidupan universiti. Tanya saya apa sahaja!'
+    : 'I can help you check your classes and assignments, explain your timetable, plan your study time and answer general university questions. You can ask me anything!';
   uniBotMessages.push({role:'assistant',content}); renderUniBot();
   if (uniBotPrefs().autoSpeak) uniBotSpeakText(content);
 }
@@ -783,7 +803,9 @@ const acts={
  custom:()=>{const visible=U.prefs.order.filter(w=>!U.prefs.hidden.includes(w));const available=['academic','schedule','calendar','assignments','exams','finance','productivity','todayFocus','quickAccess','notes'].filter(w=>!visible.includes(w));return modal(`<div class="widget-manager-head"><div><h3>${t('customize')}</h3><p class="muted">${t('widgetManagerHint')}</p></div><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><h4>${t('activeWidgets')}</h4>${visible.map((w,i)=>`<div class="widget-manager-row"><span class="grow"><i data-lucide="${({academic:'graduation-cap',schedule:'calendar-days',calendar:'calendar-range',assignments:'clipboard-list',exams:'timer',finance:'wallet',productivity:'target',todayFocus:'list-checks',quickAccess:'command',notes:'notebook-pen'})[w]}"></i><b>${t(WN[w]||w)}</b></span><button class="icon-btn" data-act="mv" data-id="${i}" data-d="-1" ${i===0?'disabled':''} aria-label="${t('moveUp')}">↑</button><button class="icon-btn" data-act="mv" data-id="${i}" data-d="1" ${i===visible.length-1?'disabled':''} aria-label="${t('moveDown')}">↓</button><button class="icon-btn danger" data-act="widget-remove" data-id="${w}" aria-label="${t('removeWidget')}"><i data-lucide="x"></i></button></div>`).join('')||`<p class="muted">${t('noWidgets')}</p>`}<h4 class="widget-library-title">${t('widgetLibrary')}</h4><div class="widget-library">${available.map(w=>`<div class="widget-library-row"><span class="grow"><b>${t(WN[w]||w)}</b><small>${t('widgetDesc_'+w)}</small></span><button class="btn small" data-act="widget-add" data-id="${w}"><i data-lucide="plus"></i>${t('add')}</button></div>`).join('')||`<p class="muted">${t('allWidgetsAdded')}</p>`}</div><div class="row end" style="margin-top:16px"><button class="btn" data-act="close">${t('done')}</button></div>`)},
  
  'unibot-toggle':()=>{
+   if(uniBotWasDragged) return;
    uniBotOpen=!uniBotOpen;
+   if(uniBotOpen) uniBotStopVoice();
    renderUniBot();
    if(uniBotOpen) setTimeout(()=>$('#unibot-text')?.focus(),100);
  },
@@ -836,7 +858,7 @@ document.addEventListener('change',async e=>{const el=e.target,d=el.dataset;
    store();return;
   }
   U.prefs.notif[key]=v;store();return}
- U.prefs[d.set]=v;store();if(d.set==='lang')await fmt.load(v);apply();render()});
+ U.prefs[d.set]=v;store();if(d.set==='lang'){await fmt.load(v);if(uniBotGreeting){uniBotGreeting=uniBotGreetingForNow();uniBotGreetingSpoken=false;}}apply();render()});
 $('#search').addEventListener('input',e=>{const q=e.target.value.toLowerCase();$$('#view [data-s]').forEach(n=>n.hidden=!!q&&!n.dataset.s.toLowerCase().includes(q))});
 addEventListener('hashchange',()=>{if(location.hash==='#/settings')st.settingsPage='home';render()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
