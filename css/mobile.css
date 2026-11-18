@@ -1,0 +1,147 @@
+/* =========================================================
+   UniLife OS — Mobile-first responsive refinement
+   Loaded after main.css and dashboard.css. Desktop styling is
+   intentionally left unchanged.
+   ========================================================= */
+
+/* Prevent grid/flex children from forcing the page wider than the viewport. */
+.app, .main, #view, .dashboard-canvas, .dashboard-widget-grid,
+.dashboard-widget, .card, .campus-layout, .campus-main, .campus-side {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+  .app { width: 100%; min-width: 0; }
+  .main { width: 100%; min-width: 0; }
+  #view { width: 100%; min-width: 0; }
+  .ph { align-items: flex-start; }
+  .ph > div { min-width: 0; }
+  .ph h1 { overflow-wrap: anywhere; }
+  .dashboard-widget-grid { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-widget { grid-column: span 1 !important; }
+  .dashboard-widget.widget-size-large { grid-column: span 2 !important; }
+  .dashboard-widget > .card, .dashboard-widget > .campus-card { width: 100%; min-width: 0; }
+  .scroll { max-width: 100%; }
+}
+
+/* Phone layout */
+@media (max-width: 600px) {
+  #view { padding: 8px 12px calc(112px + env(safe-area-inset-bottom)); }
+  .topbar { gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .topbar .search { min-width: 0; width: 100%; }
+  .ph { margin: 8px 0 14px; gap: 10px; }
+  .ph h1 { font-size: clamp(21px, 6vw, 27px); }
+  .ph .btn { min-height: 40px; padding: 8px 11px; font-size: 12px; }
+  .card { padding: 15px; border-radius: 17px; }
+  .card h3 { font-size: 16px; margin-bottom: 10px; }
+  .dashboard-widget-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .dashboard-widget, .dashboard-widget.widget-size-small,
+  .dashboard-widget.widget-size-medium, .dashboard-widget.widget-size-large {
+    grid-column: 1 / -1 !important;
+    width: 100%;
+  }
+  .dashboard-welcome { padding: 18px; border-radius: 19px; }
+  .welcome-copy { min-width: 0; }
+  .welcome-copy h2 { font-size: clamp(20px, 5.8vw, 26px); overflow-wrap: anywhere; }
+  .welcome-copy p { max-width: 34ch; font-size: 13px; }
+  .welcome-art { width: 84px; height: 84px; flex: 0 0 84px; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .stats > * { padding: 10px; }
+  .item { gap: 8px; flex-wrap: wrap; }
+  .item .grow { flex: 1 1 calc(100% - 48px); }
+  .badge { white-space: normal; }
+  .bottomnav { left: 8px; right: 8px; bottom: calc(7px + env(safe-area-inset-bottom)); padding: 5px; border-radius: 21px; }
+  .bottomnav a, .bottomnav button { min-height: 47px; font-size: 10px; }
+  .bottomnav svg { width: 19px; height: 19px; }
+}
+
+/* Sticky notes become readable stacked cards on phones.
+   Their desktop free-positioned canvas remains untouched. */
+@media (max-width: 600px) {
+  .dashboard-canvas { min-height: 0 !important; padding-bottom: 8px; }
+  .sticky-notes-layer {
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+    pointer-events: auto;
+    overflow: visible;
+  }
+  .sticky-note,
+  .sticky-note:nth-child(even) {
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    min-height: 150px;
+    height: auto !important;
+    transform: none;
+    border-radius: 13px;
+  }
+  .sticky-note-body { min-height: 76px; max-height: 220px; padding: 12px; font-size: 14px; }
+  .sticky-note-head { min-height: 44px; }
+  .sticky-note-resize { display: none !important; }
+  .sticky-note-hint { padding-bottom: 10px; }
+}
+
+/* UniBot: compact floating launcher; chat opens as a bottom sheet,
+   not a centered desktop dialog that competes with the dashboard. */
+@media (max-width: 600px) {
+  #unibot-root {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 120;
+  }
+  .unibot-launcher { width: 66px; height: 76px; }
+  .unibot-character { width: 62px; height: 62px; margin-top: 8px; transform: none; }
+  .unibot-face { top: 17px; transform: scale(.76); transform-origin: top center; }
+  .unibot-label { font-size: 9px; margin-top: 0; }
+  .unibot-greeting { right: 58px; bottom: 56px; width: min(230px, calc(100vw - 88px)); }
+  .unibot-chat-backdrop { inset: 0; width: 100%; height: 100%; }
+  .unibot-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: min(86dvh, 760px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - 8px);
+    border-radius: 22px 22px 0 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    transform: none;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: unibot-sheet-in .22s ease-out;
+  }
+  @keyframes unibot-sheet-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .unibot-header { flex: none; padding: 12px 14px; }
+  .unibot-messages { min-height: 0; padding: 12px; overscroll-behavior: contain; }
+  .unibot-message { max-width: 94%; font-size: 14px; }
+  .unibot-suggestions { flex: none; padding-bottom: 9px; }
+  .unibot-input { flex: none; gap: 6px; padding: 9px 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  .unibot-input input { min-width: 0; font-size: 16px !important; }
+  .unibot-input select { min-width: 50px; width: 50px; font-size: 14px; }
+  .unibot-input button { flex: 0 0 42px; min-width: 42px; min-height: 44px; }
+  #unibot-root:has(.unibot-panel:not([hidden])) .unibot-launcher,
+  #unibot-root:has(.unibot-panel:not([hidden])) .unibot-greeting { display: none; }
+}
+
+/* Short phones and landscape: keep the composer accessible while messages scroll. */
+@media (max-width: 600px) and (max-height: 560px) {
+  .unibot-panel { height: 94dvh; }
+  .unibot-header { padding: 8px 12px; }
+  .unibot-suggestions { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unibot-panel { animation: none !important; }
+}
