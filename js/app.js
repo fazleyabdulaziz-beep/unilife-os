@@ -372,6 +372,7 @@ function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study,notes:restoreStickyLayouts(d.notes||[])})}
 let dashboardLoadingTimer = null;
 let dashboardLoadingIndex = 0;
+let dashboardTypingTimer = null;
 
 function startDashboardLoading(){
   stopDashboardLoading();
@@ -380,16 +381,11 @@ function startDashboardLoading(){
   renderUniBot();
   const root = document.getElementById('unibot-root');
   if(root) root.classList.add('is-welcome-stage');
+  uniBotTypeWelcomeMessage(0);
   dashboardLoadingTimer = setInterval(()=>{
     dashboardLoadingIndex = (dashboardLoadingIndex + 1) % 4;
-    const message = document.getElementById('unibot-welcome-message');
-    if(message){
-      message.classList.remove('message-in');
-      message.textContent = uniBotWelcomeMessages()[dashboardLoadingIndex];
-      void message.offsetWidth;
-      message.classList.add('message-in');
-    }
-  }, 2600);
+    uniBotTypeWelcomeMessage(dashboardLoadingIndex);
+  }, 3600);
 }
 
 function uniBotWelcomeMessages(){
@@ -397,12 +393,30 @@ function uniBotWelcomeMessages(){
     ? ['Selamat kembali! Kami sedang menyediakan dashboard anda…','Menyusun jadual dan kelas anda…','Menyemak tugasan dan peringatan…','Hampir siap! UniBot sedang mengemas semuanya…']
     : ['Welcome back! We’re preparing your dashboard…','Getting your classes and timetable ready…','Checking your assignments and reminders…','Almost there! UniBot is getting things ready…'];
 }
+function uniBotTypeWelcomeMessage(index){
+  if(dashboardTypingTimer){clearInterval(dashboardTypingTimer);dashboardTypingTimer=null;}
+  const el=document.getElementById('unibot-welcome-message');
+  const full=uniBotWelcomeMessages()[index] || uniBotWelcomeMessages()[0];
+  if(!el) return;
+  el.textContent='';
+  el.classList.remove('message-in');
+  el.classList.add('is-typing-message');
+  void el.offsetWidth;
+  el.classList.add('message-in');
+  let n=0;
+  dashboardTypingTimer=setInterval(()=>{
+    n=Math.min(full.length,n+2);
+    el.textContent=full.slice(0,n);
+    if(n>=full.length){clearInterval(dashboardTypingTimer);dashboardTypingTimer=null;el.classList.remove('is-typing-message');}
+  },28);
+}
 
 async function stopDashboardLoading(){
   if(dashboardLoadingTimer){
     clearInterval(dashboardLoadingTimer);
     dashboardLoadingTimer = null;
   }
+  if(dashboardTypingTimer){clearInterval(dashboardTypingTimer);dashboardTypingTimer=null;}
   if(!uniBotWelcomeLoading) return;
   const root = document.getElementById('unibot-root');
   const launcher = root && root.querySelector('.unibot-launcher');
@@ -785,9 +799,15 @@ function uniBotMarkup() {
 function renderUniBot() {
   const root = document.getElementById('unibot-root');
   if (!root) return;
+  const wasChatOpen = root.classList.contains('is-chat-open');
   root.innerHTML = uniBotMarkup();
   root.classList.toggle('is-welcome-stage', uniBotWelcomeLoading);
-  if(!uniBotWelcomeLoading) uniBotApplyPosition();
+  if(!uniBotWelcomeLoading) {
+    // Keep the current coordinates during open/close so the dock movement can animate.
+    if(uniBotOpen && wasChatOpen) uniBotPositionBesideChat(false);
+    else if(!uniBotOpen && !wasChatOpen) uniBotApplyPosition();
+  }
+  root.classList.toggle('is-chat-open', uniBotOpen);
   root.classList.toggle('is-thinking', uniBotBusy);
   const messages = document.getElementById('unibot-messages');
   if (messages) messages.scrollTop = messages.scrollHeight;
@@ -804,6 +824,49 @@ function uniBotApplyPosition() {
   root.style.left = Math.max(8, Math.min(maxX, pos.x)) + 'px';
   root.style.top = Math.max(8, Math.min(maxY, pos.y)) + 'px';
   root.style.right = 'auto'; root.style.bottom = 'auto';
+}
+function uniBotPositionBesideChat(animate = true) {
+  const root = document.getElementById('unibot-root');
+  const panel = document.getElementById('unibot-panel');
+  if (!root || !panel || !uniBotOpen) return;
+  const panelRect = panel.getBoundingClientRect();
+  const rootWidth = root.offsetWidth || 100;
+  const rootHeight = root.offsetHeight || 116;
+  const gap = 12;
+  let left, top;
+  if (window.innerWidth > 760 && panelRect.right + rootWidth + gap <= window.innerWidth - 8) {
+    left = panelRect.right + gap;
+    top = panelRect.top + Math.max(12, (panelRect.height - rootHeight) * .5);
+  } else if (window.innerWidth > 760 && panelRect.left - rootWidth - gap >= 8) {
+    left = panelRect.left - rootWidth - gap;
+    top = panelRect.top + Math.max(12, (panelRect.height - rootHeight) * .5);
+  } else {
+    // On narrow screens keep the mascot visible beside the chat, near its top edge.
+    left = Math.max(6, window.innerWidth - rootWidth - 8);
+    top = Math.max(8, panelRect.top - Math.min(18, rootHeight * .15));
+  }
+  left = Math.max(6, Math.min(window.innerWidth - rootWidth - 6, left));
+  top = Math.max(8, Math.min(window.innerHeight - rootHeight - 8, top));
+  root.style.transition = animate ? 'left .72s cubic-bezier(.2,.78,.2,1), top .72s cubic-bezier(.2,.78,.2,1), right .72s, bottom .72s' : 'none';
+  root.style.left = left + 'px';
+  root.style.top = top + 'px';
+  root.style.right = 'auto';
+  root.style.bottom = 'auto';
+  root.classList.add('is-chat-open');
+  if(!animate) requestAnimationFrame(()=>{root.style.transition='';});
+}
+function uniBotReturnToSavedPosition(animate = true) {
+  const root = document.getElementById('unibot-root');
+  if(!root) return;
+  const pos = uniBotPrefs().position;
+  const width = root.offsetWidth || 100;
+  const height = root.offsetHeight || 116;
+  const left = pos && Number.isFinite(pos.x) ? Math.max(8,Math.min(window.innerWidth-width-8,pos.x)) : Math.max(8,window.innerWidth-width-18);
+  const top = pos && Number.isFinite(pos.y) ? Math.max(8,Math.min(window.innerHeight-height-8,pos.y)) : Math.max(8,window.innerHeight-height-18);
+  root.style.transition = animate ? 'left .72s cubic-bezier(.2,.78,.2,1), top .72s cubic-bezier(.2,.78,.2,1)' : 'none';
+  root.style.left=left+'px'; root.style.top=top+'px'; root.style.right='auto'; root.style.bottom='auto';
+  root.classList.remove('is-chat-open');
+  if(!animate) requestAnimationFrame(()=>{root.style.transition='';});
 }
 let uniBotDrag = null;
 let uniBotWasDragged = false;
@@ -837,7 +900,10 @@ function uniBotFinishDrag(e) {
 }
 document.addEventListener('pointerup', uniBotFinishDrag, { passive:true });
 document.addEventListener('pointercancel', uniBotFinishDrag, { passive:true });
-window.addEventListener('resize', uniBotApplyPosition);
+window.addEventListener('resize', ()=>{
+  if(uniBotOpen) uniBotPositionBesideChat(false);
+  else uniBotApplyPosition();
+});
 function uniBotContext() {
   const classes = todayCls().map(c => ({course:c.course,start:c.start,end:c.end,room:c.room||'',lecturer:c.lecturer||''}));
   const assignments = (D.assignments || []).filter(a => a.status !== 'done')
@@ -1060,13 +1126,19 @@ const acts={
    uniBotOpen=!uniBotOpen;
    if(uniBotOpen) uniBotStopVoice();
    renderUniBot();
-   if(uniBotOpen) setTimeout(()=>$('#unibot-text')?.focus(),100);
+   if(uniBotOpen) {
+     requestAnimationFrame(()=>uniBotPositionBesideChat(true));
+     setTimeout(()=>$('#unibot-text')?.focus(),100);
+   } else {
+     uniBotReturnToSavedPosition(true);
+   }
  },
  'unibot-close':()=>{
    uniBotOpen=false;
    uniBotStopVoice();
    uniBotStopListening();
    renderUniBot();
+   uniBotReturnToSavedPosition(true);
  },
  'unibot-prompt':id=>uniBotQuickPrompt(id),
  'unibot-mic-toggle':()=>uniBotStartListening(),

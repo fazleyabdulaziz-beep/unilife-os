@@ -1111,3 +1111,53 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 @media(prefers-reduced-motion:reduce){
   .unibot-message.is-new-message,#unibot-root.is-welcome-stage .unibot-launcher .unibot-character{animation:none!important;filter:none}
 }
+
+
+/* Companion stays visible beside the chat; the backdrop dims but never blurs the mascot. */
+.unibot-chat-backdrop{
+  background:rgba(12,18,35,.16)!important;
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+#unibot-root.is-chat-open{z-index:140;pointer-events:none}
+#unibot-root.is-chat-open .unibot-launcher{
+  z-index:5;pointer-events:auto;cursor:pointer;
+  filter:drop-shadow(0 8px 16px rgba(50,45,120,.24));
+}
+#unibot-root.is-chat-open .unibot-character{
+  animation:uniBotCompanionTalk 1.35s ease-in-out infinite;
+}
+#unibot-root.is-chat-open.is-speaking .unibot-character{
+  animation:uniBotCompanionSpeak .52s ease-in-out infinite;
+}
+#unibot-root.is-chat-open .unibot-label{opacity:0;transform:translateY(4px);transition:opacity .25s,transform .25s}
+@keyframes uniBotCompanionTalk{
+  0%,100%{transform:translateY(0) rotate(0)}
+  25%{transform:translateY(-5px) rotate(-2deg)}
+  50%{transform:translateY(-2px) rotate(1deg)}
+  75%{transform:translateY(-6px) rotate(2deg)}
+}
+@keyframes uniBotCompanionSpeak{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-5px) scale(1.035)}
+}
+.unibot-welcome-bubble{
+  transform-origin:50% 100%;
+  animation:uniBotBubbleFromMascot .52s cubic-bezier(.16,.82,.22,1) both;
+}
+.unibot-welcome-bubble span.is-typing-message:after{
+  content:"";display:inline-block;width:5px;height:1em;margin-left:3px;
+  vertical-align:-2px;border-radius:2px;background:currentColor;animation:uniBotCaret .75s steps(2,end) infinite;
+}
+@keyframes uniBotBubbleFromMascot{
+  from{opacity:0;transform:translate(-50%,18px) scale(.82)}
+  to{opacity:1;transform:translate(-50%,0) scale(1)}
+}
+@keyframes uniBotCaret{50%{opacity:0}}
+@media(max-width:760px){
+  #unibot-root.is-chat-open .unibot-launcher{transform:scale(.78);transform-origin:top right}
+  #unibot-root.is-chat-open .unibot-character{animation:uniBotCompanionTalk 1.35s ease-in-out infinite}
+}
+@media(prefers-reduced-motion:reduce){
+  #unibot-root.is-chat-open .unibot-character,.unibot-welcome-bubble,.unibot-welcome-bubble span.is-typing-message:after{animation:none!important}
+}
