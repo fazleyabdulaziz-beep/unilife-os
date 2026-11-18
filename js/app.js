@@ -429,18 +429,25 @@ function uniBotGreetingForNow() {
 function uniBotVoiceAvailable() {
   return !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
 }
-function uniBotGuessLanguage(text) {
-  return /\b(dah|jom|kita|awak|kau|saya|anda|kelas|assignment|tugasan|jangan|rehat|hari|boleh|macam|okay|tak|terima kasih)\b/i.test(text) ? 'ms-MY' : 'en-SG';
+function uniBotVoiceLocale() {
+  // Follow the language selected in UniLife OS Settings > Language.
+  return U.prefs.lang === 'ms' ? 'ms-MY' : 'en-SG';
 }
 function uniBotSpeakSegments(segments) {
   const prefs = uniBotPrefs();
   if (!prefs.voiceEnabled || !uniBotVoiceAvailable()) return false;
   try {
     window.speechSynthesis.cancel();
-    let queue = (segments || []).filter(x => x && String(x.text || '').trim());
+    const locale = uniBotVoiceLocale();
+    const text = (segments || []).filter(x => x && String(x.text || '').trim()).map(x => String(x.text).trim()).join(' ');
+    const queue = text ? [{ text, lang: locale }] : [];
+    const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
     queue.forEach((part, index) => {
       const utterance = new SpeechSynthesisUtterance(String(part.text).trim());
-      utterance.lang = part.lang || uniBotGuessLanguage(utterance.text);
+      utterance.lang = locale;
+      const langPrefix = locale.toLowerCase().split('-')[0];
+      utterance.voice = voices.find(v => String(v.lang || '').toLowerCase() === locale.toLowerCase())
+        || voices.find(v => String(v.lang || '').toLowerCase().startsWith(langPrefix)) || null;
       utterance.rate = Math.max(0.7, Math.min(1.3, Number(prefs.speechRate) || 1));
       utterance.pitch = 1.08;
       if (index === 0) utterance.onstart = () => document.getElementById('unibot-root')?.classList.add('is-speaking');
@@ -460,8 +467,7 @@ function uniBotSpeakSegments(segments) {
   }
 }
 function uniBotSpeakText(text) {
-  const parts = String(text || '').match(/[^.!?]+[.!?]*/g) || [String(text || '')];
-  return uniBotSpeakSegments(parts.map(s => ({ text: s.trim(), lang: uniBotGuessLanguage(s) })));
+  return uniBotSpeakSegments([{ text: String(text || ''), lang: uniBotVoiceLocale() }]);
 }
 function uniBotStopVoice() {
   if (uniBotVoiceAvailable()) window.speechSynthesis.cancel();
@@ -530,11 +536,57 @@ function renderUniBot() {
   const root = document.getElementById('unibot-root');
   if (!root) return;
   root.innerHTML = uniBotMarkup();
+  uniBotApplyPosition();
   root.classList.toggle('is-thinking', uniBotBusy);
   const messages = document.getElementById('unibot-messages');
   if (messages) messages.scrollTop = messages.scrollHeight;
   window.lucide && lucide.createIcons({root});
 }
+
+// Restore a user-positioned mascot after every render. Position is stored locally per user/device.
+function uniBotApplyPosition() {
+  const root = document.getElementById('unibot-root');
+  const pos = uniBotPrefs().position;
+  if (!root || !pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y)) return;
+  const maxX = Math.max(8, window.innerWidth - root.offsetWidth - 8);
+  const maxY = Math.max(8, window.innerHeight - root.offsetHeight - 8);
+  root.style.left = Math.max(8, Math.min(maxX, pos.x)) + 'px';
+  root.style.top = Math.max(8, Math.min(maxY, pos.y)) + 'px';
+  root.style.right = 'auto'; root.style.bottom = 'auto';
+}
+let uniBotDrag = null;
+let uniBotWasDragged = false;
+document.addEventListener('pointerdown', e => {
+  const launcher = e.target.closest('.unibot-launcher');
+  if (!launcher || e.button !== 0) return;
+  const root = document.getElementById('unibot-root');
+  if (!root) return;
+  const rect = root.getBoundingClientRect();
+  uniBotDrag = { id:e.pointerId, startX:e.clientX, startY:e.clientY, left:rect.left, top:rect.top, moved:false };
+}, { passive:true });
+document.addEventListener('pointermove', e => {
+  if (!uniBotDrag || e.pointerId !== uniBotDrag.id) return;
+  const dx=e.clientX-uniBotDrag.startX, dy=e.clientY-uniBotDrag.startY;
+  if (!uniBotDrag.moved && Math.hypot(dx,dy) < 6) return;
+  uniBotDrag.moved=true; uniBotWasDragged=true;
+  const root=document.getElementById('unibot-root'); if(!root)return;
+  const x=Math.max(8,Math.min(window.innerWidth-root.offsetWidth-8,uniBotDrag.left+dx));
+  const y=Math.max(8,Math.min(window.innerHeight-root.offsetHeight-8,uniBotDrag.top+dy));
+  root.style.left=x+'px'; root.style.top=y+'px'; root.style.right='auto'; root.style.bottom='auto';
+}, { passive:true });
+function uniBotFinishDrag(e) {
+  if (!uniBotDrag || (e && e.pointerId !== uniBotDrag.id)) return;
+  if (uniBotDrag.moved) {
+    const root=document.getElementById('unibot-root');
+    if(root){const r=root.getBoundingClientRect();const p=uniBotPrefs();p.position={x:r.left,y:r.top};local();}
+    // Prevent the pointer-up from also opening the chatbot.
+    setTimeout(()=>{uniBotWasDragged=false;},80);
+  }
+  uniBotDrag=null;
+}
+document.addEventListener('pointerup', uniBotFinishDrag, { passive:true });
+document.addEventListener('pointercancel', uniBotFinishDrag, { passive:true });
+window.addEventListener('resize', uniBotApplyPosition);
 function uniBotContext() {
   const classes = todayCls().map(c => ({course:c.course,start:c.start,end:c.end,room:c.room||'',lecturer:c.lecturer||''}));
   const assignments = (D.assignments || []).filter(a => a.status !== 'done')
@@ -750,7 +802,7 @@ const acts={
 
 
 };
-document.addEventListener('click',e=>{if(!e.target.closest('.widget-tools'))$$('.widget-menu').forEach(x=>x.hidden=true);if(!e.target.closest('.sticky-note-tools'))$$('.sticky-note-menu').forEach(x=>x.hidden=true);const b=e.target.closest('[data-act]');if(b&&acts[b.dataset.act])acts[b.dataset.act](b.dataset.id,b,e);else if(e.target.id==='modal')close()});
+document.addEventListener('click',e=>{if(uniBotWasDragged&&e.target.closest('.unibot-launcher')){e.preventDefault();e.stopImmediatePropagation();uniBotWasDragged=false;return;}if(!e.target.closest('.widget-tools'))$$('.widget-menu').forEach(x=>x.hidden=true);if(!e.target.closest('.sticky-note-tools'))$$('.sticky-note-menu').forEach(x=>x.hidden=true);const b=e.target.closest('[data-act]');if(b&&acts[b.dataset.act])acts[b.dataset.act](b.dataset.id,b,e);else if(e.target.id==='modal')close()});
 
 document.addEventListener('submit',e=>{
   if(e.target.id!=='unibot-form') return;

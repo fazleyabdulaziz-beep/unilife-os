@@ -874,64 +874,46 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
   --ub-bg1:#f3f1ff; --ub-bg2:#e3f6fb; --ub-body:#fff; --ub-edge:#c9c2f5;
   --ub-face:#2b2a5c; --ub-eye:#bfeeff; --ub-cheek:#ff9ec0; --ub-cap:#3b3f9e;
   --ub-gold:#ffc83d; --ub-shadow:rgba(80,70,190,.28);
-  position:fixed; right:max(22px,env(safe-area-inset-right)); bottom:max(24px,env(safe-area-inset-bottom));
-  z-index:120; font-family:var(--font); isolation:isolate;
+  position:fixed; right:max(18px,env(safe-area-inset-right)); bottom:max(18px,env(safe-area-inset-bottom));
+  z-index:120; font-family:var(--font); isolation:isolate; touch-action:none;
 }
-[data-theme="dark"] #unibot-root, .dark #unibot-root {
-  --ub-bg1:#16152e; --ub-bg2:#10202b; --ub-body:#eceaff; --ub-edge:#8f88d8; --ub-shadow:rgba(0,0,0,.55);
-}
+[data-theme="dark"] #unibot-root, .dark #unibot-root { --ub-bg1:#16152e; --ub-bg2:#10202b; --ub-body:#eceaff; --ub-edge:#8f88d8; --ub-shadow:rgba(0,0,0,.55); }
 .unibot-launcher {
   position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-  width:166px; height:190px; padding:0; border:0; background:transparent; cursor:pointer;
-  -webkit-tap-highlight-color:transparent; filter:drop-shadow(0 8px 12px rgba(50,45,120,.16));
+  width:100px; height:116px; padding:0; border:0; background:transparent; cursor:grab;
+  -webkit-tap-highlight-color:transparent; filter:drop-shadow(0 5px 8px rgba(50,45,120,.13)); touch-action:none;
 }
-.unibot-character { position:relative; width:150px; height:150px; margin-top:25px; animation:unibot-float 3s ease-in-out infinite; }
-.unibot-head {
-  position:absolute; inset:0; border:4px solid var(--ub-edge); border-radius:50% 50% 46% 46%;
-  background:var(--ub-body); box-shadow:inset -8px -8px 0 rgba(90,80,200,.07);
-}
-.unibot-face {
-  position:absolute; left:50%; top:38px; width:100px; height:62px; margin-left:-50px;
-  border-radius:30px; background:var(--ub-face); display:flex; align-items:flex-start;
-  justify-content:space-between; padding:16px 24px 0;
-}
-.unibot-eye { display:block; width:14px; height:18px; border-radius:50%; background:var(--ub-eye); box-shadow:0 0 8px var(--ub-eye); animation:unibot-blink 4s infinite; }
+.unibot-launcher:active { cursor:grabbing; }
+.unibot-character { position:relative; width:86px; height:86px; margin-top:20px; animation:unibot-float 3s ease-in-out infinite; }
+.unibot-head { position:absolute; inset:0; border:3px solid var(--ub-edge); border-radius:50% 50% 46% 46%; background:var(--ub-body); box-shadow:inset -6px -6px 0 rgba(90,80,200,.07); }
+.unibot-face { position:absolute; left:50%; top:23px; width:58px; height:38px; margin-left:-29px; border-radius:19px; background:var(--ub-face); display:flex; align-items:flex-start; justify-content:space-between; padding:10px 14px 0; }
+.unibot-eye { display:block; width:9px; height:12px; border-radius:50%; background:var(--ub-eye); box-shadow:0 0 6px var(--ub-eye); animation:unibot-blink 4s infinite; }
 .unibot-eye:nth-child(2) { animation-delay:.08s; }
-.unibot-mouth { position:absolute; left:50%; top:38px; width:10px; height:5px; margin-left:-5px; border-bottom:3px solid var(--ub-eye); border-radius:0 0 10px 10px; }
-.unibot-face:before,.unibot-face:after { content:""; position:absolute; top:36px; width:10px; height:6px; border-radius:50%; background:var(--ub-cheek); }
-.unibot-face:before { left:10px; } .unibot-face:after { right:10px; }
-.unibot-face i:first-child { position:relative; }
+.unibot-mouth { position:absolute; left:50%; top:24px; width:8px; height:4px; margin-left:-4px; border-bottom:2px solid var(--ub-eye); border-radius:0 0 10px 10px; }
+.unibot-face:before,.unibot-face:after { content:""; position:absolute; top:23px; width:7px; height:4px; border-radius:50%; background:var(--ub-cheek); }
+.unibot-face:before { left:6px; } .unibot-face:after { right:6px; }
 .unibot-antenna { display:none; }
-.unibot-arm { position:absolute; z-index:-1; top:78px; width:20px; height:39px; border-radius:15px; background:var(--ub-body); border:3px solid var(--ub-edge); }
-.unibot-arm.left { left:-8px; transform:rotate(18deg); } .unibot-arm.right { right:-8px; transform:rotate(-18deg); }
-.unibot-cap { position:absolute; z-index:3; top:-30px; left:50%; width:84px; height:40px; margin-left:-42px; }
-.unibot-cap-board { position:absolute; top:0; width:84px; height:18px; border-radius:4px; background:var(--ub-cap); transform:perspective(90px) rotateX(48deg); box-shadow:0 3px 0 rgba(0,0,0,.18); }
-.unibot-cap-base { position:absolute; top:10px; left:21px; width:42px; height:18px; border-radius:0 0 16px 16px; background:var(--ub-cap); }
-.unibot-cap-tassel { position:absolute; top:7px; left:74px; width:2px; height:26px; background:var(--ub-gold); transform-origin:top; animation:unibot-sway 2s ease-in-out infinite; }
-.unibot-cap-tassel:after { content:""; position:absolute; bottom:-5px; left:-3px; width:8px; height:9px; border-radius:3px; background:var(--ub-gold); }
-.unibot-label { display:block; margin-top:4px; color:var(--text); font-size:11px; font-weight:800; text-align:center; }
-.unibot-character:after { content:""; position:absolute; z-index:-2; left:30px; bottom:-20px; width:90px; height:12px; border-radius:50%; background:var(--ub-shadow); filter:blur(4px); animation:unibot-shadow 3s ease-in-out infinite; }
-@keyframes unibot-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+.unibot-arm { position:absolute; z-index:-1; top:47px; width:13px; height:25px; border-radius:12px; background:var(--ub-body); border:2px solid var(--ub-edge); }
+.unibot-arm.left { left:-5px; transform:rotate(18deg); } .unibot-arm.right { right:-5px; transform:rotate(-18deg); }
+/* Graduation cap: centred, smaller, and layered correctly above the head. */
+.unibot-cap { position:absolute; z-index:3; top:-19px; left:50%; width:62px; height:31px; margin-left:-31px; pointer-events:none; }
+.unibot-cap-board { position:absolute; top:0; left:0; width:62px; height:13px; border-radius:3px; background:var(--ub-cap); transform:perspective(75px) rotateX(48deg); box-shadow:0 2px 0 rgba(0,0,0,.18); }
+.unibot-cap-base { position:absolute; top:8px; left:15px; width:32px; height:14px; border-radius:0 0 12px 12px; background:var(--ub-cap); }
+.unibot-cap-tassel { position:absolute; top:5px; left:53px; width:2px; height:19px; background:var(--ub-gold); transform-origin:top; animation:unibot-sway 2s ease-in-out infinite; }
+.unibot-cap-tassel:after { content:""; position:absolute; bottom:-4px; left:-2px; width:6px; height:7px; border-radius:3px; background:var(--ub-gold); }
+.unibot-label { display:block; margin-top:2px; color:var(--text); font-size:10px; font-weight:800; text-align:center; }
+.unibot-character:after { content:""; position:absolute; z-index:-2; left:18px; bottom:-12px; width:50px; height:8px; border-radius:50%; background:var(--ub-shadow); filter:blur(3px); animation:unibot-shadow 3s ease-in-out infinite; }
+@keyframes unibot-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
 @keyframes unibot-blink { 0%,92%,100%{transform:scaleY(1)} 95%{transform:scaleY(.1)} }
 @keyframes unibot-sway { 0%,100%{transform:rotate(10deg)} 50%{transform:rotate(-10deg)} }
 @keyframes unibot-shadow { 50%{transform:scale(.65);opacity:.5} }
-.unibot-greeting {
-  position:absolute; right:126px; bottom:104px; width:min(300px,calc(100vw - 150px));
-  display:flex; flex-direction:column; gap:6px; padding:14px 16px; border:1px solid var(--border);
-  border-radius:18px 18px 5px 18px; background:var(--surface); color:var(--text);
-  box-shadow:0 12px 36px rgba(20,30,60,.16); font-size:13px; line-height:1.5; animation:unibot-greet-in .35s ease-out;
-}
-.unibot-greeting b { font-size:13px; }
-.unibot-greeting span { white-space:normal; }
-.unibot-greeting-close { position:absolute; top:5px; right:8px; border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:18px; }
+.unibot-greeting { position:absolute; right:82px; bottom:76px; width:min(270px,calc(100vw - 110px)); display:flex; flex-direction:column; gap:6px; padding:12px 14px; border:1px solid var(--border); border-radius:16px 16px 5px 16px; background:var(--surface); color:var(--text); box-shadow:0 10px 28px rgba(20,30,60,.15); font-size:12px; line-height:1.5; animation:unibot-greet-in .35s ease-out; }
+.unibot-greeting b { font-size:12px; } .unibot-greeting span { white-space:normal; }
+.unibot-greeting-close { position:absolute; top:4px; right:7px; border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:18px; }
 .unibot-enable-voice { display:flex; align-items:center; gap:6px; width:max-content; border:0; padding:4px 0; color:var(--primary); background:transparent; font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
 .unibot-enable-voice svg { width:14px; height:14px; }
 @keyframes unibot-greet-in { from{opacity:0;transform:translateY(8px) scale(.97)} to{opacity:1;transform:none} }
-.unibot-panel {
-  position:absolute; right:0; bottom:190px; width:min(370px,calc(100vw - 28px)); height:min(540px,calc(100dvh - 230px));
-  display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:22px;
-  background:var(--surface); box-shadow:0 18px 55px rgba(15,35,55,.22); transform-origin:bottom right; animation:unibot-open .22s ease-out;
-}
+.unibot-panel { position:absolute; right:0; bottom:120px; width:min(370px,calc(100vw - 28px)); height:min(540px,calc(100dvh - 155px)); display:flex; flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:22px; background:var(--surface); box-shadow:0 18px 55px rgba(15,35,55,.22); transform-origin:bottom right; animation:unibot-open .22s ease-out; }
 .unibot-panel[hidden] { display:none; }
 @keyframes unibot-open { from{opacity:0;transform:translateY(12px) scale(.96)} to{opacity:1;transform:none} }
 .unibot-header { display:flex; align-items:center; gap:9px; padding:13px; background:linear-gradient(120deg,#e8e2ff,#e3f6fb); color:#292858; }
@@ -958,10 +940,10 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 #unibot-root.is-speaking .unibot-face { box-shadow:0 0 0 3px rgba(120,110,220,.12); }
 @media(max-width:520px) {
   #unibot-root { right:max(10px,env(safe-area-inset-right)); bottom:max(12px,env(safe-area-inset-bottom)); }
-  .unibot-launcher { width:125px; height:150px; }
-  .unibot-character { transform:scale(.78); transform-origin:bottom center; margin-bottom:-20px; }
-  .unibot-panel { bottom:150px; width:min(360px,calc(100vw - 20px)); height:min(500px,calc(100dvh - 185px)); }
-  .unibot-greeting { right:100px; bottom:90px; width:min(260px,calc(100vw - 120px)); }
+  .unibot-launcher { width:88px; height:102px; }
+  .unibot-character { transform:scale(.88); transform-origin:bottom center; margin-bottom:-8px; }
+  .unibot-panel { bottom:106px; width:min(360px,calc(100vw - 20px)); height:min(500px,calc(100dvh - 125px)); }
+  .unibot-greeting { right:76px; bottom:72px; width:min(250px,calc(100vw - 100px)); }
 }
 @media(prefers-reduced-motion:reduce) {
   .unibot-character,.unibot-eye,.unibot-cap-tassel,.unibot-greeting,.unibot-panel,.unibot-character:after { animation:none!important; }

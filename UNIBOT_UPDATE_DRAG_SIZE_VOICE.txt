@@ -1,0 +1,13 @@
+UniBot UI and Voice Preferences Update
+
+Changes:
+- Reduced floating UniBot launcher and mascot size to avoid covering dashboard controls.
+- Reworked graduation cap dimensions, alignment and tassel placement.
+- Added pointer-based drag-and-drop positioning for mouse and touch.
+- Saved mascot position locally in the user's UniLife OS preferences and restored it after rerenders.
+- UniBot speech now follows Settings > Language (English -> en-SG; Bahasa Melayu -> ms-MY), and prefers an installed browser voice matching that locale.
+- Existing mute, auto-speak and greeting controls remain available.
+
+No Apps Script backend changes are required for this update.
+
+After extracting, replace the frontend project files in GitHub Pages. Hard-refresh the browser after deployment. Voice locale follows the language selected in UniLife OS Settings.
