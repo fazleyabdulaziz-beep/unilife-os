@@ -374,178 +374,206 @@ async function boot(){
 
 
 /* =========================================
-   UNIBOT — COMPANION + AI CHAT
+   UNIBOT — COMPANION + VOICE + AI CHAT
 ========================================= */
 let uniBotOpen = false;
 let uniBotBusy = false;
 let uniBotHistory = [];
+let uniBotGreeting = null;
+let uniBotGreetingSpoken = false;
 let uniBotMessages = [
   { role: 'assistant', content: 'Hey! 👋 I’m UniBot. I can help you with your classes, assignments and university life. What do you need?' }
 ];
 
+const uniBotDefaultPrefs = { voiceEnabled: true, autoSpeak: true, autoGreeting: true, speechRate: 1 };
+const uniBotPrefs = () => {
+  U.prefs.unibot = Object.assign({}, uniBotDefaultPrefs, U.prefs.unibot || {});
+  return U.prefs.unibot;
+};
+function saveUniBotPrefs() {
+  U.prefs.unibot = uniBotPrefs();
+  local();
+}
+function uniBotName() {
+  return String(D.user && D.user.name || 'there').trim().split(/\s+/)[0] || 'there';
+}
+function uniBotGreetingForNow() {
+  const hour = Number(new Intl.DateTimeFormat('en', {
+    hour: '2-digit', hourCycle: 'h23', timeZone: (D.user && D.user.timezone) || 'Asia/Singapore'
+  }).format(new Date()));
+  const name = uniBotName();
+  let greeting;
+  if (hour >= 5 && hour < 12) greeting = { en: `Good morning, ${name}!`, ms: 'Dah breakfast? Jom kita mulakan hari dengan semangat!' };
+  else if (hour >= 12 && hour < 18) greeting = { en: `Good afternoon, ${name}!`, ms: 'How is your day going? Ada apa-apa yang UniBot boleh bantu?' };
+  else if (hour >= 18 && hour < 22) greeting = { en: `Good evening, ${name}!`, ms: 'Jom check apa yang masih perlu disiapkan hari ini.' };
+  else greeting = { en: `Still awake, ${name}?`, ms: 'Jangan lupa rehat juga okay. Esok kita sambung lagi!' };
+
+  let contextLine = '';
+  try {
+    const classes = todayCls();
+    if (classes && classes.length) {
+      const next = classes.find(c => String(c.start || '') >= new Date().toTimeString().slice(0,5));
+      if (next) contextLine = ` Your next class is ${next.course} at ${next.start}.`;
+    }
+  } catch (e) { /* timetable may not be available on every route */ }
+
+  return {
+    text: greeting.en + ' ' + greeting.ms + contextLine,
+    speech: [
+      { text: greeting.en, lang: 'en-SG' },
+      { text: greeting.ms, lang: 'ms-MY' },
+      ...(contextLine ? [{ text: contextLine, lang: 'en-SG' }] : [])
+    ]
+  };
+}
+function uniBotVoiceAvailable() {
+  return !!(window.speechSynthesis && window.SpeechSynthesisUtterance);
+}
+function uniBotGuessLanguage(text) {
+  return /\b(dah|jom|kita|awak|kau|saya|anda|kelas|assignment|tugasan|jangan|rehat|hari|boleh|macam|okay|tak|terima kasih)\b/i.test(text) ? 'ms-MY' : 'en-SG';
+}
+function uniBotSpeakSegments(segments) {
+  const prefs = uniBotPrefs();
+  if (!prefs.voiceEnabled || !uniBotVoiceAvailable()) return false;
+  try {
+    window.speechSynthesis.cancel();
+    let queue = (segments || []).filter(x => x && String(x.text || '').trim());
+    queue.forEach((part, index) => {
+      const utterance = new SpeechSynthesisUtterance(String(part.text).trim());
+      utterance.lang = part.lang || uniBotGuessLanguage(utterance.text);
+      utterance.rate = Math.max(0.7, Math.min(1.3, Number(prefs.speechRate) || 1));
+      utterance.pitch = 1.08;
+      if (index === 0) utterance.onstart = () => document.getElementById('unibot-root')?.classList.add('is-speaking');
+      if (index === queue.length - 1) {
+        utterance.onend = () => document.getElementById('unibot-root')?.classList.remove('is-speaking');
+        utterance.onerror = () => {
+          document.getElementById('unibot-root')?.classList.remove('is-speaking');
+          if (uniBotGreeting) { uniBotGreetingSpoken = false; renderUniBot(); }
+        };
+      }
+      window.speechSynthesis.speak(utterance);
+    });
+    return true;
+  } catch (e) {
+    console.warn('UniBot voice unavailable:', e);
+    return false;
+  }
+}
+function uniBotSpeakText(text) {
+  const parts = String(text || '').match(/[^.!?]+[.!?]*/g) || [String(text || '')];
+  return uniBotSpeakSegments(parts.map(s => ({ text: s.trim(), lang: uniBotGuessLanguage(s) })));
+}
+function uniBotStopVoice() {
+  if (uniBotVoiceAvailable()) window.speechSynthesis.cancel();
+  document.getElementById('unibot-root')?.classList.remove('is-speaking');
+}
+function initUniBotGreeting() {
+  const prefs = uniBotPrefs();
+  if (!prefs.autoGreeting || sessionStorage.getItem('ul_unibot_greeted')) return;
+  sessionStorage.setItem('ul_unibot_greeted', '1');
+  uniBotGreeting = uniBotGreetingForNow();
+  renderUniBot();
+  if (prefs.voiceEnabled) {
+    // Browsers may require a user gesture before allowing audio playback.
+    const spoke = uniBotSpeakSegments(uniBotGreeting.speech);
+    uniBotGreetingSpoken = spoke;
+  }
+}
 function uniBotMarkup() {
+  const prefs = uniBotPrefs();
   return `
+    ${uniBotGreeting && !uniBotOpen ? `
+      <aside class="unibot-greeting" role="status">
+        <button class="unibot-greeting-close" data-act="unibot-dismiss-greeting" aria-label="Dismiss greeting">×</button>
+        <b>${esc(uniBotGreeting.speech[0].text)}</b>
+        <span>${esc(uniBotGreeting.speech.slice(1).map(x=>x.text).join(' '))}</span>
+        ${!uniBotGreetingSpoken && prefs.voiceEnabled ? `<button class="unibot-enable-voice" data-act="unibot-speak-greeting"><i data-lucide="volume-2"></i> Tap to hear UniBot</button>` : ''}
+      </aside>` : ''}
     <section class="unibot-panel" id="unibot-panel" ${uniBotOpen ? '' : 'hidden'}>
       <header class="unibot-header">
         <div class="unibot-header-avatar">🤖</div>
-        <div class="unibot-header-copy">
-          <b>UniBot</b>
-          <small> Your UniLife companion</small>
-        </div>
+        <div class="unibot-header-copy"><b>UniBot</b><small>Your UniLife companion</small></div>
+        <button data-act="unibot-voice-toggle" aria-label="Toggle voice" title="${prefs.voiceEnabled ? 'Mute voice' : 'Enable voice'}"><i data-lucide="${prefs.voiceEnabled ? 'volume-2' : 'volume-x'}"></i></button>
+        <button data-act="unibot-auto-speak-toggle" aria-label="Toggle automatic replies" title="${prefs.autoSpeak ? 'Automatic speech on' : 'Automatic speech off'}"><i data-lucide="${prefs.autoSpeak ? 'audio-lines' : 'message-square'}"></i></button>
+        <button data-act="unibot-greeting-toggle" aria-label="Toggle greetings" title="${prefs.autoGreeting ? 'Automatic greeting on' : 'Automatic greeting off'}"><i data-lucide="${prefs.autoGreeting ? 'message-circle' : 'message-circle-off'}"></i></button>
         <button data-act="unibot-close" aria-label="Close UniBot">✕</button>
       </header>
-
       <div class="unibot-messages" id="unibot-messages">
-        ${uniBotMessages.map(m => `
-          <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}">${esc(m.content)}</div>
+        ${uniBotMessages.map((m, i) => `
+          <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}">
+            <span>${esc(m.content)}</span>
+            ${m.role !== 'user' ? `<button class="unibot-speak-message" data-act="unibot-speak-message" data-id="${i}" title="Listen"><i data-lucide="volume-2"></i></button>` : ''}
+          </div>
         `).join('')}
       </div>
-
-      <div class="unibot-typing" id="unibot-typing" hidden>UniBot is thinking...</div>
-
+      <div class="unibot-typing" id="unibot-typing" ${uniBotBusy ? '' : 'hidden'}>UniBot is thinking...</div>
       <div class="unibot-suggestions">
         <button data-act="unibot-prompt" data-id="classes">📅 My next class</button>
         <button data-act="unibot-prompt" data-id="assignments">📝 My assignments</button>
         <button data-act="unibot-prompt" data-id="help">✨ What can you do?</button>
       </div>
-
       <form class="unibot-input" id="unibot-form">
-        <input id="unibot-text" maxlength="1000" autocomplete="off"
-          placeholder="Ask UniBot anything..." ${uniBotBusy ? 'disabled' : ''}>
+        <input id="unibot-text" maxlength="1000" autocomplete="off" placeholder="Ask UniBot anything..." ${uniBotBusy ? 'disabled' : ''}>
         <button type="submit" aria-label="Send" ${uniBotBusy ? 'disabled' : ''}>➤</button>
       </form>
     </section>
-
-    <button class="unibot-launcher" data-act="unibot-toggle"
-      aria-label="Open UniBot" aria-expanded="${uniBotOpen}">
+    <button class="unibot-launcher" data-act="unibot-toggle" aria-label="Open UniBot" aria-expanded="${uniBotOpen}">
       <div class="unibot-character">
-        <div class="unibot-antenna"></div>
-        <div class="unibot-arm left"></div>
-        <div class="unibot-arm right"></div>
-        <div class="unibot-head">
-          <div class="unibot-face">
-            <i class="unibot-eye"></i><i class="unibot-eye"></i>
-          </div>
-        </div>
+        <div class="unibot-cap"><span class="unibot-cap-board"></span><span class="unibot-cap-base"></span><span class="unibot-cap-tassel"></span></div>
+        <div class="unibot-antenna"></div><div class="unibot-arm left"></div><div class="unibot-arm right"></div>
+        <div class="unibot-head"><div class="unibot-face"><i class="unibot-eye"></i><i class="unibot-eye"></i><span class="unibot-mouth"></span></div></div>
       </div>
       <span class="unibot-label">UniBot</span>
-    </button>
-  `;
+    </button>`;
 }
-
 function renderUniBot() {
   const root = document.getElementById('unibot-root');
   if (!root) return;
   root.innerHTML = uniBotMarkup();
   root.classList.toggle('is-thinking', uniBotBusy);
-
   const messages = document.getElementById('unibot-messages');
   if (messages) messages.scrollTop = messages.scrollHeight;
+  window.lucide && lucide.createIcons({root});
 }
-
 function uniBotContext() {
-  const classes = todayCls().map(c => ({
-    course: c.course,
-    start: c.start,
-    end: c.end,
-    room: c.room || '',
-    lecturer: c.lecturer || ''
-  }));
-
-  const assignments = (D.assignments || [])
-    .filter(a => a.status !== 'done')
-    .sort((a,b) => String(a.due).localeCompare(String(b.due)))
-    .slice(0,8)
-    .map(a => ({
-      title: a.title,
-      due: a.due,
-      course: a.course || ''
-    }));
-
-  return {
-    page: route(),
-    today: iso(0),
-    classes: classes,
-    assignments: assignments
-  };
+  const classes = todayCls().map(c => ({course:c.course,start:c.start,end:c.end,room:c.room||'',lecturer:c.lecturer||''}));
+  const assignments = (D.assignments || []).filter(a => a.status !== 'done')
+    .sort((a,b) => String(a.due).localeCompare(String(b.due))).slice(0,8)
+    .map(a => ({title:a.title,due:a.due,course:a.course||''}));
+  return { page:route(), today:iso(0), classes, assignments };
 }
-
 async function sendUniBot(message) {
   message = String(message || '').trim();
   if (!message || uniBotBusy) return;
-
-  uniBotMessages.push({ role: 'user', content: message });
-  uniBotHistory.push({ role: 'user', content: message });
+  uniBotMessages.push({role:'user',content:message});
+  uniBotHistory.push({role:'user',content:message});
   uniBotHistory = uniBotHistory.slice(-8);
-
-  uniBotBusy = true;
-  renderUniBot();
-
+  uniBotBusy = true; renderUniBot();
   try {
     const result = await U.api.call('unibotChat', {
-      message,
-      history: uniBotHistory.slice(0,-1),
-      context: uniBotContext()
+      message, history:uniBotHistory.slice(0,-1), context:uniBotContext()
     });
-
-    const reply = result && result.reply
-      ? result.reply
-      : 'Sorry, I could not prepare an answer. Please try again.';
-
-    uniBotMessages.push({ role: 'assistant', content: reply });
-    uniBotHistory.push({ role: 'assistant', content: reply });
+    const reply = result && result.reply ? result.reply : 'Sorry, I could not prepare an answer. Please try again.';
+    uniBotMessages.push({role:'assistant',content:reply});
+    uniBotHistory.push({role:'assistant',content:reply});
     uniBotHistory = uniBotHistory.slice(-8);
+    if (uniBotPrefs().autoSpeak) uniBotSpeakText(reply);
   } catch (error) {
-    uniBotMessages.push({
-      role: 'assistant',
-      content: 'I’m having trouble connecting right now. Please try again in a moment.'
-    });
+    uniBotMessages.push({role:'assistant',content:'I’m having trouble connecting right now. Please try again in a moment.'});
     console.warn('UniBot request failed:', error);
-  } finally {
-    uniBotBusy = false;
-    renderUniBot();
-  }
+  } finally { uniBotBusy=false; renderUniBot(); }
 }
-
 function uniBotQuickPrompt(id) {
+  let content = '';
   if (id === 'classes') {
     const list = todayCls();
-    if (!list.length) {
-      uniBotMessages.push({role:'assistant',content:'You have no classes scheduled for today. Enjoy your free time! 🎉'});
-      renderUniBot();
-      return;
-    }
-    const lines = list.map(c =>
-      `${c.start}–${c.end} · ${c.course}${c.room ? ' · '+c.room : ''}`
-    );
-    uniBotMessages.push({role:'assistant',content:'Here are your classes today:\n'+lines.join('\n')});
-    renderUniBot();
-    return;
-  }
-
-  if (id === 'assignments') {
-    const list = (D.assignments || [])
-      .filter(a => a.status !== 'done')
-      .sort((a,b) => String(a.due).localeCompare(String(b.due)))
-      .slice(0,6);
-
-    uniBotMessages.push({
-      role:'assistant',
-      content:list.length
-        ? 'Your pending assignments:\n'+list.map(a => `${a.title} · Due ${a.due}`).join('\n')
-        : 'You have no pending assignments. Great work! 🎉'
-    });
-    renderUniBot();
-    return;
-  }
-
-  if (id === 'help') {
-    uniBotMessages.push({
-      role:'assistant',
-      content:'I can help you check your classes and assignments, explain your timetable, plan your study time and answer general university questions. You can ask me anything!'
-    });
-    renderUniBot();
-  }
+    content = list.length ? 'Here are your classes today:\n'+list.map(c=>`${c.start}–${c.end} · ${c.course}${c.room?' · '+c.room:''}`).join('\n') : 'You have no classes scheduled for today. Enjoy your free time! 🎉';
+  } else if (id === 'assignments') {
+    const list=(D.assignments||[]).filter(a=>a.status!=='done').sort((a,b)=>String(a.due).localeCompare(String(b.due))).slice(0,6);
+    content=list.length?'Your pending assignments:\n'+list.map(a=>`${a.title} · Due ${a.due}`).join('\n'):'You have no pending assignments. Great work! 🎉';
+  } else content='I can help you check your classes and assignments, explain your timetable, plan your study time and answer general university questions. You can ask me anything!';
+  uniBotMessages.push({role:'assistant',content}); renderUniBot();
+  if (uniBotPrefs().autoSpeak) uniBotSpeakText(content);
 }
 
  // ---------- router / render ----------
@@ -577,6 +605,7 @@ function render(){
 
   window.lucide&&lucide.createIcons();
   renderUniBot();
+  initUniBotGreeting();
 }
 // ---------- actions ----------
 function dayPopup(ds){const e=eventsOn(ds),total=e.cls.length+e.asg.length+e.exm.length;
@@ -708,9 +737,17 @@ const acts={
  },
  'unibot-close':()=>{
    uniBotOpen=false;
+   uniBotStopVoice();
    renderUniBot();
  },
  'unibot-prompt':id=>uniBotQuickPrompt(id),
+ 'unibot-dismiss-greeting':()=>{uniBotGreeting=null;renderUniBot()},
+ 'unibot-speak-greeting':()=>{if(uniBotGreeting){uniBotGreetingSpoken=uniBotSpeakSegments(uniBotGreeting.speech);renderUniBot()}},
+ 'unibot-speak-message':id=>{const m=uniBotMessages[Number(id)];if(m&&m.content)uniBotSpeakText(m.content)},
+ 'unibot-voice-toggle':()=>{const p=uniBotPrefs();p.voiceEnabled=!p.voiceEnabled;if(!p.voiceEnabled)uniBotStopVoice();saveUniBotPrefs();renderUniBot()},
+ 'unibot-auto-speak-toggle':()=>{const p=uniBotPrefs();p.autoSpeak=!p.autoSpeak;if(!p.autoSpeak)uniBotStopVoice();saveUniBotPrefs();renderUniBot()},
+ 'unibot-greeting-toggle':()=>{const p=uniBotPrefs();p.autoGreeting=!p.autoGreeting;if(!p.autoGreeting)uniBotGreeting=null;saveUniBotPrefs();renderUniBot()},
+
 
 };
 document.addEventListener('click',e=>{if(!e.target.closest('.widget-tools'))$$('.widget-menu').forEach(x=>x.hidden=true);if(!e.target.closest('.sticky-note-tools'))$$('.sticky-note-menu').forEach(x=>x.hidden=true);const b=e.target.closest('[data-act]');if(b&&acts[b.dataset.act])acts[b.dataset.act](b.dataset.id,b,e);else if(e.target.id==='modal')close()});

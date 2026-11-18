@@ -53,6 +53,9 @@ function handle(req) {
     case 'analyzeTimetable':
       return analyzeTimetableWithGroq_(uid, d);
 
+    case 'unibotChat':
+      return uniBotChat_(uid, d);
+
     case 'saveProfilePhoto':
       return saveProfilePhoto_(uid, d.dataUrl);
 
