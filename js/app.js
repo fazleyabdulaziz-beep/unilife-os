@@ -407,6 +407,9 @@ let uniBotGreeting = null;
 let uniBotGreetingSpoken = false;
 let uniBotGreetingInitialized = false;
 let uniBotMessages = [];
+let uniBotRecognition = null;
+let uniBotListening = false;
+let uniBotMicTranscript = '';
 
 function uniBotLanguage() { return U.prefs.lang === 'ms' ? 'ms' : 'en'; }
 function uniBotLocale() { return uniBotLanguage() === 'ms' ? 'ms-MY' : 'en-SG'; }
@@ -418,7 +421,7 @@ function uniBotInitialMessage() {
   );
 }
 
-const uniBotDefaultPrefs = { voiceEnabled: true, autoSpeak: true, autoGreeting: true, speechRate: 1 };
+const uniBotDefaultPrefs = { voiceEnabled: true, autoSpeak: true, autoGreeting: true, speechRate: 1, micLanguage: 'auto' };
 const uniBotPrefs = () => {
   U.prefs.unibot = Object.assign({}, uniBotDefaultPrefs, U.prefs.unibot || {});
   return U.prefs.unibot;
@@ -475,13 +478,14 @@ function uniBotSpeakSegments(segments) {
   if (!prefs.voiceEnabled || !uniBotVoiceAvailable()) return false;
   try {
     window.speechSynthesis.cancel();
-    const locale = uniBotVoiceLocale();
+    const defaultLocale = uniBotVoiceLocale();
     const queue = (segments || []).filter(x => x && String(x.text || '').trim()).map(x => ({
-      text: String(x.text).trim(), lang: locale
+      text: String(x.text).trim(), lang: String(x.lang || defaultLocale)
     }));
     const voices = window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
     queue.forEach((part, index) => {
       const utterance = new SpeechSynthesisUtterance(String(part.text).trim());
+      const locale = part.lang || defaultLocale;
       utterance.lang = locale;
       const langPrefix = locale.toLowerCase().split('-')[0];
       utterance.voice = voices.find(v => String(v.lang || '').toLowerCase() === locale.toLowerCase())
@@ -504,8 +508,106 @@ function uniBotSpeakSegments(segments) {
     return false;
   }
 }
+function uniBotDetectTextLanguage(text) {
+  const words = String(text || '').toLowerCase().match(/[a-zA-ZÀ-ÿ]+/g) || [];
+  const msWords = new Set(['aku','saya','kau','awak','anda','kita','kami','dia','ni','ini','itu','yang','dengan','untuk','boleh','tak','tidak','dah','belum','bila','mana','kenapa','macam','sebab','kelas','tugasan','jadual','hari','esok','sekarang','terima','kasih','tolong','sila','anda','adalah','akan','pukul','sudah','buat','nak','mahu','jangan','dekat','dalam','lepas','seterusnya','saya']);
+  let score = 0;
+  words.forEach(w => { if (msWords.has(w)) score += 1; });
+  // Malay function words and common affixes are useful signals for natural TTS selection.
+  if (/\b(ber|ter|meng|men|mem|pen|per)[a-z]+/.test(String(text || '').toLowerCase())) score += 1;
+  return score >= 1 ? 'ms-MY' : 'en-SG';
+}
 function uniBotSpeakText(text) {
-  return uniBotSpeakSegments([{ text: String(text || ''), lang: uniBotVoiceLocale() }]);
+  // Chat replies speak in the language they are written in; greetings still use Settings language.
+  return uniBotSpeakSegments([{ text: String(text || ''), lang: uniBotDetectTextLanguage(text) }]);
+}
+function uniBotSpeechRecognitionClass() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+function uniBotMicLocale() {
+  const choice = uniBotPrefs().micLanguage || 'auto';
+  if (choice === 'ms') return 'ms-MY';
+  if (choice === 'en') return 'en-SG';
+  const browserLang = String(navigator.language || '').toLowerCase();
+  return browserLang.startsWith('ms') ? 'ms-MY' : 'en-SG';
+}
+function uniBotUpdateMicUI(message) {
+  const button = document.getElementById('unibot-mic');
+  const status = document.getElementById('unibot-mic-status');
+  const input = document.getElementById('unibot-text');
+  if (button) {
+    button.classList.toggle('is-listening', uniBotListening);
+    button.setAttribute('aria-label', uniBotListening ? 'Stop recording' : 'Start voice input');
+    button.title = uniBotListening ? 'Stop recording' : 'Speak to UniBot';
+    button.innerHTML = `<i data-lucide="${uniBotListening ? 'mic-off' : 'mic'}"></i>`;
+  }
+  if (status) {
+    status.hidden = !uniBotListening && !message;
+    status.textContent = message || (uniBotListening ? uniBotText('Listening… speak now','Sedang mendengar… sila bercakap') : '');
+  }
+  if (input && uniBotBusy) input.disabled = true;
+  window.lucide && lucide.createIcons();
+}
+function uniBotStartListening() {
+  if (uniBotListening) { uniBotStopListening(); return; }
+  if (uniBotBusy) return;
+  const Recognition = uniBotSpeechRecognitionClass();
+  if (!Recognition) {
+    toast(uniBotText('Voice input is not supported in this browser. Try Chrome.','Input suara tidak disokong oleh browser ini. Cuba Chrome.'));
+    return;
+  }
+  try {
+    const recognition = new Recognition();
+    uniBotRecognition = recognition;
+    uniBotListening = true;
+    uniBotMicTranscript = '';
+    recognition.lang = uniBotMicLocale();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => uniBotUpdateMicUI();
+    recognition.onresult = event => {
+      let finalText = '', interimText = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0] && event.results[i][0].transcript || '';
+        if (event.results[i].isFinal) finalText += transcript;
+        else interimText += transcript;
+      }
+      if (finalText) uniBotMicTranscript += (uniBotMicTranscript ? ' ' : '') + finalText.trim();
+      const input = document.getElementById('unibot-text');
+      if (input) input.value = [uniBotMicTranscript, interimText.trim()].filter(Boolean).join(' ');
+      uniBotUpdateMicUI(interimText ? uniBotText('Recognising: ','Mengenal pasti: ') + interimText : '');
+    };
+    recognition.onerror = event => {
+      const messages = {
+        'not-allowed':uniBotText('Microphone permission was denied. Allow microphone access in browser settings.','Kebenaran mikrofon ditolak. Benarkan akses mikrofon dalam tetapan browser.'),
+        'no-speech':uniBotText('No speech detected. Please try again.','Tiada suara dikesan. Cuba sekali lagi.'),
+        'network':uniBotText('Speech recognition needs an internet connection.','Pengecaman suara memerlukan sambungan internet.'),
+        'service-not-allowed':uniBotText('Speech recognition service is unavailable.','Servis pengecaman suara tidak tersedia.')
+      };
+      uniBotListening = false;
+      uniBotUpdateMicUI(messages[event.error] || uniBotText('Voice input stopped. Please try again.','Input suara dihentikan. Cuba sekali lagi.'));
+    };
+    recognition.onend = () => {
+      uniBotListening = false;
+      uniBotRecognition = null;
+      uniBotUpdateMicUI(uniBotMicTranscript ? uniBotText('Transcript ready — review and send','Transkripsi siap — semak dan hantar') : '');
+    };
+    uniBotUpdateMicUI();
+    recognition.start();
+  } catch (error) {
+    uniBotListening = false;
+    uniBotRecognition = null;
+    uniBotUpdateMicUI();
+    toast(uniBotText('Could not start microphone. Please try again.','Tidak dapat mengaktifkan mikrofon. Cuba sekali lagi.'));
+  }
+}
+function uniBotStopListening() {
+  if (uniBotRecognition) {
+    try { uniBotRecognition.stop(); } catch (e) { /* already stopped */ }
+  }
+  uniBotListening = false;
+  uniBotUpdateMicUI(uniBotMicTranscript ? uniBotText('Transcript ready — review and send','Transkripsi siap — semak dan hantar') : '');
 }
 function uniBotStopVoice() {
   if (uniBotVoiceAvailable()) window.speechSynthesis.cancel();
@@ -551,14 +653,21 @@ function uniBotMarkup() {
         `).join('')}
       </div>
       <div class="unibot-typing" id="unibot-typing" ${uniBotBusy ? '' : 'hidden'}>${uniBotText('UniBot is thinking...','UniBot sedang berfikir...')}</div>
+      <div class="unibot-mic-status" id="unibot-mic-status" hidden></div>
       <div class="unibot-suggestions">
         <button data-act="unibot-prompt" data-id="classes">📅 ${uniBotText('My next class','Kelas seterusnya')}</button>
         <button data-act="unibot-prompt" data-id="assignments">📝 ${uniBotText('My assignments','Tugasan saya')}</button>
         <button data-act="unibot-prompt" data-id="help">✨ ${uniBotText('What can you do?','Apa yang boleh dibuat?')}</button>
       </div>
       <form class="unibot-input" id="unibot-form">
+        <select id="unibot-mic-language" aria-label="Voice input language" title="Voice input language">
+          <option value="auto" ${(uniBotPrefs().micLanguage || 'auto')==='auto'?'selected':''}>Auto</option>
+          <option value="en" ${uniBotPrefs().micLanguage==='en'?'selected':''}>EN</option>
+          <option value="ms" ${uniBotPrefs().micLanguage==='ms'?'selected':''}>MS</option>
+        </select>
         <input id="unibot-text" maxlength="1000" autocomplete="off" placeholder="${uniBotText('Ask UniBot anything...','Tanya UniBot apa sahaja...')}" ${uniBotBusy ? 'disabled' : ''}>
-        <button type="submit" aria-label="Send" ${uniBotBusy ? 'disabled' : ''}>➤</button>
+        <button type="button" id="unibot-mic" data-act="unibot-mic-toggle" aria-label="Start voice input" title="Speak to UniBot" ${uniBotBusy ? 'disabled' : ''}><i data-lucide="mic"></i></button>
+        <button type="submit" aria-label="Send" ${uniBotBusy ? 'disabled' : ''}><i data-lucide="send"></i></button>
       </form>
     </section>
     <button class="unibot-launcher" data-act="unibot-toggle" aria-label="Open UniBot" aria-expanded="${uniBotOpen}">
@@ -848,9 +957,11 @@ const acts={
  'unibot-close':()=>{
    uniBotOpen=false;
    uniBotStopVoice();
+   uniBotStopListening();
    renderUniBot();
  },
  'unibot-prompt':id=>uniBotQuickPrompt(id),
+ 'unibot-mic-toggle':()=>uniBotStartListening(),
  'unibot-dismiss-greeting':()=>{uniBotGreeting=null;renderUniBot()},
  'unibot-speak-greeting':()=>{if(uniBotGreeting){uniBotGreetingSpoken=uniBotSpeakSegments(uniBotGreeting.speech);renderUniBot()}},
  'unibot-speak-message':id=>{const m=uniBotMessages[Number(id)];if(m&&m.content)uniBotSpeakText(m.content)},
@@ -870,11 +981,13 @@ document.addEventListener('submit',e=>{
   const message=input?.value.trim();
   if(!message) return;
 
+  uniBotStopListening();
   input.value='';
   sendUniBot(message);
 });
 
 document.addEventListener('change',async e=>{const el=e.target,d=el.dataset;
+ if(el.id==='unibot-mic-language'){uniBotPrefs().micLanguage=el.value;saveUniBotPrefs();return;}
  if(el.id==='avatar-file'&&el.files&&el.files[0]){const f=el.files[0];if(!/^image\/(png|jpeg|webp)$/.test(f.type))return toast(t('chooseImageFormat'));if(f.size>4*1024*1024)return toast(t('imageTooLarge'));const reader=new FileReader();reader.onload=async()=>{try{const img=new Image();img.onload=async()=>{try{const c=document.createElement('canvas'),max=320,scale=Math.min(1,max/Math.max(img.width,img.height));c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const dataUrl=c.toDataURL('image/jpeg',.78);const result=await U.api.call('saveProfilePhoto',{dataUrl});const url=result.avatar_url||result.avatarUrl||result.url;if(!url)throw{code:'server'};D.user.avatar_url=url;localStorage.removeItem('ul_avatar');toast(t('profilePhotoSaved'));render()}catch(err){toast(errMsg(err))}};img.onerror=()=>toast(t('couldNotReadImage'));img.src=reader.result}catch(err){toast(errMsg(err))}};reader.readAsDataURL(f);return;}
  if(d.view){st[d.view]=el.value;return render()}
  if(d.w){const h=U.prefs.hidden,i=h.indexOf(d.w);i<0?h.push(d.w):h.splice(i,1);store();return render()}

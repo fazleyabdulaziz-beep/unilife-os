@@ -1,0 +1,24 @@
+UNILIFE OS 2.0 — UNIBOT BILINGUAL CHAT + VOICE INPUT UPDATE
+
+Frontend changes:
+- Added microphone input to the UniBot chat composer using the browser SpeechRecognition API.
+- Live/interim transcription appears in the message input; user can review and edit before sending.
+- Added Auto / EN / MS speech recognition language selection. Auto uses the browser/device language; EN and MS explicitly select en-SG or ms-MY.
+- Added listening state, stop control, permission/error feedback and mobile-friendly controls.
+- AI reply speech selects an English or Malay system voice based on the generated reply text. Greeting speech continues to follow UniLife OS Settings language.
+
+Backend changes:
+- UniBot now accepts English, Bahasa Melayu, informal Malay and mixed-language prompts.
+- It detects the dominant language of the latest user message and replies in that language, unless the user explicitly requests another language.
+- The Settings language no longer forces the language of AI chat replies; it remains for greeting and app UI.
+
+Deployment:
+1. Replace the frontend project files in GitHub Pages.
+2. Replace apps-script/UniBot.gs in the existing Apps Script project.
+3. Deploy a new Apps Script Web App version.
+4. Serve over HTTPS and allow microphone permission in the browser.
+
+Notes:
+- Native browser speech recognition support varies by browser/device and may use an online recognition service.
+- Auto speech input language follows the browser/device locale; it is not guaranteed multilingual detection in one recording. Select EN or MS when speaking the other language.
+- JavaScript syntax checks were run. Live microphone, browser permission, Groq connection and deployed Apps Script require testing in the user's environment.
