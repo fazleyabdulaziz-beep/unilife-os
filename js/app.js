@@ -414,19 +414,30 @@ async function stopDashboardLoading(){
   const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(!reduceMotion && launcher.animate){
     const rect = launcher.getBoundingClientRect();
-    const targetX = window.innerWidth - Math.max(18, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-right')) || 18) - rect.width/2;
-    const targetY = window.innerHeight - Math.max(18, parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom')) || 18) - rect.height/2;
-    const dx = targetX - (rect.left + rect.width/2);
-    const dy = targetY - (rect.top + rect.height/2);
+    const saved = uniBotPrefs().position;
+    const defaultLeft = Math.max(8, window.innerWidth - rect.width - 18);
+    const defaultTop = Math.max(8, window.innerHeight - rect.height - 18);
+    const targetLeft = saved && Number.isFinite(saved.x)
+      ? Math.max(8, Math.min(window.innerWidth - rect.width - 8, saved.x))
+      : defaultLeft;
+    const targetTop = saved && Number.isFinite(saved.y)
+      ? Math.max(8, Math.min(window.innerHeight - rect.height - 8, saved.y))
+      : defaultTop;
+    const dx = targetLeft - rect.left;
+    const dy = targetTop - rect.top;
     try {
       await launcher.animate(
-        [{ transform:'translate(0,0) scale(1.12)' }, { transform:`translate(${dx}px,${dy}px) scale(.78)` }],
-        { duration:850, easing:'cubic-bezier(.2,.75,.25,1)', fill:'forwards' }
+        [
+          { transform:'translate(0,0) scale(1.12)' },
+          { transform:`translate(${dx}px,${dy}px) scale(.78)` }
+        ],
+        { duration:1050, easing:'cubic-bezier(.18,.72,.22,1)', fill:'forwards' }
       ).finished;
     } catch(e) {}
   }
   root.classList.remove('is-welcome-stage');
   launcher.style.transform = '';
+  // Applying the stored root coordinates after the transition preserves the user's drag placement.
   uniBotApplyPosition();
   renderUniBot();
 }
@@ -473,6 +484,7 @@ let uniBotRecognition = null;
 let uniBotListening = false;
 let uniBotMicTranscript = '';
 let uniBotWelcomeLoading = false;
+let uniBotAnimatedMessageIndex = -1;
 
 function uniBotLanguage() { return U.prefs.lang === 'ms' ? 'ms' : 'en'; }
 function uniBotLocale() { return uniBotLanguage() === 'ms' ? 'ms-MY' : 'en-SG'; }
@@ -737,7 +749,7 @@ function uniBotMarkup() {
       </header>
       <div class="unibot-messages" id="unibot-messages">
         ${(uniBotMessages.length ? uniBotMessages : [{role:'assistant',content:uniBotInitialMessage()}]).map((m, i) => `
-          <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}">
+          <div class="unibot-message ${m.role === 'user' ? 'user' : 'bot'}${i === uniBotAnimatedMessageIndex ? ' is-new-message' : ''}">
             <span>${esc(uniBotPlainText(m.content))}</span>
             ${m.role !== 'user' ? `<button class="unibot-speak-message" data-act="unibot-speak-message" data-id="${i}" title="Listen"><i data-lucide="volume-2"></i></button>` : ''}
           </div>
@@ -837,6 +849,7 @@ async function sendUniBot(message) {
   message = String(message || '').trim();
   if (!message || uniBotBusy) return;
   uniBotMessages.push({role:'user',content:message});
+  uniBotAnimatedMessageIndex = uniBotMessages.length - 1;
   uniBotHistory.push({role:'user',content:message});
   uniBotHistory = uniBotHistory.slice(-8);
   uniBotBusy = true; renderUniBot();
@@ -846,11 +859,13 @@ async function sendUniBot(message) {
     });
     const reply = result && result.reply ? result.reply : uniBotText('Sorry, I could not prepare an answer. Please try again.','Maaf, saya tidak dapat menyediakan jawapan. Sila cuba lagi.');
     uniBotMessages.push({role:'assistant',content:reply});
+    uniBotAnimatedMessageIndex = uniBotMessages.length - 1;
     uniBotHistory.push({role:'assistant',content:reply});
     uniBotHistory = uniBotHistory.slice(-8);
     if (uniBotPrefs().autoSpeak) uniBotSpeakText(reply);
   } catch (error) {
     uniBotMessages.push({role:'assistant',content:uniBotText('I’m having trouble connecting right now. Please try again in a moment.','Saya menghadapi masalah sambungan sekarang. Sila cuba sebentar lagi.')});
+    uniBotAnimatedMessageIndex = uniBotMessages.length - 1;
     console.warn('UniBot request failed:', error);
   } finally { uniBotBusy=false; renderUniBot(); }
 }
