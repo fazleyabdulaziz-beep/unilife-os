@@ -371,6 +371,7 @@ function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  const authLang=localStorage.getItem('ul_auth_lang_override');Object.assign(U.prefs,r.prefs,{notif:{...U.prefs.notif,...r.prefs.notif}});if(authLang==='en'||authLang==='ms'){U.prefs.lang=authLang;localStorage.removeItem('ul_auth_lang_override');setTimeout(pushPrefs,0)}U.prefs.order=(U.prefs.order||[]).filter(w=>w!=='clock');U.prefs.hidden=(U.prefs.hidden||[]).filter(w=>w!=='clock');if(U.prefs.widgetSizes)delete U.prefs.widgetSizes.clock;if(U.prefs.theme==='system')U.prefs.theme='auto';if(r.data.welcomeTitle!==undefined)U.prefs.welcomeTitle=r.data.welcomeTitle;if(r.data.welcomeSubtitle!==undefined)U.prefs.welcomeSubtitle=r.data.welcomeSubtitle;if(r.data.reminderFrequency)U.prefs.reminderFrequency=r.data.reminderFrequency;U.prefs.widgetSizes=r.data.widgetSizes||U.prefs.widgetSizes||{};delete U.prefs.widgetSizes.clock;local();
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study,notes:restoreStickyLayouts(d.notes||[])})}
 let dashboardLoadingTimer = null;
+let dashboardLoadingExitTimer = null;
 let dashboardLoadingIndex = 0;
 
 function startDashboardLoading(){
@@ -392,25 +393,48 @@ function uniBotWelcomeMessages(){
     ? ['Selamat kembali! Kami sedang menyediakan dashboard anda…','Menyusun jadual dan kelas anda…','Menyemak tugasan dan peringatan…','Hampir siap! UniBot sedang mengemas semuanya…']
     : ['Welcome back! We’re preparing your dashboard…','Getting your classes and timetable ready…','Checking your assignments and reminders…','Almost there! UniBot is getting things ready…'];
 }
+
 function uniBotTypeWelcomeMessage(index){
   const stack=document.getElementById('unibot-welcome-stack');
   const messages=uniBotWelcomeMessages();
   const message=messages[index] || messages[0];
   if(!stack || !message) return;
-  // Each status is its own bubble; earlier bubbles remain visible instead of being overwritten.
-  const bubble=document.createElement('div');
-  bubble.className='unibot-welcome-bubble';
-  bubble.innerHTML=`<b>UniBot 👋</b><span>${esc(message)}</span>`;
-  stack.appendChild(bubble);
-  requestAnimationFrame(()=>bubble.classList.add('is-visible'));
-  // Keep the welcome area tidy on smaller screens.
-  while(stack.children.length>3) stack.removeChild(stack.firstElementChild);
+
+  const showNext = () => {
+    stack.replaceChildren();
+    const bubble=document.createElement('div');
+    bubble.className='unibot-welcome-bubble';
+    bubble.innerHTML=`<b>UniBot 👋</b><span>${esc(message)}</span>`;
+    stack.appendChild(bubble);
+    requestAnimationFrame(()=>bubble.classList.add('is-visible'));
+  };
+
+  const current=stack.querySelector('.unibot-welcome-bubble');
+  if(!current){
+    showNext();
+    return;
+  }
+
+  // Lo-fi conversation rhythm: gently dismiss the current message before showing the next.
+  current.classList.remove('is-visible');
+  current.classList.add('is-leaving');
+  if(dashboardLoadingExitTimer) clearTimeout(dashboardLoadingExitTimer);
+  dashboardLoadingExitTimer=setTimeout(()=>{
+    dashboardLoadingExitTimer=null;
+    if(uniBotWelcomeLoading && document.getElementById('unibot-welcome-stack')===stack){
+      showNext();
+    }
+  }, 460);
 }
 
 async function stopDashboardLoading(){
   if(dashboardLoadingTimer){
     clearInterval(dashboardLoadingTimer);
     dashboardLoadingTimer = null;
+  }
+  if(dashboardLoadingExitTimer){
+    clearTimeout(dashboardLoadingExitTimer);
+    dashboardLoadingExitTimer = null;
   }
   if(!uniBotWelcomeLoading) return;
   const root = document.getElementById('unibot-root');
