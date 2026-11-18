@@ -1161,3 +1161,47 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 @media(prefers-reduced-motion:reduce){
   #unibot-root.is-chat-open .unibot-character,.unibot-welcome-bubble,.unibot-welcome-bubble span.is-typing-message:after{animation:none!important}
 }
+
+
+/* Keep the floating mascot layer transparent to page clicks, but make the chat itself interactive. */
+#unibot-root.is-chat-open .unibot-panel,
+#unibot-root.is-chat-open .unibot-panel *{
+  pointer-events:auto;
+}
+#unibot-root.is-chat-open .unibot-chat-backdrop{
+  pointer-events:auto;
+}
+
+
+/* Dashboard welcome: separate speech bubbles emerge from UniBot one after another. */
+.unibot-welcome-stack{
+  position:absolute;left:50%;top:calc(50% - 242px);transform:translateX(-50%);
+  width:min( min(88vw,390px), calc(100vw - 32px));
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  pointer-events:none;z-index:2;
+}
+.unibot-welcome-stack .unibot-welcome-bubble{
+  position:relative;left:auto;top:auto;right:auto;bottom:auto;
+  transform:none;width:100%;max-width:100%;margin:0;
+  padding:13px 17px;border-radius:19px;
+  display:flex;flex-direction:column;gap:5px;
+  opacity:0;animation:none;
+  box-shadow:0 10px 28px rgba(65,48,30,.11);
+}
+.unibot-welcome-stack .unibot-welcome-bubble:after{display:none}
+.unibot-welcome-stack .unibot-welcome-bubble.is-visible{
+  animation:uniBotSeparateBubbleIn .48s cubic-bezier(.16,.82,.22,1) both;
+}
+.unibot-welcome-stack .unibot-welcome-bubble b{font-size:12px}
+.unibot-welcome-stack .unibot-welcome-bubble span{font-size:13px;line-height:1.45}
+@keyframes uniBotSeparateBubbleIn{
+  from{opacity:0;transform:translateY(16px) scale(.94)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@media(max-width:600px){
+  .unibot-welcome-stack{top:calc(50% - 226px);width:calc(100vw - 34px);gap:7px}
+  .unibot-welcome-stack .unibot-welcome-bubble{padding:11px 14px;border-radius:16px}
+}
+@media(prefers-reduced-motion:reduce){
+  .unibot-welcome-stack .unibot-welcome-bubble.is-visible{animation:none;opacity:1}
+}

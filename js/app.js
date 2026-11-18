@@ -372,7 +372,6 @@ function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study,notes:restoreStickyLayouts(d.notes||[])})}
 let dashboardLoadingTimer = null;
 let dashboardLoadingIndex = 0;
-let dashboardTypingTimer = null;
 
 function startDashboardLoading(){
   stopDashboardLoading();
@@ -394,21 +393,18 @@ function uniBotWelcomeMessages(){
     : ['Welcome back! We’re preparing your dashboard…','Getting your classes and timetable ready…','Checking your assignments and reminders…','Almost there! UniBot is getting things ready…'];
 }
 function uniBotTypeWelcomeMessage(index){
-  if(dashboardTypingTimer){clearInterval(dashboardTypingTimer);dashboardTypingTimer=null;}
-  const el=document.getElementById('unibot-welcome-message');
-  const full=uniBotWelcomeMessages()[index] || uniBotWelcomeMessages()[0];
-  if(!el) return;
-  el.textContent='';
-  el.classList.remove('message-in');
-  el.classList.add('is-typing-message');
-  void el.offsetWidth;
-  el.classList.add('message-in');
-  let n=0;
-  dashboardTypingTimer=setInterval(()=>{
-    n=Math.min(full.length,n+2);
-    el.textContent=full.slice(0,n);
-    if(n>=full.length){clearInterval(dashboardTypingTimer);dashboardTypingTimer=null;el.classList.remove('is-typing-message');}
-  },28);
+  const stack=document.getElementById('unibot-welcome-stack');
+  const messages=uniBotWelcomeMessages();
+  const message=messages[index] || messages[0];
+  if(!stack || !message) return;
+  // Each status is its own bubble; earlier bubbles remain visible instead of being overwritten.
+  const bubble=document.createElement('div');
+  bubble.className='unibot-welcome-bubble';
+  bubble.innerHTML=`<b>UniBot 👋</b><span>${esc(message)}</span>`;
+  stack.appendChild(bubble);
+  requestAnimationFrame(()=>bubble.classList.add('is-visible'));
+  // Keep the welcome area tidy on smaller screens.
+  while(stack.children.length>3) stack.removeChild(stack.firstElementChild);
 }
 
 async function stopDashboardLoading(){
@@ -416,7 +412,6 @@ async function stopDashboardLoading(){
     clearInterval(dashboardLoadingTimer);
     dashboardLoadingTimer = null;
   }
-  if(dashboardTypingTimer){clearInterval(dashboardTypingTimer);dashboardTypingTimer=null;}
   if(!uniBotWelcomeLoading) return;
   const root = document.getElementById('unibot-root');
   const launcher = root && root.querySelector('.unibot-launcher');
@@ -745,7 +740,7 @@ function initUniBotGreeting() {
 function uniBotMarkup() {
   const prefs = uniBotPrefs();
   return `
-    ${uniBotWelcomeLoading ? `<aside class="unibot-welcome-bubble" role="status" aria-live="polite"><b>UniBot 👋</b><span id="unibot-welcome-message">${esc(uniBotWelcomeMessages()[dashboardLoadingIndex] || uniBotWelcomeMessages()[0])}</span></aside>` : ''}
+    ${uniBotWelcomeLoading ? `<div class="unibot-welcome-stack" id="unibot-welcome-stack" role="status" aria-live="polite"></div>` : ''}
     ${uniBotGreeting && !uniBotOpen && !uniBotWelcomeLoading ? `
       <aside class="unibot-greeting" role="status">
         <button class="unibot-greeting-close" data-act="unibot-dismiss-greeting" aria-label="Dismiss greeting">×</button>
