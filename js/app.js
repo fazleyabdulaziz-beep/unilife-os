@@ -370,9 +370,64 @@ function rememberStickyLayout(note,layout,savedAt){
 function hydrate(r){const d=r.data;Object.assign(D.user,r.user);
  const authLang=localStorage.getItem('ul_auth_lang_override');Object.assign(U.prefs,r.prefs,{notif:{...U.prefs.notif,...r.prefs.notif}});if(authLang==='en'||authLang==='ms'){U.prefs.lang=authLang;localStorage.removeItem('ul_auth_lang_override');setTimeout(pushPrefs,0)}U.prefs.order=(U.prefs.order||[]).filter(w=>w!=='clock');U.prefs.hidden=(U.prefs.hidden||[]).filter(w=>w!=='clock');if(U.prefs.widgetSizes)delete U.prefs.widgetSizes.clock;if(U.prefs.theme==='system')U.prefs.theme='auto';if(r.data.welcomeTitle!==undefined)U.prefs.welcomeTitle=r.data.welcomeTitle;if(r.data.welcomeSubtitle!==undefined)U.prefs.welcomeSubtitle=r.data.welcomeSubtitle;if(r.data.reminderFrequency)U.prefs.reminderFrequency=r.data.reminderFrequency;U.prefs.widgetSizes=r.data.widgetSizes||U.prefs.widgetSizes||{};delete U.prefs.widgetSizes.clock;local();
  Object.assign(D,{courses:d.courses,assignments:d.assignments,classes:d.classes,exams:d.exams,finance:{budget:d.budget,tx:d.tx,goals:d.sg},habits:d.habits,tasks:d.tasks,goals:d.goals,history:d.semesters,study:d.study,notes:restoreStickyLayouts(d.notes||[])})}
+let dashboardLoadingTimer = null;
+let dashboardLoadingIndex = 0;
+
+function dashboardLoadingMarkup(){
+  const isMalay = (U.prefs && U.prefs.lang || localStorage.getItem('ul_auth_lang_override') || 'en') === 'ms';
+  const messages = isMalay
+    ? ['Menyediakan ruang belajar untuk hari ini…','Menyusun jadual dan tugasan anda…','Mengemas kini nota dan peringatan…','Sekejap ya, kami sedang siapkan semuanya…']
+    : ['Getting your study space ready…','Organising your classes and assignments…','Gathering your notes and reminders…','Almost there, getting everything in place…'];
+  const title = isMalay ? 'Hai, selamat kembali!' : 'Hey, welcome back!';
+  const subtitle = isMalay ? 'Ambil nafas. Kita buat sedikit demi sedikit.' : 'Take a breath. We’ll make progress one step at a time.';
+  return `<section class="student-loading" role="status" aria-live="polite">
+    <div class="student-loading-card">
+      <div class="student-loading-art" aria-hidden="true">
+        <span class="loading-spark spark-one">✦</span><span class="loading-spark spark-two">✧</span>
+        <div class="loading-book"><span>📖</span></div>
+        <span class="loading-leaf">🌱</span>
+      </div>
+      <p class="student-loading-kicker">UNILIFE OS</p>
+      <h2>${title}</h2>
+      <p class="student-loading-subtitle">${subtitle}</p>
+      <div class="student-loading-message" id="student-loading-message">${messages[0]}</div>
+      <div class="student-loading-track" aria-hidden="true"><span></span></div>
+      <p class="student-loading-footnote">${isMalay ? 'Terima kasih kerana menunggu' : 'Thanks for hanging in there'}</p>
+    </div>
+  </section>`;
+}
+
+function startDashboardLoading(){
+  stopDashboardLoading();
+  dashboardLoadingIndex = 0;
+  const view = $('#view');
+  if(!view) return;
+  view.innerHTML = dashboardLoadingMarkup();
+  const isMalay = (U.prefs && U.prefs.lang || localStorage.getItem('ul_auth_lang_override') || 'en') === 'ms';
+  const messages = isMalay
+    ? ['Menyediakan ruang belajar untuk hari ini…','Menyusun jadual dan tugasan anda…','Mengemas kini nota dan peringatan…','Sekejap ya, kami sedang siapkan semuanya…']
+    : ['Getting your study space ready…','Organising your classes and assignments…','Gathering your notes and reminders…','Almost there, getting everything in place…'];
+  dashboardLoadingTimer = setInterval(()=>{
+    dashboardLoadingIndex = (dashboardLoadingIndex + 1) % messages.length;
+    const message = $('#student-loading-message');
+    if(message){
+      message.classList.remove('message-in');
+      message.textContent = messages[dashboardLoadingIndex];
+      void message.offsetWidth;
+      message.classList.add('message-in');
+    }
+  }, 2400);
+}
+
+function stopDashboardLoading(){
+  if(dashboardLoadingTimer){
+    clearInterval(dashboardLoadingTimer);
+    dashboardLoadingTimer = null;
+  }
+}
+
 async function load(){
-  $('#view').innerHTML=`<div class="empty"><i data-lucide="loader"></i><p>${t('loading')}</p></div>`;
-  window.lucide&&lucide.createIcons();
+  startDashboardLoading();
   try {
     const r=await U.api.call('bootstrap');
     hydrate(r);
@@ -382,9 +437,11 @@ async function load(){
       );
     }
     if(U.prefs.lang!==fmt.lang) await fmt.load(U.prefs.lang);
+    stopDashboardLoading();
     apply(); render(); U.push&&U.push.sync(); setTimeout(checkDueDatePopup,900);
     return true;
   } catch(e) {
+    stopDashboardLoading();
     if(e.code==='auth') return false;
     $('#view').innerHTML=`<div class="empty"><p>${errMsg(e)}</p><button class="btn" data-act="retry">${t('retry')}</button></div>`;
     return true;
@@ -732,7 +789,7 @@ let uniBotDrag = null;
 let uniBotWasDragged = false;
 document.addEventListener('pointerdown', e => {
   const launcher = e.target.closest('.unibot-launcher');
-  if (!launcher || e.button !== 0) return;
+  if (!launcher || e.button !== 0 || window.matchMedia('(max-width: 600px)').matches) return;
   const root = document.getElementById('unibot-root');
   if (!root) return;
   const rect = root.getBoundingClientRect();
@@ -876,6 +933,7 @@ async function saveStickyLayout(note,el){
  }
 }
 document.addEventListener('pointerdown',e=>{
+ if(window.matchMedia('(max-width: 600px)').matches)return;
  const noteEl=e.target.closest('.sticky-note');if(!noteEl)return;
  const note=(D.notes||[]).find(n=>String(n.id)===noteEl.dataset.id);if(!note)return;
  let mode=null;
@@ -962,10 +1020,10 @@ const acts={
  install:async()=>{await U.push.install();render()},
  mv:(i,b)=>{const visible=U.prefs.order.filter(w=>!U.prefs.hidden.includes(w)),j=+i+ +b.dataset.d;if(j<0||j>=visible.length)return;const a=visible[j],c=visible[+i];const ia=U.prefs.order.indexOf(a),ic=U.prefs.order.indexOf(c);[U.prefs.order[ia],U.prefs.order[ic]]=[U.prefs.order[ic],U.prefs.order[ia]];store();acts.custom();render()},
  'widget-menu':(id,b)=>{const wrap=b.closest('.dashboard-widget'),menu=wrap?.querySelector('.widget-menu');if(!menu)return;const open=menu.hidden;$$('.widget-menu').forEach(x=>x.hidden=true);menu.hidden=!open;},
- 'widget-size':(id,b)=>{U.prefs.widgetSizes=U.prefs.widgetSizes||{};U.prefs.widgetSizes[id]=b.dataset.size||'medium';store();render();},
+ 'widget-size':(id,b)=>{if(window.matchMedia('(max-width: 600px)').matches)return;U.prefs.widgetSizes=U.prefs.widgetSizes||{};U.prefs.widgetSizes[id]=b.dataset.size||'medium';store();render();},
  'sticky-menu':(id,b)=>{const note=b.closest('.sticky-note'),menu=note?.querySelector('.sticky-note-menu');if(!menu)return;const open=menu.hidden;$$('.sticky-note-menu').forEach(x=>x.hidden=true);menu.hidden=!open;},
- 'note-move':id=>{const el=$(`[data-sticky-note=\"${CSS.escape(String(id))}\"]`);if(!el)return;$$('.sticky-note').forEach(x=>x.classList.remove('is-moving','is-resizing'));el.classList.add('is-moving');el.querySelector('.sticky-note-menu').hidden=true;toast(t('moveNoteHint'));},
- 'note-resize':id=>{const el=$(`[data-sticky-note=\"${CSS.escape(String(id))}\"]`);if(!el)return;$$('.sticky-note').forEach(x=>x.classList.remove('is-moving','is-resizing'));el.classList.add('is-resizing');el.querySelector('.sticky-note-menu').hidden=true;toast(t('resizeNoteHint'));},
+ 'note-move':id=>{if(window.matchMedia('(max-width: 600px)').matches)return;const el=$(`[data-sticky-note=\"${CSS.escape(String(id))}\"]`);if(!el)return;$$('.sticky-note').forEach(x=>x.classList.remove('is-moving','is-resizing'));el.classList.add('is-moving');el.querySelector('.sticky-note-menu').hidden=true;toast(t('moveNoteHint'));},
+ 'note-resize':id=>{if(window.matchMedia('(max-width: 600px)').matches)return;const el=$(`[data-sticky-note=\"${CSS.escape(String(id))}\"]`);if(!el)return;$$('.sticky-note').forEach(x=>x.classList.remove('is-moving','is-resizing'));el.classList.add('is-resizing');el.querySelector('.sticky-note-menu').hidden=true;toast(t('resizeNoteHint'));},
  'note-color':(id,b)=>{const f=$('#note-form');if(!f)return;const input=$('input[name="color"]',f);if(input)input.value=id;$$('.note-color-choice',f).forEach(x=>x.classList.toggle('selected',x.dataset.id===id));},
  'widget-remove':(id,b)=>{U.prefs.order=U.prefs.order.filter(w=>w!==id);U.prefs.hidden=U.prefs.hidden.filter(w=>w!==id);store();if(b&&b.closest('.widget-tools')){render();toast(t('saved'))}else{acts.custom();render()}},
  'widget-add':id=>{if(!U.prefs.order.includes(id))U.prefs.order.push(id);U.prefs.hidden=U.prefs.hidden.filter(w=>w!==id);store();acts.custom();render()},

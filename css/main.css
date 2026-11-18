@@ -1002,3 +1002,51 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 .unibot-mic-status[hidden]{display:none}
 @keyframes unibot-mic-pulse{50%{box-shadow:0 0 0 5px rgba(239,68,68,.13)}}
 @media(max-width:520px){.unibot-input select{width:48px;min-width:48px}.unibot-input button#unibot-mic{width:42px;min-width:42px}}
+
+
+/* ---------- cozy student dashboard loading ---------- */
+.student-loading{
+  min-height:min(68vh,620px);display:grid;place-items:center;padding:28px 18px;
+  color:var(--text);animation:fade .35s var(--ease) both;
+}
+.student-loading-card{
+  width:min(100%,430px);text-align:center;padding:34px 28px 28px;
+  border:1px solid color-mix(in srgb,var(--border) 72%,#d8b98b);
+  border-radius:28px;background:
+    radial-gradient(ellipse at 50% 0%,rgba(244,205,148,.20),transparent 58%),
+    var(--surface);box-shadow:0 18px 55px rgba(65,48,30,.08);
+}
+.student-loading-art{height:116px;position:relative;display:grid;place-items:center;margin:0 auto 12px}
+.loading-book{
+  width:82px;height:82px;border-radius:26px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#fff1d9,#f4d7b2);
+  box-shadow:0 12px 28px rgba(174,126,66,.18);animation:studentBookFloat 2.8s ease-in-out infinite;
+}
+.loading-book span{font-size:39px;filter:drop-shadow(0 3px 2px rgba(80,50,20,.12))}
+.loading-spark{position:absolute;color:#d5a65e;font-size:23px;animation:studentSpark 2s ease-in-out infinite}
+.spark-one{top:8px;left:calc(50% - 66px)}
+.spark-two{right:calc(50% - 70px);bottom:12px;animation-delay:.7s}
+.loading-leaf{position:absolute;right:calc(50% - 78px);top:8px;font-size:24px;animation:studentLeaf 3.4s ease-in-out infinite}
+.student-loading-kicker{margin:0 0 8px;font-size:10px;font-weight:800;letter-spacing:.2em;color:var(--muted)}
+.student-loading-card h2{margin:0;font-size:clamp(21px,4vw,27px);font-weight:800;letter-spacing:-.035em}
+.student-loading-subtitle{margin:9px auto 20px;max-width:290px;color:var(--muted);font-size:13px;line-height:1.65}
+.student-loading-message{min-height:24px;font-size:13px;font-weight:700;color:var(--primary);animation:fade .3s ease both}
+.student-loading-message.message-in{animation:studentMessageIn .35s ease both}
+.student-loading-track{height:5px;max-width:230px;margin:18px auto 12px;overflow:hidden;border-radius:99px;background:var(--surface2)}
+.student-loading-track span{display:block;width:36%;height:100%;border-radius:99px;background:linear-gradient(90deg,#d9a96b,#e8c58f,#d9a96b);animation:studentTrack 1.7s ease-in-out infinite}
+.student-loading-footnote{margin:0;color:var(--muted);font-size:11px}
+@keyframes studentBookFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
+@keyframes studentSpark{0%,100%{opacity:.35;transform:scale(.8) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(18deg)}}
+@keyframes studentLeaf{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(9deg) translateY(-5px)}}
+@keyframes studentMessageIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes studentTrack{0%{transform:translateX(-120%)}100%{transform:translateX(390%)}}
+@media(max-width:600px){
+  .student-loading{min-height:58vh;padding:18px 12px}
+  .student-loading-card{padding:27px 20px 23px;border-radius:24px}
+  .student-loading-art{height:100px}
+  .loading-book{width:72px;height:72px;border-radius:23px}
+  .loading-book span{font-size:34px}
+}
+@media(prefers-reduced-motion:reduce){
+  .student-loading,.loading-book,.loading-spark,.loading-leaf,.student-loading-message,.student-loading-track span{animation:none!important}
+}

@@ -145,3 +145,19 @@
 @media (prefers-reduced-motion: reduce) {
   .unibot-panel { animation: none !important; }
 }
+
+
+/* Mobile is touch-first: hide controls that only make sense on a free-positioned desktop canvas. */
+@media (max-width: 600px) {
+  /* Widget sizing is automatic on phones; keep the useful remove action. */
+  .widget-menu small,
+  .widget-menu button[data-act="widget-size"],
+  .widget-menu hr { display: none !important; }
+
+  /* Sticky notes are stacked cards on phones, so moving/resizing controls are unavailable. */
+  .sticky-note-grip,
+  .sticky-note-menu button[data-act="note-move"],
+  .sticky-note-menu button[data-act="note-resize"],
+  .sticky-note-resize { display: none !important; }
+  .sticky-note-head { cursor: default !important; touch-action: pan-y !important; }
+}
