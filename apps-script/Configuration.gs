@@ -34,7 +34,9 @@ const SCHEMA = {
   ],
   Sessions: ['token_hash','user_id','expires_at'],
   PasswordResets: ['id','user_id','token_hash','expires_at','used_at','created_at'],
-  Notes: ['id','user_id','title','content','created_at','updated_at','color','x','y','width','height']
+  Notes: ['id','user_id','title','content','created_at','updated_at','color','x','y','width','height'],
+  AIConversations: ['id','user_id','title','created_at','updated_at'],
+  AIChatMessages: ['id','conversation_id','user_id','role','content','created_at']
 };
 
 function mk(f,t,opt,def){f.t=t;f.opt=opt;f.def=def;return f}

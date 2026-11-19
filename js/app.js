@@ -273,6 +273,7 @@ function stickyNotesMarkup(){
  }).join('')}</div><style id="sticky-notes-canvas-style">.dashboard-canvas{--sticky-canvas-min:${Math.max(620,maxBottom+40)}px}</style>`;
 }
 const views={
+ ai(){return U.aiHub?U.aiHub.render():`<div class="empty">AI Study Hub is loading…</div>`},
  dashboard(){const h=new Date().getHours(),g=h<12?'gm':h<18?'ga':'ge',u=D.user;
   const vis=U.prefs.order.filter(w=>!U.prefs.hidden.includes(w)&&W[w]);
   return `<div class="ph dashboard-head"><div><h1>${t(g)}, ${esc((u.name||'Student').split(' ')[0])} <span>✦</span></h1><small>${esc(u.university||'')} · ${esc(u.semester||'')} · ${esc(u.year||'')}</small></div><button class="btn ghost" data-act="custom"><i data-lucide="sliders-horizontal"></i>${t('customize')}</button></div>
@@ -989,6 +990,7 @@ function render(){
 
   $('#view').innerHTML=views[r]();
   $('#search').value='';
+  if(r==='ai'&&U.aiHub) U.aiHub.onEnter();
 
   if(r==='developer')acts['dev-refresh']();
 

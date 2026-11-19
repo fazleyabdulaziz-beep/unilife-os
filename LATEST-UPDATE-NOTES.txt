@@ -21,3 +21,14 @@ Files changed from supplied package:
 - unilife-os 2.0/locales/ms.json
 
 Backend files, Google Calendar integration files, service worker, and existing separated notification settings are preserved from the supplied complete ZIP.
+
+
+AI STUDY HUB — PHASE 1 + 2
+- Added dedicated AI Study Hub navigation and responsive Lo-Fi workspace.
+- Added bilingual English / Bahasa Melayu interface strings.
+- Added dashboard shortcuts for chat, explanations, assignments, exams, planning, writing, quizzes and language practice.
+- Added separate persistent conversations and message history.
+- Added server-side student context from the authenticated user's courses, timetable, assignments and examinations.
+- Added AI Study Hub Apps Script actions and additive database sheets.
+- Reuses the existing Groq Script Property; no provider choice is hard-coded into the frontend.
+- See AI_STUDY_HUB_SETUP.md for Apps Script migration and deployment steps.

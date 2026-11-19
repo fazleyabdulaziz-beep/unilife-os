@@ -56,6 +56,18 @@ function handle(req) {
     case 'unibotChat':
       return uniBotChat_(uid, d);
 
+    // AI Study Hub — persistent, user-owned conversations.
+    case 'aiStudyHubListConversations':
+      return aiStudyHubListConversations_(uid, d);
+    case 'aiStudyHubCreateConversation':
+      return aiStudyHubCreateConversation_(uid, d);
+    case 'aiStudyHubGetConversation':
+      return aiStudyHubGetConversation_(uid, d);
+    case 'aiStudyHubDeleteConversation':
+      return aiStudyHubDeleteConversation_(uid, d);
+    case 'aiStudyHubSendMessage':
+      return aiStudyHubSendMessage_(uid, d);
+
     case 'saveProfilePhoto':
       return saveProfilePhoto_(uid, d.dataUrl);
 
