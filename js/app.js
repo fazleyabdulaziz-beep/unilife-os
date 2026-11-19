@@ -891,12 +891,15 @@ let uniBotDrag = null;
 let uniBotWasDragged = false;
 document.addEventListener('pointerdown', e => {
   const launcher = e.target.closest('.unibot-launcher');
-  if (!launcher || e.button !== 0 || window.matchMedia('(max-width: 600px)').matches) return;
+  if (!launcher || e.button !== 0) return;
   const root = document.getElementById('unibot-root');
   if (!root) return;
   const rect = root.getBoundingClientRect();
+  // Support mouse, pen and touch dragging on both desktop and mobile.
   uniBotDrag = { id:e.pointerId, startX:e.clientX, startY:e.clientY, left:rect.left, top:rect.top, moved:false };
-}, { passive:true });
+  try { launcher.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+}, { passive:false });
 document.addEventListener('pointermove', e => {
   if (!uniBotDrag || e.pointerId !== uniBotDrag.id) return;
   const dx=e.clientX-uniBotDrag.startX, dy=e.clientY-uniBotDrag.startY;

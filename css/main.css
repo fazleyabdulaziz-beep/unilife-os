@@ -1213,3 +1213,18 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
 @media(prefers-reduced-motion:reduce){
   .unibot-welcome-stack .unibot-welcome-bubble.is-visible{animation:none;opacity:1}\n  .unibot-welcome-stack .unibot-welcome-bubble.is-leaving{animation:none;opacity:0}
 }
+
+
+/* UniBot drag support: the launcher is the touch/mouse drag handle. */
+#unibot-root .unibot-launcher {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+#unibot-root .unibot-launcher:active { cursor: grabbing; }
+
+/* On wide desktop layouts the floating menu bubble replaces the topbar menu. */
+@media (min-width: 901px) {
+  .topbar .icon-btn.menu { display: none !important; }
+}

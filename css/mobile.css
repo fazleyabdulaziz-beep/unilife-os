@@ -161,3 +161,15 @@
   .sticky-note-resize { display: none !important; }
   .sticky-note-head { cursor: default !important; touch-action: pan-y !important; }
 }
+
+
+/* UniBot mobile launcher remains a draggable floating control. */
+@media (max-width: 600px) {
+  #unibot-root { max-width: calc(100vw - 16px); }
+  #unibot-root .unibot-launcher {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
+  }
+}
