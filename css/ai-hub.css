@@ -194,3 +194,78 @@
 .aihub-copilot-stats span{font-size:12px;padding:7px 10px;border-radius:999px;background:var(--surface-secondary,rgba(120,120,120,.10));color:var(--text-secondary);}
 .aihub-copilot-plan{white-space:normal;line-height:1.75;font-size:14px;margin:14px 0 18px;color:var(--text-primary);overflow-wrap:anywhere;}
 .aihub-copilot-plan br+br{display:block;content:"";margin-top:7px;}
+
+/* Unified AI workspace — single-page, mode-based chat experience */
+.aihub-workspace{--aihub-line:var(--border);max-width:1240px;min-height:calc(100dvh - 150px);margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.aihub-workspace-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 2px}
+.aihub-workspace-top .aihub-brand{gap:9px;font-size:16px}
+.aihub-workspace-top .aihub-brand small{margin-left:3px;padding-left:10px;border-left:1px solid var(--border);font:700 9px var(--font-body,inherit);letter-spacing:.12em;color:var(--muted)}
+.aihub-top-actions{display:flex;align-items:center;gap:7px}
+.aihub-top-button{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:7px 11px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:11px;font-weight:650}
+.aihub-top-button svg{width:15px;height:15px;color:var(--muted)}
+.aihub-top-button:hover{border-color:var(--primary);color:var(--primary)}
+.aihub-history-drawer{padding:13px;border:1px solid var(--border);border-radius:15px;background:var(--surface);box-shadow:var(--shadow)}
+.aihub-history-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px}
+.aihub-history-heading button{border:0;background:transparent;color:var(--primary);font-size:11px}
+.aihub-history-drawer .aihub-conversation-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:190px;overflow:auto}
+.aihub-history-drawer .aihub-conversation-row{min-width:0;margin:0;padding:2px 5px;border:1px solid var(--border);border-radius:10px}
+.aihub-mode-strip{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:2px 1px 7px;scrollbar-width:thin}
+.aihub-mode{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:none;min-height:37px;padding:8px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);font-size:11px;font-weight:650;white-space:nowrap;transition:background .16s,border-color .16s,color .16s}
+.aihub-mode svg{width:15px;height:15px}
+.aihub-mode:hover{border-color:var(--primary);color:var(--primary)}
+.aihub-mode.active{border-color:var(--primary);background:var(--primary-soft);color:var(--primary)}
+.aihub-chat-stage{display:flex;flex:1;flex-direction:column;min-height:min(690px,calc(100dvh - 270px));border:1px solid var(--border);border-radius:22px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.aihub-chat-stage .aihub-messages{width:100%;max-width:960px;flex:1;margin:0 auto;padding:28px clamp(15px,4vw,44px);}
+.aihub-messages.is-empty{justify-content:center}
+.aihub-welcome-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;max-width:720px;margin:auto;padding:25px 10px 35px}
+.aihub-welcome-mark{display:grid;place-items:center;width:55px;height:55px;margin-bottom:17px;border:1px solid var(--border);border-radius:19px;background:var(--primary-soft);color:var(--primary)}
+.aihub-welcome-mark svg{width:25px;height:25px}
+.aihub-welcome-kicker{margin:0 0 8px;color:var(--primary);font-size:9px;font-weight:800;letter-spacing:.16em}
+.aihub-welcome-state h1{max-width:650px;margin:0;font-size:clamp(25px,4vw,37px);letter-spacing:-.045em;line-height:1.18}
+.aihub-mode-hint{margin:11px 0 22px;color:var(--muted);font-size:13px}
+.aihub-suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:min(100%,590px)}
+.aihub-suggestion{display:flex;align-items:center;gap:10px;min-height:49px;padding:10px 12px;border:1px solid var(--border);border-radius:13px;background:var(--surface2);color:var(--text);text-align:left;font-size:11px;line-height:1.4;transition:border-color .16s,transform .16s}
+.aihub-suggestion:hover{border-color:var(--primary);transform:translateY(-1px)}
+.aihub-suggestion svg{width:16px;height:16px;flex:none;color:var(--primary)}
+.aihub-unified-composer{width:calc(100% - 36px);max-width:900px;margin:0 auto 8px;padding:13px 14px 10px;border-radius:19px;background:var(--surface2)}
+.aihub-unified-composer textarea{min-height:65px;max-height:200px;font-size:14px}
+.aihub-composer-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.aihub-composer-tools{display:flex;align-items:center;flex-wrap:wrap;gap:11px}
+.aihub-composer-tools>small{font-size:10px;color:var(--muted)}
+.aihub-current-mode{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:8px;background:var(--primary-soft);color:var(--primary);font-size:10px;font-weight:700}
+.aihub-current-mode svg{width:13px;height:13px}
+.aihub-workspace-disclaimer{margin:0 12px 11px;text-align:center;color:var(--muted);font-size:9px}
+.aihub-my-tools{margin:0 0 20px;border:1px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden}
+.aihub-my-tools>summary{display:flex;align-items:center;gap:11px;padding:14px 16px;cursor:pointer;list-style:none}
+.aihub-my-tools>summary::-webkit-details-marker{display:none}
+.aihub-my-tools>summary>svg:first-child{width:19px;height:19px;color:var(--primary)}
+.aihub-my-tools>summary>svg:last-child{width:16px;height:16px;margin-left:auto;color:var(--muted);transition:transform .2s}
+.aihub-my-tools[open]>summary>svg:last-child{transform:rotate(180deg)}
+.aihub-my-tools>summary span{display:grid;gap:2px}
+.aihub-my-tools>summary b{font-size:12px}
+.aihub-my-tools>summary small{font-size:10px;color:var(--muted)}
+.aihub-my-tools>.aihub-documents,.aihub-my-tools>.aihub-intelligence,.aihub-my-tools>.aitutor-panel,.aihub-my-tools>.aihub-copilot{margin:0 14px 14px}
+.aihub-my-tools>.aihub-intelligence,.aihub-my-tools>.aitutor-panel,.aihub-my-tools>.aihub-copilot{margin-top:14px}
+.aihub-my-tools>.aihub-context-note{margin:14px}
+@media(max-width:700px){
+ .aihub-workspace{min-height:calc(100dvh - 110px);gap:10px}
+ .aihub-workspace-top .aihub-brand small{display:none}
+ .aihub-top-actions{gap:5px}
+ .aihub-top-button{width:36px;min-width:36px;justify-content:center;padding:7px}
+ .aihub-top-button span{display:none}
+ .aihub-mode-strip{gap:6px;margin-right:-2px}
+ .aihub-mode{min-height:35px;padding:7px 10px;font-size:10px}
+ .aihub-chat-stage{min-height:calc(100dvh - 290px);border-radius:17px}
+ .aihub-chat-stage .aihub-messages{padding:16px 12px}
+ .aihub-welcome-state{padding:15px 2px 23px}
+ .aihub-welcome-state h1{font-size:27px}
+ .aihub-mode-hint{font-size:12px;margin-bottom:17px}
+ .aihub-suggestions{grid-template-columns:1fr;gap:7px}
+ .aihub-suggestion{min-height:42px;padding:8px 10px}
+ .aihub-unified-composer{width:calc(100% - 16px);margin-bottom:5px;padding:10px;border-radius:15px}
+ .aihub-unified-composer textarea{min-height:54px;font-size:16px}
+ .aihub-composer-tools>small{display:none}
+ .aihub-workspace-disclaimer{font-size:8px}
+ .aihub-history-drawer .aihub-conversation-list{grid-template-columns:1fr;max-height:160px}
+}
+@media(prefers-reduced-motion:reduce){.aihub-mode,.aihub-suggestion,.aihub-my-tools>summary>svg:last-child{transition:none}}

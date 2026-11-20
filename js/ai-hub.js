@@ -5,7 +5,7 @@
   'use strict';
   const U = window.UL;
   if (!U) return;
-  const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false,
+  const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false, mode:'chat', historyOpen:false,
     documents: [], docsLoaded: false, uploading: false, uploadProgress: '', intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false };
   const $ = (s, root=document) => root.querySelector(s);
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
@@ -36,7 +36,7 @@
       view.innerHTML = render();
       refreshIcons();
       const log = $('#aihub-messages');
-      if (log) log.scrollTop = log.scrollHeight;
+      if (log && state.messages.length) log.scrollTop = log.scrollHeight;
     }
   }
   function toolCards() {
@@ -54,7 +54,7 @@
     </div>`).join('');
   }
   function messageList() {
-    if (!state.messages.length) return `<div class="aihub-chat-empty"><span>${icon('sparkles')}</span><b>${t('aiHubNoMessages')}</b></div>`;
+    if (!state.messages.length) return '';
     return state.messages.map(m => `<article class="aihub-message ${m.role==='user'?'from-user':'from-ai'}">
       <div class="aihub-message-avatar">${icon(m.role==='user'?'user':'brain')}</div>
       <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):t('aiHubAssistant')}</small><p>${esc(m.content).replace(/\n/g,'<br>')}</p></div>
@@ -101,65 +101,51 @@
     catch(e){notifyError(e);}
     finally {state.copilotLoading=false;draw();}
   }
-  function renderHome() {
+  const modes = [
+    {id:'chat',label:'Chat',icon:'message-circle',hint:'Ask anything about university life and your studies.',prompt:''},
+    {id:'explain',label:'Learn',icon:'lightbulb',hint:'Understand difficult topics, step by step.',prompt:'Act as a patient tutor. Explain concepts step by step, use simple examples, check my understanding, and do not assume I already know the basics.\n\n'},
+    {id:'assignment',label:'Assignment',icon:'clipboard-list',hint:'Break down briefs, research and writing tasks.',prompt:'Act as my academic assignment coach. Help me understand the brief, plan the work, structure my ideas and improve my draft without doing dishonest academic work for me.\n\n'},
+    {id:'exam',label:'Exam prep',icon:'graduation-cap',hint:'Revise topics and prepare for upcoming exams.',prompt:'Act as my exam preparation coach. Help me prioritise topics, explain concepts, create practice questions and build a realistic revision approach. Use my UniLife OS academic context when relevant.\n\n'},
+    {id:'planner',label:'Study plan',icon:'calendar-check',hint:'Build a realistic plan around my schedule.',prompt:'Act as my study planner. Use my available UniLife OS timetable, assignments and examinations when relevant. Make a realistic, prioritised plan and explain the next actions.\n\n'},
+    {id:'writing',label:'Writing',icon:'pen-line',hint:'Improve clarity, grammar and academic structure.',prompt:'Act as my academic writing coach. Preserve my ideas and voice while helping improve clarity, grammar, structure and academic tone. Explain important edits.\n\n'},
+    {id:'quiz',label:'Quiz',icon:'brain',hint:'Practise with questions and explanations.',prompt:'Act as an interactive quiz tutor. Ask me which subject and topic if I have not specified them, then quiz me one question at a time. Wait for my answer before revealing the explanation.\n\n'},
+    {id:'language',label:'Language',icon:'languages',hint:'Practise a language at my level.',prompt:'Act as my language practice partner. Adapt to my level, correct mistakes kindly and keep the conversation interactive.\n\n'}
+  ];
+  const suggestions = [
+    {icon:'book-open',text:'Explain a topic I find difficult',mode:'explain'},
+    {icon:'clipboard-check',text:'Help me plan my assignment',mode:'assignment'},
+    {icon:'calendar-days',text:'Make a study plan for this week',mode:'planner'},
+    {icon:'brain',text:'Test my knowledge with a quiz',mode:'quiz'}
+  ];
+  function renderWorkspace() {
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
-    const welcome = t('aiHubWelcome').replace('{name}', esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there')));
-    return `<section class="aihub-home">
-      <div class="aihub-hero">
-        <div class="aihub-eyebrow"><span></span>${t('aiHubEyebrow')}</div>
-        <h1>${t('aiHubTitle')}</h1><p>${t('aiHubSubtitle')}</p>
-        <div class="aihub-home-prompt"><div class="aihub-home-greeting">${welcome}</div>
-          <form data-ai-form="send" class="aihub-composer">
-            <textarea name="message" rows="2" maxlength="3000" placeholder="${t('aiHubPlaceholder')}" aria-label="${t('aiHubPlaceholder')}"></textarea>
-            <div class="aihub-composer-footer"><small>${t('aiHubContext')}</small><button class="aihub-send" type="submit" aria-label="${t('aiHubSend')}">${icon('arrow-up')}</button></div>
-          </form>
-        </div>
-      </div>
-      ${renderCopilot()}
-      ${renderIntelligence()}
-      ${renderTutor()}
-      <section class="aihub-documents">
-        <div class="aihub-section-head"><div><h2>${t('aiHubDocuments')}</h2><p>${t('aiHubDocumentsHint')}</p></div>
-          <button type="button" class="aihub-upload-button" data-ai-act="upload" ${state.uploading?'disabled':''}>${icon('upload-cloud')} ${t('aiHubUploadPdf')}</button>
-        </div>
-        <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
-        ${state.uploading ? `<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress || t('aiHubUploading'))}</span></div>` : ''}
-        <div class="aihub-document-grid">${documentCards()}</div>
-        <p class="aihub-file-note">${t('aiHubPdfPrivacy')}</p>
-      </section>
-      <div class="aihub-section-head"><div><h2>${t('aiHubTools')}</h2><p>${t('aiHubToolsHint')}</p></div></div>
-      <div class="aihub-tools-grid">${toolCards()}</div>
-      <div class="aihub-home-recent"><div class="aihub-section-head"><div><h2>${t('aiHubRecent')}</h2></div><button type="button" class="aihub-text-button" data-ai-act="new">${t('aiHubNewChat')}</button></div>
-        <div class="aihub-home-recent-list">${state.conversations.length ? conversationList() : `<p class="aihub-empty-list">${t('aiHubEmpty')}</p>`}</div>
-      </div>
-      <div class="aihub-context-note">${icon('shield-check')}<span><b>${t('aiHubContext')}</b><small>${t('aiHubContextHint')}</small></span></div>
-      <p class="aihub-disclaimer">${t('aiHubDisclaimer')}</p>
-    </section>`;
-  }
-  function renderChat() {
     const active = state.conversations.find(c => c.id === state.activeId);
-    return `<section class="aihub-chat-layout">
-      <aside class="aihub-chat-sidebar">
-        <button type="button" class="aihub-new-chat" data-ai-act="new">${icon('plus')} ${t('aiHubNewChat')}</button>
-        <div class="aihub-sidebar-label">${t('aiHubRecent')}</div>
-        <div class="aihub-conversation-list">${conversationList()}</div>
-        <div class="aihub-sidebar-context">${icon('shield-check')}<span>${t('aiHubContext')}</span></div>
-      </aside>
-      <div class="aihub-chat-main">
-        <header class="aihub-chat-header"><div><small>${active && active.document_id ? t('aiHubDocumentChat') : t('ai')}</small><h2>${esc(active && active.title || t('aiHubUntitled'))}</h2></div>
-          <button type="button" class="aihub-new-chat mobile-only" data-ai-act="new">${icon('plus')} ${t('aiHubNewChat')}</button>
-        </header>
-        <div class="aihub-messages" id="aihub-messages">${messageList()}</div>
-        <form data-ai-form="send" class="aihub-composer aihub-chat-composer">
-          <textarea name="message" rows="2" maxlength="3000" placeholder="${t('aiHubPlaceholder')}" aria-label="${t('aiHubPlaceholder')}" ${state.busy?'disabled':''}></textarea>
-          <div class="aihub-composer-footer"><small>${t('aiHubDisclaimer')}</small><button class="aihub-send" type="submit" aria-label="${t('aiHubSend')}" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
-        </form>
+    const selected = modes.find(m=>m.id===state.mode)||modes[0];
+    const welcome = t('aiHubWelcome').replace('{name}', esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there')));
+    const modeBar = modes.map(m=>`<button type="button" class="aihub-mode ${state.mode===m.id?'active':''}" data-ai-act="mode" data-mode="${m.id}" aria-pressed="${state.mode===m.id}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
+    const suggestionBar = suggestions.map(x=>`<button type="button" class="aihub-suggestion" data-ai-act="suggest" data-mode="${x.mode}" data-text="${esc(x.text)}">${icon(x.icon)}<span>${x.text}</span></button>`).join('');
+    const empty = !state.messages.length ? `<div class="aihub-welcome-state"><div class="aihub-welcome-mark">${icon('sparkles')}</div><p class="aihub-welcome-kicker">YOUR STUDY COMPANION</p><h1>${welcome}</h1><p class="aihub-mode-hint">${selected.hint}</p><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
+    return `<section class="aihub-workspace">
+      <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="upload">${icon('paperclip')}<span>Files</span></button></div></header>
+      ${state.historyOpen?`<div class="aihub-history-drawer"><div class="aihub-history-heading"><b>Recent conversations</b><button type="button" data-ai-act="history">Close</button></div>${conversationList()}</div>`:''}
+      <div class="aihub-mode-strip" role="group" aria-label="AI modes">${modeBar}</div>
+      <div class="aihub-chat-stage"><div class="aihub-messages ${state.messages.length?'has-messages':'is-empty'}" id="aihub-messages">${empty}${messageList()}</div>
+        <form data-ai-form="send" class="aihub-composer aihub-unified-composer">
+          <textarea name="message" rows="2" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
+          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><span class="aihub-current-mode">${icon(selected.icon)} ${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
+        </form><p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
+      <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
+      ${state.uploading?`<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress||t('aiHubUploading'))}</span></div>`:''}
+      <details class="aihub-my-tools"><summary>${icon('library')}<span><b>My study space</b><small>Documents, progress, quizzes and academic overview</small></span>${icon('chevron-down')}</summary>
+        <section class="aihub-documents"><div class="aihub-section-head"><div><h2>${t('aiHubDocuments')}</h2><p>${t('aiHubDocumentsHint')}</p></div><button type="button" class="aihub-upload-button" data-ai-act="upload" ${state.uploading?'disabled':''}>${icon('upload-cloud')} ${t('aiHubUploadPdf')}</button></div><div class="aihub-document-grid">${documentCards()}</div><p class="aihub-file-note">${t('aiHubPdfPrivacy')}</p></section>
+        ${renderCopilot()}${renderIntelligence()}${renderTutor()}
+        <div class="aihub-context-note">${icon('shield-check')}<span><b>${t('aiHubContext')}</b><small>${t('aiHubContextHint')}</small></span></div>
+      </details>
     </section>`;
   }
   function render() {
-    return `<div class="aihub-page"><header class="aihub-page-head"><div class="aihub-brand">${icon('brain')}<span>${t('ai')}</span></div>${state.activeId?`<button type="button" class="aihub-back-home" data-ai-act="home">${icon('layout-dashboard')} ${t('aiHubTools')}</button>`:''}</header>
-      ${state.activeId ? renderChat() : renderHome()}</div>`;
+    return `<div class="aihub-page">${renderWorkspace()}</div>`;
   }
   function documentCards() {
     if (!state.documents.length) return `<div class="aihub-doc-empty">${icon('file-up')}<b>${t('aiHubNoDocuments')}</b><small>${t('aiHubNoDocumentsHint')}</small></div>`;
@@ -356,8 +342,10 @@
     if (U.ui && U.ui.toast) U.ui.toast(message); else alert(message);
   }
   async function sendMessage(message) {
-    const content = String(message || '').trim();
-    if (!content || state.busy) return;
+    const rawContent = String(message || '').trim();
+    if (!rawContent || state.busy) return;
+    const selectedMode = modes.find(m=>m.id===state.mode)||modes[0];
+    const content = selectedMode.prompt ? selectedMode.prompt + rawContent : rawContent;
     state.busy = true;
     try {
       if (!state.activeId) await createConversation();
@@ -424,6 +412,9 @@
     if (!button) return;
     const action = button.dataset.aiAct;
     if (action==='new') newChat();
+    else if (action==='history') { state.historyOpen=!state.historyOpen; draw(); }
+    else if (action==='mode') { state.mode=button.dataset.mode||'chat'; draw(); }
+    else if (action==='suggest') { state.mode=button.dataset.mode||'chat'; draw(); const field=$('textarea[name="message"]'); if(field){field.value=button.dataset.text||'';field.focus();} }
     else if (action==='home') home();
     else if (action==='open') openConversation(button.dataset.id);
     else if (action==='delete') deleteConversation(button.dataset.id);
