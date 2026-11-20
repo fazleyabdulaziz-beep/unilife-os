@@ -200,3 +200,33 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):
   .aihub-study-panel{width:100vw}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* =====================================================
+   AI STUDY HUB = ONE FIXED PAGE (no page scroll; only the messages scroll)
+   ===================================================== */
+body.ai-page{height:100dvh;overflow:hidden}
+body.ai-page .app{height:100dvh;min-height:0;overflow:hidden}
+body.ai-page .main{display:flex;flex-direction:column;height:100dvh;min-height:0}
+body.ai-page .topbar{flex:none}
+body.ai-page #view{flex:1;min-height:0;display:flex;flex-direction:column;width:100%;margin:0 auto;padding-top:0;padding-bottom:14px;overflow:hidden}
+body.ai-page .aihub-page{flex:1;min-height:0;display:flex;flex-direction:column;padding:0}
+body.ai-page .aihub-workspace{flex:1;min-height:0;height:100%;width:100%;gap:10px}
+body.ai-page .aihub-chat-stage{flex:1;min-height:0;display:flex;flex-direction:column}
+body.ai-page .aihub-messages{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:8px 6px 18px;scroll-behavior:auto;scrollbar-width:thin;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 14px,#000 calc(100% - 22px),transparent 100%)}
+body.ai-page .aihub-messages.is-empty{justify-content:center}
+body.ai-page .aihub-dock{position:static;flex:none;padding:6px 0 0;background:none}
+body.ai-page .aihub-workspace-disclaimer{margin-top:8px;font-size:10.5px}
+body.ai-page .aihub-welcome-state{padding:6px 0}
+body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15;width:min(380px,100%);max-height:60%;overflow:auto}
+@media(max-width:900px){
+  body.ai-page #view{padding-left:12px;padding-right:12px;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  body.ai-page .aihub-dock{bottom:auto}
+  body.ai-page .aihub-workspace-disclaimer{display:none}
+}
+@media(max-height:700px){
+  body.ai-page .aihub-bot{width:72px;height:72px}
+  body.ai-page .aihub-welcome-state h1{font-size:clamp(26px,4.2vw,38px)}
+  body.ai-page .aihub-suggestions{margin-top:6px;gap:8px}
+  body.ai-page .aihub-suggestion{min-height:48px;padding:9px 14px}
+}

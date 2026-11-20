@@ -79,14 +79,19 @@
       movePill(stripLeft);
       if (state.messages.length) {
         const last = state.messages[state.messages.length - 1];
-        if (jump) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
+        if (jump) toBottom('auto');
         else if (grew && last.role !== 'user') {
           const fresh = Array.from(document.querySelectorAll('.aihub-message.is-new.from-ai'))[0];
           if (fresh) fresh.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (grew) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+        } else if (grew) toBottom('smooth');
       }
     }
   }
+  function toBottom(behavior){
+    const box=$('#aihub-messages'); if(box) box.scrollTo({top:box.scrollHeight,behavior:behavior||'auto'});
+  }
+  function syncPageClass(){ document.body.classList.toggle('ai-page', location.hash.replace('#/','')==='ai'); }
+  window.addEventListener('hashchange', syncPageClass);
   function movePill(stripLeft){
     const strip=$('.aihub-mode-strip'), act=$('.aihub-mode.active'), pill=$('.aihub-mode-pill');
     if(!strip||!act||!pill) return;
@@ -245,6 +250,7 @@
     </section>`;
   }
   function render() {
+    syncPageClass();
     return `<div class="aihub-page">${renderWorkspace()}</div>`;
   }
   function documentCards() {
