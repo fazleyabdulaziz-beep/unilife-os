@@ -1,0 +1,21 @@
+UNILIFE OS — AI WORKSPACE ATTACHMENTS & UNIBOT SCOPE UPDATE
+
+Changes:
+- Added a Gemini-inspired + attachment menu to the AI Study Hub composer.
+- Added multi-file selection (up to 5 files, max 8 MB each).
+- PDF files are parsed in the browser with the existing PDF.js dependency and their extracted text is included in the AI prompt.
+- TXT files are read locally and included in the AI prompt.
+- Image files can be selected and previewed in the composer. IMPORTANT: the current Groq text-only AI provider does not accept image payloads, so image understanding is not enabled; the UI warns and prevents sending until a vision-capable backend is implemented.
+- Added smooth entrance, focus, hover and reduced-motion-aware animations.
+- UniBot is now rendered only on the Dashboard route; it is hidden and cleared on all other routes.
+- Service worker cache version bumped to v13.
+
+Deployment:
+- Replace the project files from this ZIP in the GitHub Pages repository.
+- No Apps Script changes are required for PDF/TXT text attachments or the UniBot visibility rule.
+- Deploy/publish the GitHub Pages frontend and hard refresh. If needed, unregister the old service worker and clear site data.
+
+Validation:
+- JavaScript syntax checks passed for all frontend JS files and Apps Script files (Apps Script files checked through Node stdin).
+- JSON locale/manifest validation and ZIP integrity checked.
+- Live browser, Apps Script and Groq integration were not tested in this environment.

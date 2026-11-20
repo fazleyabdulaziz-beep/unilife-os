@@ -6,7 +6,7 @@
   const U = window.UL;
   if (!U) return;
   const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false, mode:'chat', historyOpen:false,
-    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false };
+    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', attachments: [], intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false };
   const $ = (s, root=document) => root.querySelector(s);
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -117,6 +117,30 @@
     {icon:'calendar-days',text:'Make a study plan for this week',mode:'planner'},
     {icon:'brain',text:'Test my knowledge with a quiz',mode:'quiz'}
   ];
+  function renderAttachments() {
+    if (!state.attachments.length) return '';
+    return `<div class="aihub-attachment-chips">${state.attachments.map((a,i)=>`<div class="aihub-attachment-chip ${a.kind==='image'?'is-image':''}">${a.preview?`<img src="${a.preview}" alt="${esc(a.name)}">`:icon(a.kind==='pdf'?'file-pdf':'file-text')}<span><b>${esc(a.name)}</b><small>${a.kind==='image'?'Image preview':a.kind==='pdf'?'PDF text extracted':'Text file'}</small></span><button type="button" data-ai-act="remove-attachment" data-index="${i}" aria-label="Remove ${esc(a.name)}">${icon('x')}</button></div>`).join('')}</div>`;
+  }
+  async function addAttachments(files) {
+    for (const file of Array.from(files||[])) {
+      if (state.attachments.length>=5) { if(U.ui&&U.ui.toast)U.ui.toast('Maximum 5 attachments per message.'); break; }
+      if (file.size>8*1024*1024) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: maximum file size is 8 MB.`); continue; }
+      try {
+        if (file.type.startsWith('image/')) {
+          const preview=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});
+          state.attachments.push({name:file.name,kind:'image',preview,content:''});
+        } else if (file.type==='application/pdf' || /\.pdf$/i.test(file.name)) {
+          const extracted=await extractPdfText(file);
+          state.attachments.push({name:file.name,kind:'pdf',content:extracted.text,pages:extracted.pages});
+        } else if (file.type==='text/plain' || /\.txt$/i.test(file.name)) {
+          const content=await file.text();
+          if(content.length>30000) throw new Error('Text file exceeds 30,000 characters.');
+          state.attachments.push({name:file.name,kind:'text',content});
+        } else { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: currently supported formats are images, PDF and TXT.`); }
+      } catch(err) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: ${err.message||'Could not read file.'}`); }
+    }
+    state.attachMenuOpen=false; draw();
+  }
   function renderWorkspace() {
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
     const active = state.conversations.find(c => c.id === state.activeId);
@@ -131,10 +155,13 @@
       <div class="aihub-mode-strip" role="group" aria-label="AI modes">${modeBar}</div>
       <div class="aihub-chat-stage"><div class="aihub-messages ${state.messages.length?'has-messages':'is-empty'}" id="aihub-messages">${empty}${messageList()}</div>
         <form data-ai-form="send" class="aihub-composer aihub-unified-composer">
+          <div class="aihub-attachment-list">${renderAttachments()}</div>
           <textarea name="message" rows="2" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
-          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><span class="aihub-current-mode">${icon(selected.icon)} ${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
+          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" title="Add files">${icon('plus')}</button><span class="aihub-current-mode">${icon(selected.icon)} ${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
         </form><p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
+      <div class="aihub-attach-menu" ${state.attachMenuOpen?'':'hidden'}><button type="button" data-ai-act="attach-images">${icon('image')} Photos</button><button type="button" data-ai-act="attach-files">${icon('file-text')} Files and PDFs</button></div>
+      <input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple hidden>
       <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
       ${state.uploading?`<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress||t('aiHubUploading'))}</span></div>`:''}
       <details class="aihub-my-tools"><summary>${icon('library')}<span><b>My study space</b><small>Documents, progress, quizzes and academic overview</small></span>${icon('chevron-down')}</summary>
@@ -343,9 +370,11 @@
   }
   async function sendMessage(message) {
     const rawContent = String(message || '').trim();
-    if (!rawContent || state.busy) return;
+    if ((!rawContent && !state.attachments.length) || state.busy) return;
+    if (state.attachments.some(a=>a.kind==='image')) { if(U.ui&&U.ui.toast)U.ui.toast('Image preview is ready, but image understanding is not enabled in the current AI backend yet. Remove images or send a PDF/TXT attachment for text analysis.'); return; }
+    const fileContext=state.attachments.map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
     const selectedMode = modes.find(m=>m.id===state.mode)||modes[0];
-    const content = selectedMode.prompt ? selectedMode.prompt + rawContent : rawContent;
+    const content = (selectedMode.prompt ? selectedMode.prompt : '') + rawContent + fileContext;
     state.busy = true;
     try {
       if (!state.activeId) await createConversation();
@@ -353,6 +382,7 @@
       draw();
       const r = await U.api.call('aiStudyHubSendMessage', {conversation_id:state.activeId,message:content});
       state.messages.push({role:'assistant',content:r.reply,created_at:new Date().toISOString()});
+      state.attachments=[];
       if (r.conversation) {
         const i = state.conversations.findIndex(c=>c.id===r.conversation.id);
         if (i>=0) state.conversations[i]=r.conversation; else state.conversations.unshift(r.conversation);
@@ -419,7 +449,11 @@
     else if (action==='open') openConversation(button.dataset.id);
     else if (action==='delete') deleteConversation(button.dataset.id);
     else if (action==='tool') chooseTool(button.dataset.tool);
-    else if (action==='upload') $('#aihub-pdf-input')?.click();
+    else if (action==='upload') $('#aihub-file-input')?.click();
+    else if (action==='attach-menu') { state.attachMenuOpen=!state.attachMenuOpen; draw(); }
+    else if (action==='attach-images') { state.attachMenuOpen=false; draw(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.click();} }
+    else if (action==='attach-files') { state.attachMenuOpen=false; draw(); const f=$('#aihub-file-input'); if(f){f.accept='.pdf,.txt,application/pdf,text/plain';f.click();} }
+    else if (action==='remove-attachment') { state.attachments.splice(Number(button.dataset.index),1); draw(); }
     else if (action==='doc-summary') startDocumentTask(button.dataset.id,'summary');
     else if (action==='doc-ask') startDocumentTask(button.dataset.id,'ask');
     else if (action==='doc-guide') startDocumentTask(button.dataset.id,'guide');
@@ -436,6 +470,7 @@
     else if (action==='tutor-reset') resetTutorQuiz();
   });
   document.addEventListener('change', e => {
+    if (e.target && e.target.id === 'aihub-file-input') { const files=e.target.files; e.target.value=''; addAttachments(files); return; }
     if (e.target && e.target.id === 'aihub-pdf-input') {
       const file = e.target.files && e.target.files[0];
       e.target.value = '';

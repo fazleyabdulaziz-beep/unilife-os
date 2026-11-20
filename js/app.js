@@ -819,6 +819,10 @@ function uniBotMarkup() {
 function renderUniBot() {
   const root = document.getElementById('unibot-root');
   if (!root) return;
+  // UniBot is the dashboard companion only; keep it out of every other workspace.
+  const dashboardOnly = typeof route === 'function' && route() === 'dashboard';
+  root.hidden = !dashboardOnly;
+  if (!dashboardOnly) { root.innerHTML = ''; root.classList.remove('is-chat-open','is-welcome-stage','is-thinking','is-speaking'); return; }
   const wasChatOpen = root.classList.contains('is-chat-open');
   root.innerHTML = uniBotMarkup();
   root.classList.toggle('is-welcome-stage', uniBotWelcomeLoading);

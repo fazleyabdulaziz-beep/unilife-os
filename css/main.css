@@ -870,6 +870,7 @@ html[data-theme="dark"] .auth-simple-brand img.logo-dark { display:block !import
    UNIBOT — GRADUATION MASCOT + VOICE CHAT
    Scoped to #unibot-root; does not affect app layout.
 ========================================= */
+#unibot-root[hidden] { display:none !important; }
 #unibot-root {
   --ub-bg1:#f3f1ff; --ub-bg2:#e3f6fb; --ub-body:#fff; --ub-edge:#c9c2f5;
   --ub-face:#2b2a5c; --ub-eye:#bfeeff; --ub-cheek:#ff9ec0; --ub-cap:#3b3f9e;
