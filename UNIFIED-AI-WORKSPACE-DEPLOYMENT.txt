@@ -1,0 +1,15 @@
+UNILIFE OS — UNIFIED AI WORKSPACE DEPLOYMENT
+
+IMPORTANT: This ZIP contains the complete project inside the folder "unilife-os 2.0".
+
+For GitHub Pages:
+1. Extract the ZIP.
+2. Open the inner folder "unilife-os 2.0".
+3. Upload/replace the CONTENTS of that folder in the ROOT of your existing GitHub Pages repository (where index.html already lives). Do not upload the outer folder as a nested folder.
+4. Make sure BOTH js/ai-hub.js and css/ai-hub.css are replaced.
+5. Make sure service-worker.js is also replaced. Its cache version is now unilife-v12-unified-ai-workspace, which forces old cached app files to be discarded.
+6. Commit and push to the same branch/folder configured for GitHub Pages.
+7. Open the deployed site, hard refresh with Ctrl+Shift+R. If it still looks old, open DevTools > Application > Service Workers > Unregister, then Application > Storage > Clear site data, and reload.
+
+The new AI workspace is rendered by U.aiHub.render() when the #/ai route is opened.
+This is a frontend update; it does not require Apps Script changes.
