@@ -121,6 +121,10 @@ UL.auth = {
             <span class="auth-orb auth-orb-one"></span>
             <span class="auth-orb auth-orb-two"></span>
             <span class="auth-orb auth-orb-three"></span>
+            <div class="auth-unibot-float">
+              <div class="aihub-bot"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div>
+              <span class="auth-bot-spark spark-a">✦</span><span class="auth-bot-spark spark-b">✧</span>
+            </div>
           </div>
 
           <div class="auth-preferences" aria-label="Login appearance and language">

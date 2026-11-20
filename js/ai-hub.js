@@ -6,7 +6,7 @@
   const U = window.UL;
   if (!U) return;
   const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false, mode:'chat', historyOpen:false, studyOpen:false, attachMenuOpen:false, seen:0,
-    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', attachments: [], intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false };
+    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', attachments: [], intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false, deletingId:'', firstChatTransition:false };
   const $ = (s, root=document) => root.querySelector(s);
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -72,6 +72,11 @@
       state.jump = false;
       view.innerHTML = render();
       refreshIcons();
+      if (state.firstChatTransition) {
+        state.firstChatTransition = false;
+        const leaving = $('.aihub-welcome-state.is-leaving');
+        if (leaving) leaving.addEventListener('animationend', () => { if (leaving.isConnected) { const current=$('.aihub-welcome-state.is-leaving'); if(current) current.remove(); } }, {once:true});
+      }
       const field = $('textarea[name="message"]');
       if (field && keep) { field.value = keep; autoGrow(field); }
       if (field && hadFocus) field.focus();
@@ -120,15 +125,24 @@
       <button type="button" class="aihub-conversation-select" data-ai-act="open" data-id="${esc(c.id)}">
         ${icon('message-square')}<span><b>${esc(c.title || t('aiHubUntitled'))}</b><small>${formatDate(c.updated_at)}</small></span>
       </button>
-      <button type="button" class="aihub-conversation-delete" data-ai-act="delete" data-id="${esc(c.id)}" aria-label="${t('aiHubDelete')}" title="${t('aiHubDelete')}">${icon('trash-2')}</button>
+      <button type="button" class="aihub-conversation-delete ${state.deletingId===c.id?'is-loading':''}" data-ai-act="delete" data-id="${esc(c.id)}" aria-label="${t('aiHubDelete')}" title="${t('aiHubDelete')}" ${state.deletingId?'disabled':''}>${state.deletingId===c.id?'<span class="aihub-mini-spinner"></span>':icon('trash-2')}</button>
     </div>`).join('');
+  }
+  function userAvatarMarkup() {
+    const user = (window.D && window.D.user) || (U.data && U.data.user) || {};
+    const url = user.avatar_url || user.avatarUrl || localStorage.getItem('ul_avatar') || '';
+    const name = user.name || 'You';
+    return url ? `<img src="${esc(url)}" alt="${esc(name)}">` : `<span>${esc(name.trim().charAt(0).toUpperCase() || 'U')}</span>`;
+  }
+  function botAvatarMarkup() {
+    return `<span class="aihub-bot-avatar" aria-hidden="true"><span class="aihub-bot"><span class="body"></span><span class="eyes"><i class="eye"></i><i class="eye"></i></span><span class="shadow"></span></span></span>`;
   }
   function messageList() {
     if (!state.messages.length) return '';
     return state.messages.map((m,i) => `<article class="aihub-message ${m.role==='user'?'from-user':'from-ai'} ${i>=state.seen?'is-new':''}">
-      <div class="aihub-message-avatar">${icon(m.role==='user'?'user':'brain')}</div>
-      <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):t('aiHubAssistant')}</small><div class="aihub-bubble">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(m.content)}</div></div>
-    </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai"><div class="aihub-message-avatar">${icon('brain')}</div><div class="aihub-message-body"><small>${t('aiHubAssistant')}</small><div class="aihub-bubble aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</div></div></article>` : '');
+      <div class="aihub-message-avatar ${m.role==='user'?'user-photo':'bot-mascot'}">${m.role==='user'?userAvatarMarkup():botAvatarMarkup()}</div>
+      <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):'UniBot'}</small><div class="aihub-bubble">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(m.content)}</div></div>
+    </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai is-typing"><div class="aihub-message-avatar bot-mascot">${botAvatarMarkup()}</div><div class="aihub-message-body"><small>UniBot</small><div class="aihub-bubble aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</div></div></article>` : '');
   }
   function renderIntelligence() {
     const d=state.intelligence;
@@ -219,8 +233,8 @@
     const modeBar = '<span class="aihub-mode-pill"></span>' + modes.map(m=>`<button type="button" class="aihub-mode ${state.mode===m.id?'active':''}" data-ai-act="mode" data-mode="${m.id}" aria-pressed="${state.mode===m.id}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
     const suggestionBar = suggestions.map((x,i)=>`<button type="button" class="aihub-suggestion" style="--i:${i}" data-ai-act="suggest" data-mode="${x.mode}" data-text="${esc(x.text)}"><em>0${i+1}</em><span>${x.text}</span>${icon(x.icon)}</button>`).join('');
     const words = t('aiHubWelcome').split(' ').map((w,i)=>`<span class="w" style="--w:${i}">${w.includes('{name}')?w.replace('{name}','<em>'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</em>'):esc(w)}</span>`).join(' ');
-    const empty = !state.messages.length ? `<div class="aihub-welcome-state"><div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div><div class="aihub-welcome-copy"><p class="aihub-welcome-kicker">${selected.label} mode</p><h1>${words}</h1><p class="aihub-mode-hint">${selected.hint}</p></div><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
-    return `<section class="aihub-workspace" data-mode="${state.mode}">
+    const empty = (!state.messages.length || state.firstChatTransition) ? `<div class="aihub-welcome-state ${state.firstChatTransition?'is-leaving':''}"><div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div><div class="aihub-welcome-copy"><p class="aihub-welcome-kicker">${selected.label} mode</p><h1>${words}</h1><p class="aihub-mode-hint">${selected.hint}</p></div><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
+    return `<section class="aihub-workspace ${state.messages.length?'has-chat':''} ${state.firstChatTransition?'is-first-chat-transition':''}" data-mode="${state.mode}">
       <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="study" aria-expanded="${state.studyOpen}">${icon('library')}<span>Study space</span></button></div></header>
       ${state.historyOpen?`<div class="aihub-history-drawer"><div class="aihub-history-heading"><b>Recent conversations</b><button type="button" data-ai-act="history">Close</button></div>${conversationList()}</div>`:''}
       <div class="aihub-mode-strip" role="group" aria-label="AI modes">${modeBar}</div>
@@ -235,7 +249,7 @@
         <form data-ai-form="send" class="aihub-composer aihub-unified-composer">
           <div class="aihub-attachment-list">${renderAttachments()}</div>
           <textarea name="message" rows="1" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
-          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode"><i></i>${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
+          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode"><i></i>${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${state.busy?'<span class="aihub-send-spinner" aria-label="Sending"></span>':icon('arrow-up')}</button></div>
         </form></div>
         <p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
@@ -462,10 +476,11 @@
     const selectedMode = modes.find(m=>m.id===state.mode)||modes[0];
     const content = (selectedMode.prompt ? selectedMode.prompt : '') + rawContent + fileContext;
     state.busy = true;
+    state.firstChatTransition = state.messages.length === 0;
+    state.messages.push({role:'user',content:content,created_at:new Date().toISOString()});
+    draw();
     try {
       if (!state.activeId) await createConversation();
-      state.messages.push({role:'user',content:content,created_at:new Date().toISOString()});
-      draw();
       const r = await U.api.call('aiStudyHubSendMessage', {conversation_id:state.activeId,message:content});
       state.messages.push({role:'assistant',content:r.reply,created_at:new Date().toISOString()});
       state.attachments=[];
@@ -482,6 +497,8 @@
   }
   async function deleteConversation(id) {
     if (!window.confirm(t('aiHubDeleteConfirm'))) return;
+    state.deletingId = id;
+    draw();
     try {
       await U.api.call('aiStudyHubDeleteConversation', {conversation_id:id});
       state.conversations = state.conversations.filter(c=>c.id!==id);
@@ -489,6 +506,7 @@
       if (U.ui && U.ui.toast) U.ui.toast(t('aiHubDeleteDone'));
       draw();
     } catch (e) { notifyError(e); }
+    finally { state.deletingId = ''; draw(); }
   }
   async function chooseTool(id) {
     const item = tools.find(x=>x.id===id);

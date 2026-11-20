@@ -230,3 +230,93 @@ body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15
   body.ai-page .aihub-suggestions{margin-top:6px;gap:8px}
   body.ai-page .aihub-suggestion{min-height:48px;padding:9px 14px}
 }
+
+
+/* UniLife OS v21 — login mascot, UniBot chat identity and chat transitions */
+.auth-unibot-float {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(150px, 22vw, 250px);
+  height: clamp(150px, 22vw, 250px);
+  display: grid;
+  place-items: center;
+  opacity: .22;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+  animation: auth-bot-drift 8s ease-in-out infinite;
+  filter: drop-shadow(0 28px 55px var(--a));
+}
+.auth-unibot-float .aihub-bot { width: 100%; height: 100%; }
+.auth-unibot-float .aihub-bot .eye { width: 25px; height: 31px; }
+.auth-bot-spark { position:absolute; color:var(--a); font-size:24px; animation:unibot-sparkle 3s ease-in-out infinite; }
+.auth-bot-spark.spark-a { top:8%; right:5%; }
+.auth-bot-spark.spark-b { left:4%; bottom:18%; animation-delay:1.2s; }
+@keyframes auth-bot-drift {
+  0%,100% { transform:translate(-50%,-50%) translateY(0) rotate(-4deg) scale(.96); }
+  50% { transform:translate(-50%,-50%) translateY(-20px) rotate(4deg) scale(1.04); }
+}
+.auth-simple-shell { position:relative; z-index:2; }
+.auth-simple-card { backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+@media (max-width:700px) {
+  .auth-unibot-float { top:24%; width:150px; height:150px; opacity:.14; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .auth-unibot-float,.auth-bot-spark { animation:none !important; }
+}
+
+/* Message identities: circular UniBot mascot and WhatsApp-like user profile photo. */
+.aihub-message-avatar.user-photo,
+.aihub-message-avatar.bot-mascot {
+  width:38px; height:38px; min-width:38px; border-radius:50%;
+  display:grid; place-items:center; overflow:hidden; border:1px solid var(--border);
+}
+.aihub-message-avatar.user-photo { background:var(--surface-2); color:var(--text); font-weight:700; }
+.aihub-message-avatar.user-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+.aihub-message-avatar.user-photo span { display:grid; place-items:center; width:100%; height:100%; }
+.aihub-message-avatar.bot-mascot { overflow:visible; border:0; background:transparent; }
+.aihub-bot-avatar { display:grid; place-items:center; width:38px; height:38px; overflow:visible; }
+.aihub-bot-avatar .aihub-bot { width:34px; height:34px; animation:sk-float 4s ease-in-out infinite; }
+.aihub-bot-avatar .aihub-bot .eyes { gap:5px; }
+.aihub-bot-avatar .aihub-bot .eye { width:6px; height:8px; }
+.aihub-bot-avatar .aihub-bot .shadow { bottom:-5px; height:4px; filter:blur(3px); }
+.aihub-message.from-ai .aihub-message-body small { color:var(--a); font-weight:700; }
+
+/* First prompt: let the greeting drift away while the conversation enters. */
+.aihub-welcome-state.is-leaving {
+  animation: aihub-welcome-away .82s cubic-bezier(.2,.75,.25,1) forwards;
+  pointer-events:none;
+}
+.aihub-message.is-new {
+  animation: aihub-message-enter .48s cubic-bezier(.2,.8,.2,1) both;
+}
+.aihub-message.is-typing .aihub-thinking {
+  animation: aihub-thinking-pulse 1.2s ease-in-out infinite;
+}
+.aihub-thinking span {
+  display:inline-block; width:6px; height:6px; margin:0 2px;
+  border-radius:50%; background:var(--a); animation:aihub-dot 1s ease-in-out infinite;
+}
+.aihub-thinking span:nth-child(2) { animation-delay:.14s; }
+.aihub-thinking span:nth-child(3) { animation-delay:.28s; }
+.aihub-send-spinner,.aihub-mini-spinner {
+  display:inline-block; width:17px; height:17px; border:2px solid currentColor;
+  border-right-color:transparent; border-radius:50%; animation:aihub-spin .7s linear infinite;
+}
+.aihub-mini-spinner { width:14px; height:14px; }
+.aihub-conversation-delete.is-loading { opacity:.75; cursor:wait; }
+.aihub-conversation-delete:disabled { pointer-events:none; }
+@keyframes aihub-welcome-away {
+  0% { opacity:1; transform:translateY(0) scale(1); filter:blur(0); max-height:700px; }
+  100% { opacity:0; transform:translateY(-24px) scale(.96); filter:blur(8px); max-height:0; margin:0; }
+}
+@keyframes aihub-message-enter {
+  from { opacity:0; transform:translateY(18px) scale(.985); filter:blur(5px); }
+  to { opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
+}
+@keyframes aihub-dot { 0%,60%,100% { transform:translateY(0); opacity:.45; } 30% { transform:translateY(-5px); opacity:1; } }
+@keyframes aihub-spin { to { transform:rotate(360deg); } }
+@keyframes aihub-thinking-pulse { 0%,100% { box-shadow:0 0 0 rgba(0,0,0,0); } 50% { box-shadow:0 8px 28px color-mix(in srgb,var(--a) 13%,transparent); } }
+@media (prefers-reduced-motion:reduce) {
+  .aihub-welcome-state.is-leaving,.aihub-message.is-new,.aihub-thinking span,.aihub-send-spinner,.aihub-mini-spinner { animation-duration:.001ms !important; }
+}
