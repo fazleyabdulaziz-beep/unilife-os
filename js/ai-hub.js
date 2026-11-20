@@ -242,11 +242,17 @@
       <input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple hidden>
       <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
       ${state.uploading?`<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress||t('aiHubUploading'))}</span></div>`:''}
-      ${state.studyOpen?`<div class="aihub-study-scrim" data-ai-act="study"></div><aside class="aihub-study-panel" aria-label="My study space"><header><div><b>My study space</b><small>Documents, progress, quizzes and overview</small></div><button type="button" class="aihub-top-button" data-ai-act="study" aria-label="Close">${icon('x')}</button></header><div class="aihub-study-body">
-        <section class="aihub-documents"><div class="aihub-section-head"><div><h2>${t('aiHubDocuments')}</h2><p>${t('aiHubDocumentsHint')}</p></div><button type="button" class="aihub-upload-button" data-ai-act="upload" ${state.uploading?'disabled':''}>${icon('upload-cloud')} ${t('aiHubUploadPdf')}</button></div><div class="aihub-document-grid">${documentCards()}</div><p class="aihub-file-note">${t('aiHubPdfPrivacy')}</p></section>
-        ${renderCopilot()}${renderIntelligence()}${renderTutor()}
-        <div class="aihub-context-note">${icon('shield-check')}<span><b>${t('aiHubContext')}</b><small>${t('aiHubContextHint')}</small></span></div>
-      </div></aside>`:''}
+      ${state.studyOpen?`<div class="aihub-study-scrim" data-ai-act="study"></div>
+        <aside class="aihub-study-panel" aria-label="My study space">
+          <header><div><b>My study space</b><small>Documents, progress, quizzes and overview</small></div><button type="button" class="aihub-top-button" data-ai-act="study" aria-label="Close">${icon('x')}</button></header>
+          <div class="aihub-study-body">
+            <section class="aihub-documents"><div class="aihub-section-head"><div><h2>${t('aiHubDocuments')}</h2><p>${t('aiHubDocumentsHint')}</p></div><button type="button" class="aihub-upload-button" data-ai-act="upload" ${state.uploading?'disabled':''}>${icon('upload-cloud')} ${t('aiHubUploadPdf')}</button></div><div class="aihub-document-grid">${documentCards()}</div><p class="aihub-file-note">${t('aiHubPdfPrivacy')}</p></section>
+            ${renderCopilot()}
+            ${renderIntelligence()}
+            ${renderTutor()}
+            <div class="aihub-context-note">${icon('shield-check')}<span><b>${t('aiHubContext')}</b><small>${t('aiHubContextHint')}</small></span></div>
+          </div>
+        </aside>`:''}
     </section>`;
   }
   function render() {
