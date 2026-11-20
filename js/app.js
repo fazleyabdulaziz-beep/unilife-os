@@ -808,10 +808,14 @@ function uniBotMarkup() {
       </form>
     </section>
     <button class="unibot-launcher" data-act="unibot-toggle" aria-label="Open UniBot" aria-expanded="${uniBotOpen}">
-      <div class="unibot-character">
-        <div class="unibot-cap"><span class="unibot-cap-board"></span><span class="unibot-cap-base"></span><span class="unibot-cap-tassel"></span></div>
-        <div class="unibot-antenna"></div><div class="unibot-arm left"></div><div class="unibot-arm right"></div>
-        <div class="unibot-head"><div class="unibot-face"><i class="unibot-eye"></i><i class="unibot-eye"></i><span class="unibot-mouth"></span></div></div>
+      <div class="unibot-studyhub-orb" aria-hidden="true">
+        <div class="aihub-bot">
+          <div class="body"></div>
+          <div class="eyes"><i class="eye"></i><i class="eye"></i></div>
+          <div class="shadow"></div>
+        </div>
+        <span class="unibot-orb-spark spark-one">✦</span>
+        <span class="unibot-orb-spark spark-two">✧</span>
       </div>
       <span class="unibot-label">UniBot</span>
     </button>`;
