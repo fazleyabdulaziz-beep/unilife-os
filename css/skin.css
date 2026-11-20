@@ -230,3 +230,12 @@ body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15
   body.ai-page .aihub-suggestions{margin-top:6px;gap:8px}
   body.ai-page .aihub-suggestion{min-height:48px;padding:9px 14px}
 }
+
+/* AI Hub viewport guard: keep the workspace on one screen. Only chat messages scroll. */
+body.ai-page #view,
+body.ai-page .aihub-page,
+body.ai-page .aihub-workspace{overflow:hidden;}
+body.ai-page .aihub-workspace{min-height:0;}
+body.ai-page .aihub-chat-stage{min-height:0;overflow:hidden;}
+body.ai-page .aihub-dock{min-width:0;}
+body.ai-page .aihub-unified-composer textarea{resize:none;}

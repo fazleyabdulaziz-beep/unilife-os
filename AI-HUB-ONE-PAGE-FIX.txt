@@ -1,0 +1,16 @@
+UniLife OS 3.1 — AI Study Hub One-Page Layout Fix
+
+Changes:
+- Fixed My Study Space rendering so its documents, Academic Copilot, Study Intelligence and Tutor panels are rendered ONLY inside the opened slide-over panel. Previously these sections were emitted on every render, below the chat, which created a long page and vertical scrolling.
+- Kept the AI workspace constrained to the available viewport.
+- Kept the chat message list as the internal scroll region; the overall AI page and workspace no longer scroll vertically.
+- Disabled manual textarea resizing so the composer cannot push the page beyond the viewport.
+
+Deployment:
+Replace the project files from this ZIP in the existing GitHub repository and push. No Apps Script changes are required.
+After deployment, hard refresh (Ctrl+Shift+R). If a service worker still serves old files, unregister it in DevTools > Application > Service Workers and reload.
+
+Validation:
+- ai-hub.js passes Node syntax check.
+- ZIP integrity checked after packaging.
+- Live browser testing was not performed.
