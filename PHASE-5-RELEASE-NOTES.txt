@@ -1,0 +1,14 @@
+UniLife OS — Phase 5: AI Learning Coach
+
+Added:
+- AI-generated five-question multiple-choice practice quizzes by course/topic and difficulty.
+- Server-side answer keys and answer validation.
+- Per-user quiz attempt history and topic-level accuracy dashboard.
+- Weak-topic signals and explanations after submission.
+- English and Bahasa Melayu UI strings; responsive Lo-Fi styling.
+
+New Apps Script file: apps-script/AITutor.gs
+New Sheets: AITutorQuizzes, AITutorAttempts
+
+Deployment: add AITutor.gs, replace updated backend/frontend files, run setup(), deploy a new Apps Script Web App version and update GitHub Pages.
+Live Apps Script/Groq deployment tests have not been run.

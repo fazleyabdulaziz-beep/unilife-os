@@ -68,6 +68,48 @@ function handle(req) {
     case 'aiStudyHubSendMessage':
       return aiStudyHubSendMessage_(uid, d);
 
+    // AI Study Intelligence — revision planner, analytics and spaced repetition.
+    case 'aiStudyIntelligenceDashboard':
+      return aiStudyIntelligenceDashboard_(uid);
+    case 'aiStudyIntelligenceGeneratePlan':
+      return aiStudyIntelligenceGeneratePlan_(uid);
+    case 'aiStudyIntelligenceCompleteSession':
+      return aiStudyIntelligenceCompleteSession_(uid, d);
+    case 'aiStudyIntelligenceAddCard':
+      return aiStudyIntelligenceAddCard_(uid, d);
+    case 'aiStudyIntelligenceReviewCard':
+      return aiStudyIntelligenceReviewCard_(uid, d);
+
+    // Phase 5 — AI Learning Coach and adaptive practice.
+    case 'aiTutorDashboard':
+      return aiTutorDashboard_(uid);
+    case 'aiTutorGenerateQuiz':
+      return aiTutorGenerateQuiz_(uid, d);
+    case 'aiTutorSubmitQuiz':
+      return aiTutorSubmitQuiz_(uid, d);
+
+    // Phase 5 — AI Learning Coach and adaptive practice.
+    case 'aiTutorDashboard':
+      return aiTutorDashboard_(uid);
+    case 'aiTutorGenerateQuiz':
+      return aiTutorGenerateQuiz_(uid, d);
+    case 'aiTutorSubmitQuiz':
+      return aiTutorSubmitQuiz_(uid, d);
+
+    // AI Study Hub — document library and document-grounded conversations.
+    case 'aiStudyHubListDocuments':
+      return aiStudyHubListDocuments_(uid, d);
+    case 'aiStudyHubStartDocumentUpload':
+      return aiStudyHubStartDocumentUpload_(uid, d);
+    case 'aiStudyHubSaveDocumentChunk':
+      return aiStudyHubSaveDocumentChunk_(uid, d);
+    case 'aiStudyHubCompleteDocumentUpload':
+      return aiStudyHubCompleteDocumentUpload_(uid, d);
+    case 'aiStudyHubDeleteDocument':
+      return aiStudyHubDeleteDocument_(uid, d);
+    case 'aiStudyHubCreateDocumentConversation':
+      return aiStudyHubCreateDocumentConversation_(uid, d);
+
     case 'saveProfilePhoto':
       return saveProfilePhoto_(uid, d.dataUrl);
 

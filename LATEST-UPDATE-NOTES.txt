@@ -32,3 +32,23 @@ AI STUDY HUB — PHASE 1 + 2
 - Added AI Study Hub Apps Script actions and additive database sheets.
 - Reuses the existing Groq Script Property; no provider choice is hard-coded into the frontend.
 - See AI_STUDY_HUB_SETUP.md for Apps Script migration and deployment steps.
+
+
+AI STUDY HUB — PHASE 3: DOCUMENT INTELLIGENCE
+- Added PDF document library inside AI Study Hub.
+- Uses the PDF.js dependency already present in index.html to extract selectable PDF text in the browser.
+- Added document metadata and extracted-text chunk storage using additive AIDocuments and AIDocumentChunks sheets.
+- Added document-grounded conversations and AI actions for summaries, study guides, quizzes and flashcards.
+- Added document delete flow and document-aware conversation metadata.
+- Current constraints: PDF only, 8 MB, 50 pages, 60,000 extracted characters, 20 documents per user. Scanned/image-only PDFs require OCR and are not supported yet.
+- Original PDF bytes are not uploaded or retained; extracted text is stored in the existing Google Sheets backend.
+- See AI_STUDY_HUB_SETUP.md for Phase 3 migration and deployment steps.
+
+
+PHASE 4 — AI PERSONAL STUDY INTELLIGENCE
+- Personal revision dashboard using existing exam records.
+- Generates up to seven 30-minute study sessions per upcoming exam.
+- Session completion tracking and progress analytics.
+- Manual flashcard creation and SM-2-style spaced repetition review queue.
+- Transparent exam readiness heuristic based on completed revision sessions and days remaining.
+- English and Bahasa Melayu UI.

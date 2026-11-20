@@ -35,8 +35,18 @@ const SCHEMA = {
   Sessions: ['token_hash','user_id','expires_at'],
   PasswordResets: ['id','user_id','token_hash','expires_at','used_at','created_at'],
   Notes: ['id','user_id','title','content','created_at','updated_at','color','x','y','width','height'],
-  AIConversations: ['id','user_id','title','created_at','updated_at'],
-  AIChatMessages: ['id','conversation_id','user_id','role','content','created_at']
+  AIConversations: ['id','user_id','title','created_at','updated_at','document_id'],
+  AIChatMessages: ['id','conversation_id','user_id','role','content','created_at'],
+  AIDocuments: ['id','user_id','name','mime_type','size_bytes','page_count','chunk_count','text_length','status','created_at','updated_at'],
+  AIDocumentChunks: ['id','document_id','user_id','chunk_index','content','created_at'],
+  AIStudyPlans: ['id','user_id','exam_id','course','exam_date','created_at','status'],
+  AIStudySessions: ['id','user_id','plan_id','exam_id','course','title','study_date','duration_minutes','status','completed_at','created_at'],
+  AIFlashcards: ['id','user_id','document_id','course','front','back','ease_factor','interval_days','repetitions','due_date','last_reviewed','created_at'],
+  AIReviewLogs: ['id','user_id','card_id','quality','reviewed_at','interval_days'],
+  AITutorQuizzes: ['id','user_id','course','topic','difficulty','questions_json','answer_key_json','created_at','status'],
+  AITutorAttempts: ['id','user_id','quiz_id','course','topic','score','total','answers_json','completed_at'],
+  AITutorQuizzes: ['id','user_id','course','topic','difficulty','questions_json','answer_key_json','created_at','status'],
+  AITutorAttempts: ['id','user_id','quiz_id','course','topic','score','total','answers_json','completed_at']
 };
 
 function mk(f,t,opt,def){f.t=t;f.opt=opt;f.def=def;return f}

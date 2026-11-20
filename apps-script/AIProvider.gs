@@ -11,7 +11,7 @@ function aiStudyHubGenerate_(messages) {
     response = UrlFetchApp.fetch(GROQ_TIMETABLE.ENDPOINT, {
       method:'post',contentType:'application/json',
       headers:{Authorization:'Bearer ' + apiKey},
-      payload:JSON.stringify({model:model,messages:messages,temperature:0.55,max_completion_tokens:1100}),
+      payload:JSON.stringify({model:model,messages:messages,temperature:0.55,max_completion_tokens:1800}),
       muteHttpExceptions:true
     });
   } catch (err) {

@@ -5,7 +5,8 @@
   'use strict';
   const U = window.UL;
   if (!U) return;
-  const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false };
+  const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false,
+    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false };
   const $ = (s, root=document) => root.querySelector(s);
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -59,6 +60,34 @@
       <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):t('aiHubAssistant')}</small><p>${esc(m.content).replace(/\n/g,'<br>')}</p></div>
     </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai"><div class="aihub-message-avatar">${icon('brain')}</div><div class="aihub-message-body"><small>${t('aiHubAssistant')}</small><p class="aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</p></div></article>` : '');
   }
+  function renderIntelligence() {
+    const d=state.intelligence;
+    if(!d) return `<section class="aihub-intelligence"><div class="aihub-section-head"><div><h2>${t('aiHubIntelligence')}</h2><p>${t('aiHubIntelligenceHint')}</p></div><button type="button" class="aihub-upload-button" data-ai-act="study-refresh">${icon('refresh-cw')} ${t('aiHubRefresh')}</button></div><p class="aihub-intel-loading">${t('aiHubLoadingIntelligence')}</p></section>`;
+    const stats=d.stats||{};
+    const sessions=(d.sessions||[]).map(x=>`<article class="aihub-study-task"><div><b>${esc(x.course)} · ${esc(x.title)}</b><small>${esc(x.study_date)} · ${Number(x.duration_minutes)||30} ${t('aiHubMinutes')}</small></div><button type="button" data-ai-act="study-done" data-id="${esc(x.id)}">${icon('check')} ${t('aiHubMarkDone')}</button></article>`).join('') || `<p class="aihub-intel-empty">${t('aiHubNoSessions')}</p>`;
+    const exams=(d.exams||[]).map(x=>`<div class="aihub-readiness-row"><div><b>${esc(x.course)}</b><small>${esc(x.date)} · ${x.days_left} ${t('aiHubDaysLeft')}</small></div><div class="aihub-readiness-meter"><span style="width:${Math.max(0,Math.min(100,x.readiness))}%"></span></div><strong>${x.readiness}%</strong></div>`).join('') || `<p class="aihub-intel-empty">${t('aiHubNoExams')}</p>`;
+    const cards=(d.due_cards||[]).map(x=>`<article class="aihub-review-card"><b>${esc(x.course||t('aiHubGeneral'))}</b><p>${esc(x.front)}</p><details><summary>${t('aiHubRevealAnswer')}</summary><p>${esc(x.back)}</p><div class="aihub-review-ratings"><button data-ai-act="card-rate" data-id="${esc(x.id)}" data-quality="1">${t('aiHubAgain')}</button><button data-ai-act="card-rate" data-id="${esc(x.id)}" data-quality="3">${t('aiHubHard')}</button><button data-ai-act="card-rate" data-id="${esc(x.id)}" data-quality="4">${t('aiHubGood')}</button><button data-ai-act="card-rate" data-id="${esc(x.id)}" data-quality="5">${t('aiHubEasy')}</button></div></details></article>`).join('') || `<p class="aihub-intel-empty">${t('aiHubNoDueCards')}</p>`;
+    return `<section class="aihub-intelligence"><div class="aihub-section-head"><div><h2>${t('aiHubIntelligence')}</h2><p>${t('aiHubIntelligenceHint')}</p></div><button type="button" class="aihub-upload-button" data-ai-act="study-plan">${icon('calendar-plus')} ${t('aiHubGeneratePlan')}</button></div>
+      <div class="aihub-intel-stats"><div><b>${stats.completion||0}%</b><small>${t('aiHubPlanCompletion')}</small></div><div><b>${stats.due_cards||0}</b><small>${t('aiHubCardsDue')}</small></div><div><b>${stats.mastered_cards||0}</b><small>${t('aiHubMastered')}</small></div></div>
+      <div class="aihub-intel-columns"><div class="aihub-intel-panel"><h3>${t('aiHubUpcomingStudy')}</h3>${sessions}</div><div class="aihub-intel-panel"><h3>${t('aiHubExamReadiness')}</h3>${exams}</div></div>
+      <div class="aihub-intel-panel aihub-review-panel"><div class="aihub-section-head"><div><h3>${t('aiHubReviewQueue')}</h3><p>${t('aiHubReviewQueueHint')}</p></div><button type="button" class="aihub-text-button" data-ai-act="card-add">${icon('plus')} ${t('aiHubAddFlashcard')}</button></div><div class="aihub-review-grid">${cards}</div></div>
+    </section>`;
+  }
+  async function loadIntelligence() {
+    try { const r=await U.api.call('aiStudyIntelligenceDashboard',{}); state.intelligence=r; state.intelligenceLoaded=true; }
+    catch(e){ console.warn('AI Study Intelligence:',e); }
+  }
+  function renderTutor() {
+    const d=state.tutorDashboard||{};
+    const weak=(d.weak_topics||[]).map(x=>`<div class="aitutor-weak-row"><span><b>${esc(x.course||t('aiTutorGeneral'))}</b><small>${esc(x.topic)} · ${x.attempts} ${t('aiTutorAttempts')}</small></span><strong>${x.accuracy}%</strong></div>`).join('') || `<p class="aihub-intel-empty">${t('aiTutorNoWeakness')}</p>`;
+    const quiz=state.tutorQuiz;
+    const questions=quiz?(quiz.questions||[]).map((q,i)=>`<article class="aitutor-question"><b>${i+1}. ${esc(q.question)}</b><div class="aitutor-options">${q.options.map((o,j)=>`<label class="aitutor-option ${state.tutorAnswers[q.id]===j?'selected':''}"><input type="radio" name="aitutor-${esc(q.id)}" value="${j}" data-tutor-answer="${esc(q.id)}" ${state.tutorAnswers[q.id]===j?'checked':''}><span>${esc(o)}</span></label>`).join('')}</div></article>`).join('') : '';
+    const result=state.tutorResult?`<div class="aitutor-result"><div class="aitutor-score"><b>${state.tutorResult.percentage}%</b><span>${state.tutorResult.score}/${state.tutorResult.total} ${t('aiTutorCorrect')}</span></div>${(state.tutorResult.details||[]).map((x,i)=>`<div class="aitutor-feedback"><b>${x.correct?'✓':'✕'} ${t('aiTutorQuestion')} ${i+1} · ${esc(x.concept)}</b><p>${esc(x.explanation||'')}</p></div>`).join('')}<button type="button" class="aihub-upload-button" data-ai-act="tutor-reset">${t('aiTutorNewQuiz')}</button></div>`:'';
+    return `<section class="aitutor-panel"><div class="aihub-section-head"><div><h2>${t('aiTutorTitle')}</h2><p>${t('aiTutorHint')}</p></div><span class="aitutor-mark">${icon('graduation-cap')}</span></div>
+      <div class="aitutor-dashboard"><div><b>${d.attempt_count||0}</b><small>${t('aiTutorAttempts')}</small></div><div><b>${d.average_accuracy||0}%</b><small>${t('aiTutorAverage')}</small></div><div class="aitutor-weak"><b>${t('aiTutorWeakTopics')}</b>${weak}</div></div>
+      ${!quiz?`<form class="aitutor-form" data-ai-form="tutor"><label>${t('aiTutorCourse')}<select name="course"><option value="">${t('aiTutorGeneral')}</option>${((U.data&&U.data.courses)||[]).map(c=>`<option value="${esc(c.code||c.name)}">${esc(c.code||'')} ${esc(c.name||'')}</option>`).join('')}</select></label><label>${t('aiTutorTopic')}<input name="topic" maxlength="160" required placeholder="${t('aiTutorTopicPlaceholder')}"></label><label>${t('aiTutorDifficulty')}<select name="difficulty"><option value="adaptive">${t('aiTutorAdaptive')}</option><option value="easy">${t('aiTutorEasy')}</option><option value="medium">${t('aiTutorMedium')}</option><option value="hard">${t('aiTutorHard')}</option></select></label><button class="aihub-upload-button" type="submit" ${state.tutorLoading?'disabled':''}>${icon('sparkles')} ${state.tutorLoading?t('aiTutorGenerating'):t('aiTutorStart')}</button></form>`:`<div class="aitutor-quiz-head"><b>${esc(quiz.topic)}</b><small>${esc(quiz.course||t('aiTutorGeneral'))} · ${esc(quiz.difficulty)}</small></div>${questions}${!state.tutorResult?`<button type="button" class="aihub-upload-button" data-ai-act="tutor-submit" ${Object.keys(state.tutorAnswers).length!==5?'disabled':''}>${t('aiTutorSubmit')}</button>`:''}`}
+      ${quiz&&state.tutorResult?result:''}</section>`;
+  }
   function renderHome() {
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
     const welcome = t('aiHubWelcome').replace('{name}', esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there')));
@@ -73,6 +102,17 @@
           </form>
         </div>
       </div>
+      ${renderIntelligence()}
+      ${renderTutor()}
+      <section class="aihub-documents">
+        <div class="aihub-section-head"><div><h2>${t('aiHubDocuments')}</h2><p>${t('aiHubDocumentsHint')}</p></div>
+          <button type="button" class="aihub-upload-button" data-ai-act="upload" ${state.uploading?'disabled':''}>${icon('upload-cloud')} ${t('aiHubUploadPdf')}</button>
+        </div>
+        <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
+        ${state.uploading ? `<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress || t('aiHubUploading'))}</span></div>` : ''}
+        <div class="aihub-document-grid">${documentCards()}</div>
+        <p class="aihub-file-note">${t('aiHubPdfPrivacy')}</p>
+      </section>
       <div class="aihub-section-head"><div><h2>${t('aiHubTools')}</h2><p>${t('aiHubToolsHint')}</p></div></div>
       <div class="aihub-tools-grid">${toolCards()}</div>
       <div class="aihub-home-recent"><div class="aihub-section-head"><div><h2>${t('aiHubRecent')}</h2></div><button type="button" class="aihub-text-button" data-ai-act="new">${t('aiHubNewChat')}</button></div>
@@ -92,7 +132,7 @@
         <div class="aihub-sidebar-context">${icon('shield-check')}<span>${t('aiHubContext')}</span></div>
       </aside>
       <div class="aihub-chat-main">
-        <header class="aihub-chat-header"><div><small>${t('ai')}</small><h2>${esc(active && active.title || t('aiHubUntitled'))}</h2></div>
+        <header class="aihub-chat-header"><div><small>${active && active.document_id ? t('aiHubDocumentChat') : t('ai')}</small><h2>${esc(active && active.title || t('aiHubUntitled'))}</h2></div>
           <button type="button" class="aihub-new-chat mobile-only" data-ai-act="new">${icon('plus')} ${t('aiHubNewChat')}</button>
         </header>
         <div class="aihub-messages" id="aihub-messages">${messageList()}</div>
@@ -107,6 +147,130 @@
     return `<div class="aihub-page"><header class="aihub-page-head"><div class="aihub-brand">${icon('brain')}<span>${t('ai')}</span></div>${state.activeId?`<button type="button" class="aihub-back-home" data-ai-act="home">${icon('layout-dashboard')} ${t('aiHubTools')}</button>`:''}</header>
       ${state.activeId ? renderChat() : renderHome()}</div>`;
   }
+  function documentCards() {
+    if (!state.documents.length) return `<div class="aihub-doc-empty">${icon('file-up')}<b>${t('aiHubNoDocuments')}</b><small>${t('aiHubNoDocumentsHint')}</small></div>`;
+    return state.documents.map(d => `<article class="aihub-document-card">
+      <div class="aihub-document-top"><span class="aihub-pdf-icon">${icon('file-pdf')}</span><button type="button" class="aihub-doc-delete" data-ai-act="doc-delete" data-id="${esc(d.id)}" title="${t('aiHubDeleteDocument')}" aria-label="${t('aiHubDeleteDocument')}">${icon('trash-2')}</button></div>
+      <b class="aihub-document-name" title="${esc(d.name)}">${esc(d.name)}</b>
+      <small>${Number(d.page_count)||0} ${t('aiHubPages')} · ${Math.ceil((Number(d.text_length)||0)/1000)} KB text</small>
+      <div class="aihub-document-actions">
+        <button type="button" data-ai-act="doc-summary" data-id="${esc(d.id)}">${icon('list-checks')} ${t('aiHubSummarize')}</button>
+        <button type="button" data-ai-act="doc-ask" data-id="${esc(d.id)}">${icon('message-circle')} ${t('aiHubAskDoc')}</button>
+        <button type="button" data-ai-act="doc-guide" data-id="${esc(d.id)}">${icon('notebook-pen')} ${t('aiHubStudyGuide')}</button>
+        <button type="button" data-ai-act="doc-quiz" data-id="${esc(d.id)}">${icon('brain')} ${t('aiHubMakeQuiz')}</button>
+        <button type="button" data-ai-act="doc-cards" data-id="${esc(d.id)}">${icon('layers')} ${t('aiHubFlashcards')}</button>
+      </div>
+    </article>`).join('');
+  }
+  async function loadDocuments() {
+    try {
+      const r = await U.api.call('aiStudyHubListDocuments', {});
+      state.documents = Array.isArray(r.documents) ? r.documents : [];
+      state.docsLoaded = true;
+    } catch (e) {
+      console.warn('AI Study Hub document library:', e);
+    }
+  }
+  async function extractPdfText(file) {
+    const pdfjs = window.pdfjsLib;
+    if (!pdfjs) throw {code:'aiPdfUnavailable'};
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjs.getDocument({data:bytes}).promise;
+    if (pdf.numPages < 1 || pdf.numPages > 50) throw {code:'aiPdfPages'};
+    const pages = [];
+    let total = 0;
+    for (let pageNo=1; pageNo<=pdf.numPages; pageNo++) {
+      const page = await pdf.getPage(pageNo);
+      const content = await page.getTextContent();
+      const text = content.items.map(x=>x.str || '').join(' ').replace(/[ \t]+/g,' ').trim();
+      if (text) pages.push(`[Page ${pageNo}]\\n${text}`);
+      total += text.length;
+      state.uploadProgress = `${t('aiHubExtracting')} ${pageNo}/${pdf.numPages}`;
+      if (total > 60000) throw {code:'aiPdfTooLong'};
+      if (pageNo % 3 === 0) draw();
+    }
+    const extracted = pages.join('\\n\\n');
+    if (extracted.replace(/\[Page \d+\]/g,'').trim().length < 80) throw {code:'aiPdfScanned'};
+    return {text:extracted,pages:pdf.numPages};
+  }
+  function splitDocumentText(value) {
+    const chunks = [];
+    for (let i=0;i<value.length;i+=8000) chunks.push(value.slice(i,i+8000));
+    return chunks;
+  }
+  async function uploadPdf(file) {
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+      notifyError({code:'aiPdfType'}); return;
+    }
+    if (file.size > 8*1024*1024) { notifyError({code:'aiPdfSize'}); return; }
+    state.uploading = true;
+    state.uploadProgress = t('aiHubReadingPdf');
+    draw();
+    let documentId = '';
+    try {
+      const extracted = await extractPdfText(file);
+      const chunks = splitDocumentText(extracted.text);
+      const started = await U.api.call('aiStudyHubStartDocumentUpload', {
+        name:file.name,mime_type:'application/pdf',size_bytes:file.size,
+        page_count:extracted.pages,chunk_count:chunks.length
+      });
+      documentId = started.document.id;
+      for (let i=0;i<chunks.length;i++) {
+        state.uploadProgress = `${t('aiHubSavingText')} ${i+1}/${chunks.length}`;
+        draw();
+        await U.api.call('aiStudyHubSaveDocumentChunk', {
+          document_id:documentId,chunk_index:i,content:chunks[i]
+        });
+      }
+      await U.api.call('aiStudyHubCompleteDocumentUpload', {document_id:documentId});
+      await loadDocuments();
+      if (U.ui && U.ui.toast) U.ui.toast(t('aiHubUploadDone'));
+    } catch (e) {
+      if (documentId) {
+        try { await U.api.call('aiStudyHubDeleteDocument',{document_id:documentId}); } catch (_) {}
+      }
+      notifyError(e);
+    } finally {
+      state.uploading = false;
+      state.uploadProgress = '';
+      draw();
+    }
+  }
+  async function startDocumentTask(id, mode) {
+    if (state.busy) return;
+    const doc = state.documents.find(x=>x.id===id);
+    if (!doc) return;
+    const prompts = {
+      ask: `I uploaded "${doc.name}". Help me understand this document. Briefly identify its subject and ask what I would like to explore. When answering later questions, use the document text and mention page numbers where possible.`,
+      summary: `Create a comprehensive but easy-to-revise summary of "${doc.name}". Organize it by topic and section. Capture the main ideas, key definitions, formulas or processes, and important examples. Preserve page references like [Page 3] where useful. Do not add facts that are not in the document.`,
+      guide: `Turn "${doc.name}" into a structured study guide. Include learning objectives, topic-by-topic explanations, key terms, important points to remember, common misunderstandings, and a short self-check section. Base it on the document and retain page references.`,
+      quiz: `Create a practice quiz based only on "${doc.name}". Give 10 varied questions, a mix of multiple-choice and short-answer. Put the answer key after all questions with brief explanations and page references. Do not reveal answers immediately after each question.`,
+      cards: `Create 12 useful flashcards from "${doc.name}". Format each as **Front:** a clear question or prompt, then **Back:** a concise answer. Cover the most important concepts and definitions, and include page references where possible.`
+    };
+    try {
+      const r = await U.api.call('aiStudyHubCreateDocumentConversation', {
+        document_id:id,title:mode==='ask'?`Ask: ${doc.name}`:`${({summary:'Summary',guide:'Study guide',quiz:'Quiz',cards:'Flashcards'})[mode]||'Study'}: ${doc.name}`
+      });
+      const c = r.conversation;
+      state.conversations.unshift(c);
+      state.activeId = c.id;
+      state.messages = [];
+      draw();
+      await sendMessage(prompts[mode] || prompts.ask);
+    } catch (e) { notifyError(e); }
+  }
+  async function deleteDocument(id) {
+    const doc = state.documents.find(x=>x.id===id);
+    if (!doc || !window.confirm(t('aiHubDeleteDocumentConfirm').replace('{name}',doc.name))) return;
+    try {
+      await U.api.call('aiStudyHubDeleteDocument',{document_id:id});
+      state.documents = state.documents.filter(x=>x.id!==id);
+      if (U.ui && U.ui.toast) U.ui.toast(t('aiHubDocumentDeleted'));
+      draw();
+    } catch (e) { notifyError(e); }
+  }
   async function loadConversations() {
     if (state.loading) return;
     state.loading = true;
@@ -120,6 +284,9 @@
   }
   async function onEnter() {
     if (!state.loaded) await loadConversations();
+    if (!state.docsLoaded) await loadDocuments();
+    if (!state.intelligenceLoaded) await loadIntelligence();
+    if (!state.tutorDashboard) await loadTutorDashboard();
     if (state.activeId && !state.messages.length) {
       try {
         const r = await U.api.call('aiStudyHubGetConversation', {conversation_id:state.activeId});
@@ -147,9 +314,31 @@
     } catch (e) { notifyError(e); }
     draw();
   }
+  async function loadTutorDashboard() {
+    try { state.tutorDashboard=await U.api.call('aiTutorDashboard',{}); } catch(e){ console.warn('AI Tutor dashboard:',e); }
+  }
+  async function generateTutorQuiz(form) {
+    const data=new FormData(form),topic=String(data.get('topic')||'').trim(); if(!topic)return;
+    state.tutorLoading=true;draw();
+    try { const r=await U.api.call('aiTutorGenerateQuiz',{course:String(data.get('course')||''),topic:topic,difficulty:String(data.get('difficulty')||'adaptive')}); state.tutorQuiz=r.quiz;state.tutorAnswers={};state.tutorResult=null; }
+    catch(e){notifyError(e);} finally {state.tutorLoading=false;draw();}
+  }
+  async function submitTutorQuiz() {
+    if(!state.tutorQuiz||Object.keys(state.tutorAnswers).length!==5)return;
+    try { const r=await U.api.call('aiTutorSubmitQuiz',{quiz_id:state.tutorQuiz.id,answers:state.tutorAnswers});state.tutorResult=r;state.tutorDashboard=r.dashboard;draw(); }
+    catch(e){notifyError(e);}
+  }
+  function resetTutorQuiz(){state.tutorQuiz=null;state.tutorAnswers={};state.tutorResult=null;draw();}
   function notifyError(e) {
     const code = e && e.code;
-    const message = code === 'aiLimit' ? t('aiHubLimit') : code === 'aiConfig' ? t('aiHubNoApi') : t('aiHubError');
+    const errorKeys = {
+      aiLimit:'aiHubLimit',aiConfig:'aiHubNoApi',aiPdfUnavailable:'aiHubPdfUnavailable',
+      aiPdfPages:'aiHubPdfPages',aiPdfTooLong:'aiHubPdfTooLong',aiPdfScanned:'aiHubPdfScanned',
+      aiPdfType:'aiHubPdfType',aiPdfSize:'aiHubPdfSize',aiDocumentLimit:'aiHubDocumentLimit',
+      aiDocumentIncomplete:'aiHubDocumentIncomplete',aiDocumentNotReady:'aiHubDocumentNotReady',
+      noUpcomingExams:'aiHubNoUpcomingExams',cardLimit:'aiHubCardLimit',aiQuizFormat:'aiTutorQuizError',quizCompleted:'aiTutorAlreadySubmitted'
+    };
+    const message = t(errorKeys[code] || 'aiHubError');
     if (U.ui && U.ui.toast) U.ui.toast(message); else alert(message);
   }
   async function sendMessage(message) {
@@ -193,6 +382,29 @@
   }
   function newChat() { state.activeId=''; state.messages=[]; draw(); }
   function home() { state.activeId=''; state.messages=[]; draw(); }
+  async function refreshIntelligence() { await loadIntelligence(); draw(); }
+  async function generateStudyPlan() {
+    try { const r=await U.api.call('aiStudyIntelligenceGeneratePlan',{}); state.intelligence=r.dashboard; state.intelligenceLoaded=true; if(U.ui&&U.ui.toast)U.ui.toast(t('aiHubPlanCreated').replace('{count}',r.created_sessions)); draw(); }
+    catch(e){ notifyError(e); }
+  }
+  async function completeStudySession(id) {
+    try { const r=await U.api.call('aiStudyIntelligenceCompleteSession',{session_id:id}); state.intelligence=r.dashboard; draw(); }
+    catch(e){notifyError(e);}
+  }
+  async function addFlashcard() {
+    const course=window.prompt(t('aiHubFlashcardCourse'));
+    if(course===null)return;
+    const front=window.prompt(t('aiHubFlashcardFront'));
+    if(front===null)return;
+    const back=window.prompt(t('aiHubFlashcardBack'));
+    if(back===null)return;
+    try { const r=await U.api.call('aiStudyIntelligenceAddCard',{course,front,back}); state.intelligence=r.dashboard; draw(); }
+    catch(e){notifyError(e);}
+  }
+  async function reviewFlashcard(id,quality) {
+    try { const r=await U.api.call('aiStudyIntelligenceReviewCard',{card_id:id,quality}); state.intelligence=r.dashboard; if(U.ui&&U.ui.toast)U.ui.toast(t('aiHubNextReview').replace('{date}',r.next_review)); draw(); }
+    catch(e){notifyError(e);}
+  }
   document.addEventListener('click', e => {
     const button = e.target.closest('[data-ai-act]');
     if (!button) return;
@@ -202,8 +414,35 @@
     else if (action==='open') openConversation(button.dataset.id);
     else if (action==='delete') deleteConversation(button.dataset.id);
     else if (action==='tool') chooseTool(button.dataset.tool);
+    else if (action==='upload') $('#aihub-pdf-input')?.click();
+    else if (action==='doc-summary') startDocumentTask(button.dataset.id,'summary');
+    else if (action==='doc-ask') startDocumentTask(button.dataset.id,'ask');
+    else if (action==='doc-guide') startDocumentTask(button.dataset.id,'guide');
+    else if (action==='doc-quiz') startDocumentTask(button.dataset.id,'quiz');
+    else if (action==='doc-cards') startDocumentTask(button.dataset.id,'cards');
+    else if (action==='doc-delete') deleteDocument(button.dataset.id);
+    else if (action==='study-refresh') { state.intelligenceLoaded=false; loadIntelligence().then(draw); }
+    else if (action==='study-plan') generateStudyPlan();
+    else if (action==='study-done') completeStudySession(button.dataset.id);
+    else if (action==='card-add') addFlashcard();
+    else if (action==='card-rate') reviewFlashcard(button.dataset.id,Number(button.dataset.quality));
+    else if (action==='tutor-submit') submitTutorQuiz();
+    else if (action==='tutor-reset') resetTutorQuiz();
+  });
+  document.addEventListener('change', e => {
+    if (e.target && e.target.id === 'aihub-pdf-input') {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      return uploadPdf(file);
+    }
+  });
+  document.addEventListener('change', e => {
+    const answer=e.target.closest('[data-tutor-answer]');
+    if(answer){state.tutorAnswers[answer.dataset.tutorAnswer]=Number(answer.value);draw();}
   });
   document.addEventListener('submit', e => {
+    const tutor=e.target.closest('form[data-ai-form="tutor"]');
+    if(tutor){e.preventDefault();generateTutorQuiz(tutor);return;}
     const form = e.target.closest('form[data-ai-form="send"]');
     if (!form) return;
     e.preventDefault();
@@ -212,5 +451,5 @@
     if (field) field.value = '';
     sendMessage(value);
   });
-  U.aiHub = { render, onEnter, refresh:async()=>{state.loaded=false;await onEnter();} };
+  U.aiHub = { render, onEnter, refresh:async()=>{state.loaded=false;state.docsLoaded=false;await onEnter();} };
 })();
