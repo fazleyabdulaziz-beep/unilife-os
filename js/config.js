@@ -4,3 +4,5 @@ window.UL={config:{
   nav:['dashboard','ai','academics','assignments','timetable','exams','finance','productivity','settings'],
   icons:{dashboard:'layout-dashboard',ai:'brain',academics:'book-open',assignments:'clipboard-list',timetable:'calendar-days',exams:'timer',finance:'wallet',productivity:'target',settings:'settings'}
 }};
+
+window.ULPalette=function(v){return ['aurora','sunset','mint','rose','lagoon','graphite'].indexOf(v)>-1?v:'aurora'};

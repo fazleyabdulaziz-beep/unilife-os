@@ -257,12 +257,6 @@
   "fontPreviewSentence": "Your campus, your pace. A little progress every day.",
   "defaultWelcomeTitle": "Your campus, your pace.",
   "defaultWelcomeSubtitle": "A little progress every day adds up. Keep your goals in sight.",
-  "paletteLavender": "Lavender",
-  "paletteForest": "Forest Green",
-  "paletteSky": "Sky Blue",
-  "paletteOcean": "Ocean",
-  "paletteGamer": "Gamer",
-  "paletteWarm": "Warm Sand",
   "previousMonth": "Previous month",
   "nextMonth": "Next month",
   "classes": "Classes",
@@ -521,5 +515,11 @@
   "aiCopilotAssignments": "open assignments",
   "aiCopilotExams": "upcoming exams",
   "aiCopilotWeakTopics": "weak topics",
-  "aiCopilotDueCards": "flashcards due"
+  "aiCopilotDueCards": "flashcards due",
+  "paletteAurora": "Aurora",
+  "paletteSunset": "Sunset",
+  "paletteMint": "Mint",
+  "paletteRose": "Rose",
+  "paletteLagoon": "Lagoon",
+  "paletteGraphite": "Graphite"
 }

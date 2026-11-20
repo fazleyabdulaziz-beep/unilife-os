@@ -257,12 +257,6 @@
   "fontPreviewSentence": "Kampus anda, rentak anda. Sedikit kemajuan setiap hari.",
   "defaultWelcomeTitle": "Kampus anda, rentak anda.",
   "defaultWelcomeSubtitle": "Sedikit kemajuan setiap hari membawa perubahan. Terus fokus pada matlamat anda.",
-  "paletteLavender": "Lavender",
-  "paletteForest": "Hijau Hutan",
-  "paletteSky": "Biru Langit",
-  "paletteOcean": "Lautan",
-  "paletteGamer": "Gamer",
-  "paletteWarm": "Pasir Suam",
   "previousMonth": "Bulan sebelumnya",
   "nextMonth": "Bulan seterusnya",
   "classes": "Kelas",
@@ -521,5 +515,11 @@
   "aiCopilotAssignments": "tugasan belum selesai",
   "aiCopilotExams": "peperiksaan akan datang",
   "aiCopilotWeakTopics": "topik lemah",
-  "aiCopilotDueCards": "kad imbas perlu diulang kaji"
+  "aiCopilotDueCards": "kad imbas perlu diulang kaji",
+  "paletteAurora": "Aurora",
+  "paletteSunset": "Senja",
+  "paletteMint": "Pudina",
+  "paletteRose": "Ros",
+  "paletteLagoon": "Lagun",
+  "paletteGraphite": "Grafit"
 }

@@ -24,12 +24,12 @@ UL.auth = {
         if (key === 'theme') {
           const root = document.documentElement;
           root.dataset.theme = value === 'dark' ? 'dark' : 'light';
-          root.dataset.palette = UL.prefs.palette || 'lavender';
+          root.dataset.palette = window.ULPalette(UL.prefs.palette);
         }
         draw();
       };
 
-      document.documentElement.dataset.palette = UL.prefs.palette || 'lavender';
+      document.documentElement.dataset.palette = window.ULPalette(UL.prefs.palette);
       const el = document.createElement('div');
       el.className = 'authwrap auth-simple';
       document.body.append(el);

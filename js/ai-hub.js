@@ -30,21 +30,73 @@
   };
   const icon = name => `<i data-lucide="${name}"></i>`;
   const refreshIcons = () => { if (window.lucide && window.lucide.createIcons) window.lucide.createIcons(); };
+  function inlineMd(x){
+    return x.replace(/`([^`\n]+)`/g,'<code>$1</code>')
+      .replace(/\*\*\*([^*\n]+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+      .replace(/\*\*([^*\n]+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/__([^_\n]+?)__/g,'<strong>$1</strong>')
+      .replace(/(^|[^*\w])\*([^*\n]+?)\*(?![*\w])/g,'$1<em>$2</em>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  }
+  function md(src){
+    const blocks=[];
+    let t=esc(src).replace(/\r\n/g,'\n').replace(/```[\w-]*\n?([\s\S]*?)```/g,(m,c)=>{blocks.push('<pre><code>'+c.replace(/\n$/,'')+'</code></pre>');return '\u0000'+(blocks.length-1)+'\u0000';});
+    const out=[]; let list='', para=[];
+    const flushP=()=>{ if(para.length){ out.push('<p>'+para.join('<br>')+'</p>'); para=[]; } };
+    const flushL=()=>{ if(list){ out.push('</'+list+'>'); list=''; } };
+    t.split('\n').forEach(line=>{
+      let m;
+      if(/^\s*$/.test(line)){ flushP(); flushL(); return; }
+      if((m=line.match(/^\u0000(\d+)\u0000$/))){ flushP(); flushL(); out.push(blocks[+m[1]]); return; }
+      if(/^\s*([*_-])(\s*\1){2,}\s*$/.test(line)){ flushP(); flushL(); out.push('<hr>'); return; }
+      if((m=line.match(/^\s{0,3}#{1,6}\s+(.*)$/))){ flushP(); flushL(); out.push('<h4>'+inlineMd(m[1].replace(/\s*#+\s*$/,''))+'</h4>'); return; }
+      if((m=line.match(/^\s*[-*\u2022]\s+(.*)$/))){ flushP(); if(list!=='ul'){ flushL(); out.push('<ul>'); list='ul'; } out.push('<li>'+inlineMd(m[1])+'</li>'); return; }
+      if((m=line.match(/^\s*\d+[.)]\s+(.*)$/))){ flushP(); if(list!=='ol'){ flushL(); out.push('<ol>'); list='ol'; } out.push('<li>'+inlineMd(m[1])+'</li>'); return; }
+      if((m=line.match(/^&gt;\s?(.*)$/))){ flushP(); flushL(); out.push('<blockquote>'+inlineMd(m[1])+'</blockquote>'); return; }
+      flushL(); para.push(inlineMd(line.trim()));
+    });
+    flushP(); flushL();
+    return out.join('').replace(/\u0000(\d+)\u0000/g,(m,i)=>blocks[+i]);
+  }
   function draw() {
     const view = $('#view');
     if (view && location.hash.replace('#/','') === 'ai') {
       const old = $('textarea[name="message"]');
       const keep = old ? old.value : '';
       const hadFocus = old && document.activeElement === old;
-      const grew = state.messages.length > state.seen;
+      const stripOld = $('.aihub-mode-strip');
+      const stripLeft = stripOld ? stripOld.scrollLeft : 0;
+      if (state.seenId !== state.activeId) { state.seenId = state.activeId; state.seen = state.messages.length; }
+      if (state.jump) state.seen = state.messages.length;
+      const grew = state.messages.length > state.seen, jump = state.jump;
+      state.jump = false;
       view.innerHTML = render();
       refreshIcons();
       const field = $('textarea[name="message"]');
       if (field && keep) { field.value = keep; autoGrow(field); }
       if (field && hadFocus) field.focus();
       state.seen = state.messages.length;
-      if (state.messages.length) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: grew ? 'smooth' : 'auto' });
+      movePill(stripLeft);
+      if (state.messages.length) {
+        const last = state.messages[state.messages.length - 1];
+        if (jump) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
+        else if (grew && last.role !== 'user') {
+          const fresh = Array.from(document.querySelectorAll('.aihub-message.is-new.from-ai'))[0];
+          if (fresh) fresh.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (grew) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      }
     }
+  }
+  function movePill(stripLeft){
+    const strip=$('.aihub-mode-strip'), act=$('.aihub-mode.active'), pill=$('.aihub-mode-pill');
+    if(!strip||!act||!pill) return;
+    strip.scrollLeft=stripLeft||0;
+    const to={l:act.offsetLeft,w:act.offsetWidth};
+    const set=p=>{pill.style.width=p.w+'px';pill.style.transform='translateX('+p.l+'px)';};
+    if(state.pill){ pill.style.transition='none'; set(state.pill); void pill.offsetWidth; pill.style.transition=''; }
+    requestAnimationFrame(()=>set(to));
+    state.pill=to;
+    if(act.offsetLeft+act.offsetWidth>strip.clientWidth+strip.scrollLeft||act.offsetLeft<strip.scrollLeft) strip.scrollTo({left:Math.max(0,act.offsetLeft-24),behavior:'smooth'});
   }
   function autoGrow(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,200)+'px'; }
   function closeAttachMenu(){
@@ -70,8 +122,8 @@
     if (!state.messages.length) return '';
     return state.messages.map((m,i) => `<article class="aihub-message ${m.role==='user'?'from-user':'from-ai'} ${i>=state.seen?'is-new':''}">
       <div class="aihub-message-avatar">${icon(m.role==='user'?'user':'brain')}</div>
-      <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):t('aiHubAssistant')}</small><p>${esc(m.content).replace(/\n/g,'<br>')}</p></div>
-    </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai"><div class="aihub-message-avatar">${icon('brain')}</div><div class="aihub-message-body"><small>${t('aiHubAssistant')}</small><p class="aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</p></div></article>` : '');
+      <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):t('aiHubAssistant')}</small><div class="aihub-bubble">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(m.content)}</div></div>
+    </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai"><div class="aihub-message-avatar">${icon('brain')}</div><div class="aihub-message-body"><small>${t('aiHubAssistant')}</small><div class="aihub-bubble aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</div></div></article>` : '');
   }
   function renderIntelligence() {
     const d=state.intelligence;
@@ -159,10 +211,11 @@
     const active = state.conversations.find(c => c.id === state.activeId);
     const selected = modes.find(m=>m.id===state.mode)||modes[0];
     const welcome = t('aiHubWelcome').replace('{name}', '<span class="hl">'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</span>');
-    const modeBar = modes.map(m=>`<button type="button" class="aihub-mode ${state.mode===m.id?'active':''}" data-ai-act="mode" data-mode="${m.id}" aria-pressed="${state.mode===m.id}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
+    const modeBar = '<span class="aihub-mode-pill"></span>' + modes.map(m=>`<button type="button" class="aihub-mode ${state.mode===m.id?'active':''}" data-ai-act="mode" data-mode="${m.id}" aria-pressed="${state.mode===m.id}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
     const suggestionBar = suggestions.map((x,i)=>`<button type="button" class="aihub-suggestion" style="--i:${i}" data-ai-act="suggest" data-mode="${x.mode}" data-text="${esc(x.text)}"><em>0${i+1}</em><span>${x.text}</span>${icon(x.icon)}</button>`).join('');
-    const empty = !state.messages.length ? `<div class="aihub-welcome-state"><div class="aihub-welcome-mark"><i></i><i></i><i></i></div><p class="aihub-welcome-kicker">YOUR STUDY COMPANION</p><h1>${welcome}</h1><p class="aihub-mode-hint">${selected.hint}</p><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
-    return `<section class="aihub-workspace">
+    const words = t('aiHubWelcome').split(' ').map((w,i)=>`<span class="w" style="--w:${i}">${w.includes('{name}')?w.replace('{name}','<em>'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</em>'):esc(w)}</span>`).join(' ');
+    const empty = !state.messages.length ? `<div class="aihub-welcome-state"><div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div><div class="aihub-welcome-copy"><p class="aihub-welcome-kicker">${selected.label} mode</p><h1>${words}</h1><p class="aihub-mode-hint">${selected.hint}</p></div><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
+    return `<section class="aihub-workspace" data-mode="${state.mode}">
       <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="study" aria-expanded="${state.studyOpen}">${icon('library')}<span>Study space</span></button></div></header>
       ${state.historyOpen?`<div class="aihub-history-drawer"><div class="aihub-history-heading"><b>Recent conversations</b><button type="button" data-ai-act="history">Close</button></div>${conversationList()}</div>`:''}
       <div class="aihub-mode-strip" role="group" aria-label="AI modes">${modeBar}</div>
@@ -177,7 +230,7 @@
         <form data-ai-form="send" class="aihub-composer aihub-unified-composer">
           <div class="aihub-attachment-list">${renderAttachments()}</div>
           <textarea name="message" rows="1" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
-          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode">${icon(selected.icon)} ${selected.label}</span></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
+          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode"><i></i>${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
         </form></div>
         <p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
@@ -358,6 +411,7 @@
     try {
       const r = await U.api.call('aiStudyHubGetConversation', {conversation_id:id});
       state.messages = r.messages || [];
+      state.jump = true;
     } catch (e) { notifyError(e); }
     draw();
   }
@@ -503,6 +557,11 @@
     const answer=e.target.closest('[data-tutor-answer]');
     if(answer){state.tutorAnswers[answer.dataset.tutorAnswer]=Number(answer.value);draw();}
   });
+  document.addEventListener('pointermove', e => {
+    const eyes=$('.aihub-bot .eyes'); if(!eyes) return;
+    const r=eyes.getBoundingClientRect(), dx=e.clientX-(r.left+r.width/2), dy=e.clientY-(r.top+r.height/2), an=Math.atan2(dy,dx), d=Math.min(5,Math.hypot(dx,dy)/60);
+    eyes.querySelectorAll('.eye').forEach(el=>{el.style.setProperty('--ex',Math.cos(an)*d+'px');el.style.setProperty('--ey',Math.sin(an)*d+'px');});
+  },{passive:true});
   document.addEventListener('keydown', e => {
     if (e.key==='Escape') { if (state.attachMenuOpen) closeAttachMenu(); else if (state.studyOpen) { state.studyOpen=false; draw(); } }
     const f=e.target.closest&&e.target.closest('textarea[name="message"]');
