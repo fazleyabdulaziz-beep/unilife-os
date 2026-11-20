@@ -320,3 +320,36 @@ body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15
 @media (prefers-reduced-motion:reduce) {
   .aihub-welcome-state.is-leaving,.aihub-message.is-new,.aihub-thinking span,.aihub-send-spinner,.aihub-mini-spinner { animation-duration:.001ms !important; }
 }
+
+/* UniLife OS v22 — make the login mascot unmistakably visible without crowding the form. */
+.auth-simple { isolation:isolate; }
+.auth-simple .auth-ambient {
+  position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 18% 18%, color-mix(in srgb,var(--a) 10%,transparent), transparent 42%),
+    radial-gradient(ellipse at 84% 82%, color-mix(in srgb,var(--a) 9%,transparent), transparent 40%);
+}
+.auth-simple .auth-orb { position:absolute; display:block; border-radius:50%; filter:blur(2px); pointer-events:none; }
+.auth-simple .auth-orb-one { width:340px;height:340px;left:-130px;top:8%;background:radial-gradient(circle,color-mix(in srgb,var(--a) 15%,transparent),transparent 70%); }
+.auth-simple .auth-orb-two { width:420px;height:420px;right:-180px;bottom:-15%;background:radial-gradient(circle,color-mix(in srgb,var(--a) 13%,transparent),transparent 70%); }
+.auth-simple .auth-orb-three { width:180px;height:180px;left:18%;bottom:8%;background:radial-gradient(circle,color-mix(in srgb,var(--a) 9%,transparent),transparent 70%); }
+.auth-simple .auth-unibot-float {
+  left:auto; right:max(7%,calc(50% - 500px)); top:13%;
+  width:clamp(150px,19vw,230px); height:clamp(150px,19vw,230px);
+  opacity:.78; z-index:1; filter:drop-shadow(0 22px 45px color-mix(in srgb,var(--a) 25%,transparent));
+  animation:auth-bot-drift 6.5s ease-in-out infinite;
+}
+.auth-simple .auth-unibot-float .aihub-bot { width:100%;height:100%; }
+.auth-simple .auth-bot-spark { text-shadow:0 0 18px color-mix(in srgb,var(--a) 45%,transparent); }
+.auth-simple .auth-preferences { position:relative;z-index:3; }
+.auth-simple .auth-simple-shell { z-index:2; }
+@media(max-width:700px) {
+  .auth-simple .auth-unibot-float { top:7%;right:7%;left:auto;width:108px;height:108px;opacity:.55; }
+  .auth-simple .auth-bot-spark { font-size:16px; }
+  .auth-simple .auth-orb-one { width:230px;height:230px;left:-110px;top:5%; }
+  .auth-simple .auth-orb-two { width:280px;height:280px;right:-150px;bottom:0; }
+}
+
+/* Chat identity avatars are deliberately static; only the typing indicator animates. */
+.aihub-message-avatar.bot-mascot .aihub-bot-avatar .aihub-bot,
+.aihub-message-avatar.bot-mascot .aihub-bot { animation:none !important; transform:none !important; }
