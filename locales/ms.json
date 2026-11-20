@@ -512,5 +512,14 @@
   "aiTutorQuestion": "Soalan",
   "aiTutorNewQuiz": "Cuba topik lain",
   "aiTutorQuizError": "AI tidak dapat menghasilkan kuiz yang sah. Sila cuba lagi.",
-  "aiTutorAlreadySubmitted": "Kuiz ini telah dihantar."
+  "aiTutorAlreadySubmitted": "Kuiz ini telah dihantar.",
+  "aiCopilotTitle": "Pembantu Akademik AI",
+  "aiCopilotHint": "Satu pelan pembelajaran praktikal berdasarkan aktiviti akademik UniLife OS anda.",
+  "aiCopilotEmpty": "Jana pelan berdasarkan tugasan, peperiksaan, sesi ulang kaji dan prestasi kuiz anda.",
+  "aiCopilotGenerate": "Bina pelan tindakan akademik saya",
+  "aiCopilotLoading": "Sedang menyemak beban akademik anda…",
+  "aiCopilotAssignments": "tugasan belum selesai",
+  "aiCopilotExams": "peperiksaan akan datang",
+  "aiCopilotWeakTopics": "topik lemah",
+  "aiCopilotDueCards": "kad imbas perlu diulang kaji"
 }

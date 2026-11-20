@@ -1,0 +1,32 @@
+UNILIFE OS — PHASE 6 RELEASE NOTES
+AI ACADEMIC COPILOT
+
+New capability
+- Adds a cross-feature Academic Copilot panel to the AI Study Hub home screen.
+- Builds a user-scoped snapshot from upcoming assignments, upcoming examinations, revision-session completion, due flashcards, ready document filenames, and quiz-topic performance.
+- Uses the existing Groq-backed AI provider to generate a concise action plan with TODAY'S TOP 3, THIS WEEK, TOPICS TO STRENGTHEN, USEFUL UNI LIFE FEATURES, and CHECK-IN sections.
+- Includes snapshot counts so the student can see which records informed the plan.
+- English and Bahasa Melayu interface strings included.
+
+Files added/updated
+- Added apps-script/AIAcademicCopilot.gs
+- Updated apps-script/API.gs
+- Updated js/ai-hub.js and css/ai-hub.css
+- Updated locales/en.json and locales/ms.json
+- Updated service-worker.js cache version to unilife-v11-ai-academic-copilot
+
+Data and privacy
+- No new spreadsheet tabs are required.
+- The API derives user identity from the authenticated session and only reads rows belonging to that user.
+- Only compact academic metadata is sent to the existing AI provider. Uploaded PDF content is not included; only ready document names and page counts are listed.
+- The AI is instructed not to invent deadlines, scores, or document contents.
+
+Deployment
+1. Add AIAcademicCopilot.gs to the existing Apps Script project.
+2. Replace API.gs with the updated version.
+3. Deploy a new Apps Script Web App version.
+4. Publish updated frontend files to GitHub Pages.
+5. No setup() migration or new sheets are needed for Phase 6.
+
+Validation note
+Static syntax, JSON locale parity, CSS parse, route wiring and archive integrity checks are performed locally. Live Apps Script, Groq and browser deployment tests are not performed here.

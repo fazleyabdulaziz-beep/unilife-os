@@ -6,7 +6,7 @@
   const U = window.UL;
   if (!U) return;
   const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false,
-    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false };
+    documents: [], docsLoaded: false, uploading: false, uploadProgress: '', intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false };
   const $ = (s, root=document) => root.querySelector(s);
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
@@ -88,6 +88,19 @@
       ${!quiz?`<form class="aitutor-form" data-ai-form="tutor"><label>${t('aiTutorCourse')}<select name="course"><option value="">${t('aiTutorGeneral')}</option>${((U.data&&U.data.courses)||[]).map(c=>`<option value="${esc(c.code||c.name)}">${esc(c.code||'')} ${esc(c.name||'')}</option>`).join('')}</select></label><label>${t('aiTutorTopic')}<input name="topic" maxlength="160" required placeholder="${t('aiTutorTopicPlaceholder')}"></label><label>${t('aiTutorDifficulty')}<select name="difficulty"><option value="adaptive">${t('aiTutorAdaptive')}</option><option value="easy">${t('aiTutorEasy')}</option><option value="medium">${t('aiTutorMedium')}</option><option value="hard">${t('aiTutorHard')}</option></select></label><button class="aihub-upload-button" type="submit" ${state.tutorLoading?'disabled':''}>${icon('sparkles')} ${state.tutorLoading?t('aiTutorGenerating'):t('aiTutorStart')}</button></form>`:`<div class="aitutor-quiz-head"><b>${esc(quiz.topic)}</b><small>${esc(quiz.course||t('aiTutorGeneral'))} · ${esc(quiz.difficulty)}</small></div>${questions}${!state.tutorResult?`<button type="button" class="aihub-upload-button" data-ai-act="tutor-submit" ${Object.keys(state.tutorAnswers).length!==5?'disabled':''}>${t('aiTutorSubmit')}</button>`:''}`}
       ${quiz&&state.tutorResult?result:''}</section>`;
   }
+  function renderCopilot() {
+    const c=state.copilot;
+    const summary=c&&c.snapshot_summary;
+    return `<section class="aihub-copilot"><div class="aihub-section-head"><div><h2>${t('aiCopilotTitle')}</h2><p>${t('aiCopilotHint')}</p></div><span class="aihub-copilot-mark">${icon('compass')}</span></div>
+      <div class="aihub-copilot-body">${c?`<div class="aihub-copilot-stats"><span>${summary.assignments} ${t('aiCopilotAssignments')}</span><span>${summary.exams} ${t('aiCopilotExams')}</span><span>${summary.weak_topics} ${t('aiCopilotWeakTopics')}</span><span>${summary.flashcards_due} ${t('aiCopilotDueCards')}</span></div><div class="aihub-copilot-plan">${esc(c.plan).replace(/\n/g,'<br>')}</div>`:`<p>${t('aiCopilotEmpty')}</p>`}
+      <button type="button" class="aihub-upload-button" data-ai-act="copilot-run" ${state.copilotLoading?'disabled':''}>${icon('sparkles')} ${state.copilotLoading?t('aiCopilotLoading'):t('aiCopilotGenerate')}</button></div></section>`;
+  }
+  async function runCopilot() {
+    state.copilotLoading=true;draw();
+    try { state.copilot=await U.api.call('aiAcademicCopilot',{}); }
+    catch(e){notifyError(e);}
+    finally {state.copilotLoading=false;draw();}
+  }
   function renderHome() {
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
     const welcome = t('aiHubWelcome').replace('{name}', esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there')));
@@ -102,6 +115,7 @@
           </form>
         </div>
       </div>
+      ${renderCopilot()}
       ${renderIntelligence()}
       ${renderTutor()}
       <section class="aihub-documents">
@@ -421,6 +435,7 @@
     else if (action==='doc-quiz') startDocumentTask(button.dataset.id,'quiz');
     else if (action==='doc-cards') startDocumentTask(button.dataset.id,'cards');
     else if (action==='doc-delete') deleteDocument(button.dataset.id);
+    else if (action==='copilot-run') runCopilot();
     else if (action==='study-refresh') { state.intelligenceLoaded=false; loadIntelligence().then(draw); }
     else if (action==='study-plan') generateStudyPlan();
     else if (action==='study-done') completeStudySession(button.dataset.id);

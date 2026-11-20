@@ -56,6 +56,10 @@ function handle(req) {
     case 'unibotChat':
       return uniBotChat_(uid, d);
 
+    // Phase 6 — cross-feature academic copilot.
+    case 'aiAcademicCopilot':
+      return aiAcademicCopilot_(uid);
+
     // AI Study Hub — persistent, user-owned conversations.
     case 'aiStudyHubListConversations':
       return aiStudyHubListConversations_(uid, d);

@@ -512,5 +512,14 @@
   "aiTutorQuestion": "Question",
   "aiTutorNewQuiz": "Try another topic",
   "aiTutorQuizError": "The AI could not create a valid quiz. Please try again.",
-  "aiTutorAlreadySubmitted": "This quiz has already been submitted."
+  "aiTutorAlreadySubmitted": "This quiz has already been submitted.",
+  "aiCopilotTitle": "Academic Copilot",
+  "aiCopilotHint": "One practical study plan built from your UniLife OS academic activity.",
+  "aiCopilotEmpty": "Generate a grounded snapshot-based plan across your assignments, exams, revision sessions and quiz performance.",
+  "aiCopilotGenerate": "Build my academic action plan",
+  "aiCopilotLoading": "Reviewing your academic workload…",
+  "aiCopilotAssignments": "open assignments",
+  "aiCopilotExams": "upcoming exams",
+  "aiCopilotWeakTopics": "weak topics",
+  "aiCopilotDueCards": "flashcards due"
 }
