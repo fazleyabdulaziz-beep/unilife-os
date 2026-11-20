@@ -1,39 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Instrument+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
 
-/* ============ LIGHT: paper + aurora ============ */
+/* ============ LIGHT: paper + ink + vermilion ============ */
 :root{
-  --bg:#f5f2ec;--surface:#fffdf9;--surface2:#f0ecf6;
-  --text:#1d1b2e;--muted:#6a6782;--border:#e6e1ee;
-  --primary:#5b4bd6;--primary2:#2fb7c4;--primary-soft:#e8e4fb;--on-primary:#fff;
-  --blue-soft:#dcecf6;--sage-soft:#e1efe6;
-  --ok:#2f9a6b;--warn:#cf8a2e;--bad:#d0506f;
-  --grad:linear-gradient(120deg,var(--primary),var(--primary2));
-  --glass:rgba(255,253,249,.72);--glass-border:rgba(255,255,255,.7);
-  --orb1:rgba(150,130,255,.38);--orb2:rgba(70,200,210,.30);--orb3:rgba(255,190,140,.24);
-  --dot:rgba(29,27,46,.06);--glow:rgba(91,75,214,.30);
-  --shadow:0 1px 1px rgba(29,27,46,.04),0 6px 14px rgba(29,27,46,.05),0 18px 36px -12px rgba(91,75,214,.16);
-  --shadow-lg:0 2px 2px rgba(29,27,46,.05),0 12px 26px rgba(29,27,46,.07),0 32px 56px -14px rgba(91,75,214,.26);
-  --scrim:rgba(24,20,52,.42);
-  --r:24px;--r-md:18px;--r-sm:12px;--pad:20px;
-  --font:'DM Sans',system-ui,sans-serif;--font-display:'Bricolage Grotesque','Plus Jakarta Sans','DM Sans',system-ui,sans-serif;
+  --bg:#f2eee3;--surface:#fffcf4;--surface2:#ebe5d4;
+  --text:#1b1915;--muted:#6d6657;--border:#d8d0ba;
+  --primary:#e2461f;--primary2:#f4bf1d;--primary-soft:#fbe2d6;--on-primary:#fff;
+  --blue-soft:#dde8ee;--sage-soft:#dfe9d8;
+  --ok:#2f7d4f;--warn:#b9741b;--bad:#c0332f;
+  --ink:var(--text);--hl:#fde68a;
+  --glass:var(--surface);--glass-border:var(--border);
+  --orb1:transparent;--orb2:transparent;--orb3:transparent;
+  --dot:rgba(27,25,21,.07);--glow:rgba(226,70,31,.3);
+  --shadow:none;--shadow-lg:6px 6px 0 var(--ink);--scrim:rgba(27,25,21,.45);
+  --r:18px;--r-md:14px;--r-sm:11px;--pad:20px;
+  --font:'Instrument Sans','DM Sans',system-ui,sans-serif;--font-display:'Fraunces','Georgia',serif;--font-mono:'DM Mono',ui-monospace,Consolas,monospace;
   --fs-xs:12px;--fs-sm:13px;--fs-md:15px;--fs-lg:17px;--fs-xl:clamp(22px,4vw,30px);--fs-stat:clamp(20px,6vw,28px);
-  --ease:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.65,0,.35,1);--pop:cubic-bezier(.34,1.45,.64,1);
-  --t-fast:.2s;--t-med:.4s;--t-slow:.8s;--stagger:.07s
+  --ease:cubic-bezier(.22,1,.36,1);--ease-io:cubic-bezier(.65,0,.35,1);--pop:cubic-bezier(.34,1.5,.64,1);
+  --t-fast:.18s;--t-med:.38s;--t-slow:.7s;--stagger:.06s
 }
 
-/* ============ DARK: deep ink + neon aurora ============ */
+/* ============ DARK: warm charcoal + ember ============ */
 [data-theme=dark]{
-  --bg:#0c0f1d;--surface:#151a2e;--surface2:#1e2440;
-  --text:#ecebf7;--muted:#9a9cba;--border:#2a3052;
-  --primary:#9ea8ff;--primary2:#5fe0e6;--primary-soft:#262b57;--on-primary:#0c0f1d;
-  --blue-soft:#1d3048;--sage-soft:#1f3434;
-  --ok:#6fdba5;--warn:#f0b36a;--bad:#ff8aa5;
-  --glass:rgba(21,26,46,.70);--glass-border:rgba(255,255,255,.08);
-  --orb1:rgba(110,100,255,.26);--orb2:rgba(40,200,215,.16);--orb3:rgba(255,120,170,.10);
-  --dot:rgba(236,235,247,.05);--glow:rgba(158,168,255,.34);
-  --shadow:0 1px 1px rgba(0,0,0,.25),0 8px 18px rgba(0,0,0,.28),0 20px 40px -12px rgba(0,0,0,.45);
-  --shadow-lg:0 2px 2px rgba(0,0,0,.3),0 14px 30px rgba(0,0,0,.34),0 34px 60px -14px rgba(0,0,0,.55);
-  --scrim:rgba(4,5,14,.62)
+  --bg:#141311;--surface:#1e1c19;--surface2:#2a2722;
+  --text:#f3eee2;--muted:#a69e8d;--border:#3a362e;
+  --primary:#ff7a4d;--primary2:#ffd23f;--primary-soft:#3b2216;--on-primary:#1a0e08;
+  --blue-soft:#1f2f3a;--sage-soft:#232f22;
+  --ok:#7fd29b;--warn:#f0b160;--bad:#ff8680;
+  --ink:#f3eee2;--hl:#5a4a12;
+  --dot:rgba(243,238,226,.06);--glow:rgba(255,122,77,.3);
+  --shadow:none;--shadow-lg:6px 6px 0 #000;--scrim:rgba(0,0,0,.6)
 }
 
 [data-density=compact]{--pad:12px}

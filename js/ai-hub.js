@@ -5,7 +5,7 @@
   'use strict';
   const U = window.UL;
   if (!U) return;
-  const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false, mode:'chat', historyOpen:false,
+  const state = { conversations: [], activeId: '', messages: [], busy: false, loaded: false, loading: false, mode:'chat', historyOpen:false, studyOpen:false, attachMenuOpen:false, seen:0,
     documents: [], docsLoaded: false, uploading: false, uploadProgress: '', attachments: [], intelligence: null, intelligenceLoaded: false, tutorQuiz:null, tutorAnswers:{}, tutorResult:null, tutorDashboard:null, tutorLoading:false, copilot:null, copilotLoading:false };
   const $ = (s, root=document) => root.querySelector(s);
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
@@ -33,11 +33,24 @@
   function draw() {
     const view = $('#view');
     if (view && location.hash.replace('#/','') === 'ai') {
+      const old = $('textarea[name="message"]');
+      const keep = old ? old.value : '';
+      const hadFocus = old && document.activeElement === old;
+      const grew = state.messages.length > state.seen;
       view.innerHTML = render();
       refreshIcons();
-      const log = $('#aihub-messages');
-      if (log && state.messages.length) log.scrollTop = log.scrollHeight;
+      const field = $('textarea[name="message"]');
+      if (field && keep) { field.value = keep; autoGrow(field); }
+      if (field && hadFocus) field.focus();
+      state.seen = state.messages.length;
+      if (state.messages.length) window.scrollTo({ top: document.documentElement.scrollHeight, behavior: grew ? 'smooth' : 'auto' });
     }
+  }
+  function autoGrow(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,200)+'px'; }
+  function closeAttachMenu(){
+    state.attachMenuOpen=false;
+    const m=$('.aihub-attach-menu'), b=$('.aihub-attach-trigger');
+    if(m) m.hidden=true; if(b) b.setAttribute('aria-expanded','false');
   }
   function toolCards() {
     return tools.map(x => `<button class="aihub-tool-card" type="button" data-ai-act="tool" data-tool="${x.id}">
@@ -55,7 +68,7 @@
   }
   function messageList() {
     if (!state.messages.length) return '';
-    return state.messages.map(m => `<article class="aihub-message ${m.role==='user'?'from-user':'from-ai'}">
+    return state.messages.map((m,i) => `<article class="aihub-message ${m.role==='user'?'from-user':'from-ai'} ${i>=state.seen?'is-new':''}">
       <div class="aihub-message-avatar">${icon(m.role==='user'?'user':'brain')}</div>
       <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):t('aiHubAssistant')}</small><p>${esc(m.content).replace(/\n/g,'<br>')}</p></div>
     </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai"><div class="aihub-message-avatar">${icon('brain')}</div><div class="aihub-message-body"><small>${t('aiHubAssistant')}</small><p class="aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</p></div></article>` : '');
@@ -145,30 +158,37 @@
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
     const active = state.conversations.find(c => c.id === state.activeId);
     const selected = modes.find(m=>m.id===state.mode)||modes[0];
-    const welcome = t('aiHubWelcome').replace('{name}', esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there')));
+    const welcome = t('aiHubWelcome').replace('{name}', '<span class="hl">'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</span>');
     const modeBar = modes.map(m=>`<button type="button" class="aihub-mode ${state.mode===m.id?'active':''}" data-ai-act="mode" data-mode="${m.id}" aria-pressed="${state.mode===m.id}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
-    const suggestionBar = suggestions.map(x=>`<button type="button" class="aihub-suggestion" data-ai-act="suggest" data-mode="${x.mode}" data-text="${esc(x.text)}">${icon(x.icon)}<span>${x.text}</span></button>`).join('');
-    const empty = !state.messages.length ? `<div class="aihub-welcome-state"><div class="aihub-welcome-mark">${icon('sparkles')}</div><p class="aihub-welcome-kicker">YOUR STUDY COMPANION</p><h1>${welcome}</h1><p class="aihub-mode-hint">${selected.hint}</p><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
+    const suggestionBar = suggestions.map((x,i)=>`<button type="button" class="aihub-suggestion" style="--i:${i}" data-ai-act="suggest" data-mode="${x.mode}" data-text="${esc(x.text)}"><em>0${i+1}</em><span>${x.text}</span>${icon(x.icon)}</button>`).join('');
+    const empty = !state.messages.length ? `<div class="aihub-welcome-state"><div class="aihub-welcome-mark"><i></i><i></i><i></i></div><p class="aihub-welcome-kicker">YOUR STUDY COMPANION</p><h1>${welcome}</h1><p class="aihub-mode-hint">${selected.hint}</p><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
     return `<section class="aihub-workspace">
-      <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="upload">${icon('paperclip')}<span>Files</span></button></div></header>
+      <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="study" aria-expanded="${state.studyOpen}">${icon('library')}<span>Study space</span></button></div></header>
       ${state.historyOpen?`<div class="aihub-history-drawer"><div class="aihub-history-heading"><b>Recent conversations</b><button type="button" data-ai-act="history">Close</button></div>${conversationList()}</div>`:''}
       <div class="aihub-mode-strip" role="group" aria-label="AI modes">${modeBar}</div>
       <div class="aihub-chat-stage"><div class="aihub-messages ${state.messages.length?'has-messages':'is-empty'}" id="aihub-messages">${empty}${messageList()}</div>
+      </div>
+      <div class="aihub-dock"><div class="aihub-composer-wrap">
+        <div class="aihub-attach-menu" role="menu" hidden>
+          <button type="button" role="menuitem" style="--i:0" data-ai-act="attach-images">${icon('image')}<span><b>Photos</b><small>Add a picture</small></span></button>
+          <button type="button" role="menuitem" style="--i:1" data-ai-act="attach-files">${icon('file-text')}<span><b>Files and PDFs</b><small>Up to 5 files, 8 MB each</small></span></button>
+          <button type="button" role="menuitem" style="--i:2" data-ai-act="study">${icon('library')}<span><b>My study space</b><small>Saved documents</small></span></button>
+        </div>
         <form data-ai-form="send" class="aihub-composer aihub-unified-composer">
           <div class="aihub-attachment-list">${renderAttachments()}</div>
-          <textarea name="message" rows="2" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
-          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" title="Add files">${icon('plus')}</button><span class="aihub-current-mode">${icon(selected.icon)} ${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
-        </form><p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
+          <textarea name="message" rows="1" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
+          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode">${icon(selected.icon)} ${selected.label}</span></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${icon('arrow-up')}</button></div>
+        </form></div>
+        <p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
-      <div class="aihub-attach-menu" ${state.attachMenuOpen?'':'hidden'}><button type="button" data-ai-act="attach-images">${icon('image')} Photos</button><button type="button" data-ai-act="attach-files">${icon('file-text')} Files and PDFs</button></div>
       <input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple hidden>
       <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
       ${state.uploading?`<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress||t('aiHubUploading'))}</span></div>`:''}
-      <details class="aihub-my-tools"><summary>${icon('library')}<span><b>My study space</b><small>Documents, progress, quizzes and academic overview</small></span>${icon('chevron-down')}</summary>
+      ${state.studyOpen?`<div class="aihub-study-scrim" data-ai-act="study"></div><aside class="aihub-study-panel" aria-label="My study space"><header><div><b>My study space</b><small>Documents, progress, quizzes and overview</small></div><button type="button" class="aihub-top-button" data-ai-act="study" aria-label="Close">${icon('x')}</button></header><div class="aihub-study-body">`:''}
         <section class="aihub-documents"><div class="aihub-section-head"><div><h2>${t('aiHubDocuments')}</h2><p>${t('aiHubDocumentsHint')}</p></div><button type="button" class="aihub-upload-button" data-ai-act="upload" ${state.uploading?'disabled':''}>${icon('upload-cloud')} ${t('aiHubUploadPdf')}</button></div><div class="aihub-document-grid">${documentCards()}</div><p class="aihub-file-note">${t('aiHubPdfPrivacy')}</p></section>
         ${renderCopilot()}${renderIntelligence()}${renderTutor()}
         <div class="aihub-context-note">${icon('shield-check')}<span><b>${t('aiHubContext')}</b><small>${t('aiHubContextHint')}</small></span></div>
-      </details>
+      ${state.studyOpen?`</div></aside>`:''}
     </section>`;
   }
   function render() {
@@ -438,6 +458,7 @@
     catch(e){notifyError(e);}
   }
   document.addEventListener('click', e => {
+    if (state.attachMenuOpen && !e.target.closest('.aihub-attach-menu') && !e.target.closest('.aihub-attach-trigger')) closeAttachMenu();
     const button = e.target.closest('[data-ai-act]');
     if (!button) return;
     const action = button.dataset.aiAct;
@@ -450,9 +471,10 @@
     else if (action==='delete') deleteConversation(button.dataset.id);
     else if (action==='tool') chooseTool(button.dataset.tool);
     else if (action==='upload') $('#aihub-file-input')?.click();
-    else if (action==='attach-menu') { state.attachMenuOpen=!state.attachMenuOpen; draw(); }
-    else if (action==='attach-images') { state.attachMenuOpen=false; draw(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.click();} }
-    else if (action==='attach-files') { state.attachMenuOpen=false; draw(); const f=$('#aihub-file-input'); if(f){f.accept='.pdf,.txt,application/pdf,text/plain';f.click();} }
+    else if (action==='attach-menu') { const m=$('.aihub-attach-menu'); if(m){ m.hidden=!m.hidden; state.attachMenuOpen=!m.hidden; button.setAttribute('aria-expanded',String(state.attachMenuOpen)); } }
+    else if (action==='study') { state.studyOpen=!state.studyOpen; state.attachMenuOpen=false; draw(); }
+    else if (action==='attach-images') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.click();} }
+    else if (action==='attach-files') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='.pdf,.txt,application/pdf,text/plain';f.click();} }
     else if (action==='remove-attachment') { state.attachments.splice(Number(button.dataset.index),1); draw(); }
     else if (action==='doc-summary') startDocumentTask(button.dataset.id,'summary');
     else if (action==='doc-ask') startDocumentTask(button.dataset.id,'ask');
@@ -481,6 +503,12 @@
     const answer=e.target.closest('[data-tutor-answer]');
     if(answer){state.tutorAnswers[answer.dataset.tutorAnswer]=Number(answer.value);draw();}
   });
+  document.addEventListener('keydown', e => {
+    if (e.key==='Escape') { if (state.attachMenuOpen) closeAttachMenu(); else if (state.studyOpen) { state.studyOpen=false; draw(); } }
+    const f=e.target.closest&&e.target.closest('textarea[name="message"]');
+    if (f && e.key==='Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); const form=f.closest('form'); if(form&&form.requestSubmit) form.requestSubmit(); }
+  });
+  document.addEventListener('input', e => { if (e.target && e.target.matches && e.target.matches('textarea[name="message"]')) autoGrow(e.target); });
   document.addEventListener('submit', e => {
     const tutor=e.target.closest('form[data-ai-form="tutor"]');
     if(tutor){e.preventDefault();generateTutorQuiz(tutor);return;}
@@ -489,7 +517,7 @@
     e.preventDefault();
     const field = $('textarea[name="message"]',form);
     const value = field ? field.value : '';
-    if (field) field.value = '';
+    if (field) { field.value = ''; autoGrow(field); }
     sendMessage(value);
   });
   U.aiHub = { render, onEnter, refresh:async()=>{state.loaded=false;state.docsLoaded=false;await onEnter();} };
