@@ -548,7 +548,17 @@
     const fileContext=state.attachments.filter(a=>a.kind!=='image').map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
     const imageNotes = imageAttachments.map(a=>`\n[Image attached: ${a.name}]`).join('');
     const selectedMode = modes.find(m=>m.id===state.mode)||modes[0];
-    const content = (selectedMode.prompt ? selectedMode.prompt : '') + rawContent + fileContext + imageNotes;
+    // Each AI mode instruction is added at most once per conversation.
+    // This supports switching modes in an existing chat without repeating the
+    // same instruction on every reply or re-injecting it when returning to a mode.
+    // Checking saved user-message content also works for conversations loaded
+    // from history, without needing a separate local/session flag.
+    const modePrompt = selectedMode.prompt || '';
+    const modePromptAlreadyUsed = !!modePrompt && state.messages.some(m =>
+      m && m.role === 'user' && String(m.content || '').startsWith(modePrompt)
+    );
+    const modeInstruction = modePrompt && !modePromptAlreadyUsed ? modePrompt : '';
+    const content = modeInstruction + rawContent + fileContext + imageNotes;
     state.busy = true;
     state.firstChatTransition = state.messages.length === 0;
     state.messages.push({role:'user',content:content,attachments:attachmentSnapshot,created_at:new Date().toISOString()});
