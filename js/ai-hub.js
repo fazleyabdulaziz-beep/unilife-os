@@ -141,7 +141,7 @@
     if (!state.messages.length) return '';
     return state.messages.map((m,i) => `<article class="aihub-message ${m.role==='user'?'from-user':'from-ai'} ${i>=state.seen?'is-new':''}">
       <div class="aihub-message-avatar ${m.role==='user'?'user-photo':'bot-mascot'}">${m.role==='user'?userAvatarMarkup():botAvatarMarkup()}</div>
-      <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):'UniBot'}</small><div class="aihub-bubble">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(m.content)}</div></div>
+      <div class="aihub-message-body"><small>${m.role==='user'?t('aiHubYou'):'UniBot'}</small>${m.role==='user'?renderMessageAttachments(m.attachments):''}<div class="aihub-bubble">${m.role==='user'?esc(m.content).replace(/\n/g,'<br>'):md(m.content)}</div></div>
     </article>`).join('') + (state.busy ? `<article class="aihub-message from-ai is-typing"><div class="aihub-message-avatar bot-mascot">${botAvatarMarkup()}</div><div class="aihub-message-body"><small>UniBot</small><div class="aihub-bubble aihub-thinking"><span></span><span></span><span></span> ${t('aiHubThinking')}</div></div></article>` : '');
   }
   function renderIntelligence() {
@@ -201,9 +201,22 @@
     {icon:'calendar-days',text:'Make a study plan for this week',mode:'planner'},
     {icon:'brain',text:'Test my knowledge with a quiz',mode:'quiz'}
   ];
+  function attachmentCard(a, i, removable) {
+    const kindIcon = a.kind==='image' ? 'image' : a.kind==='pdf' ? 'file-pdf' : 'file-text';
+    const status = a.status==='loading' ? 'Preparing…' : a.kind==='image' ? 'Image' : a.kind==='pdf' ? 'PDF document' : 'Text document';
+    return `<div class="aihub-attachment-chip ${a.kind==='image'?'is-image':''} ${a.status==='loading'?'is-loading':''}">
+      ${a.preview && a.kind==='image' ? `<img src="${a.preview}" alt="${esc(a.name)}">` : `<span class="aihub-file-icon">${icon(kindIcon)}</span>`}
+      <span class="aihub-file-meta"><b>${esc(a.name)}</b><small>${status}</small></span>
+      ${a.status==='loading' ? '<span class="aihub-file-spinner" aria-label="Preparing file"></span>' : removable ? `<button type="button" data-ai-act="remove-attachment" data-index="${i}" aria-label="Remove ${esc(a.name)}">${icon('x')}</button>` : ''}
+    </div>`;
+  }
   function renderAttachments() {
     if (!state.attachments.length) return '';
-    return `<div class="aihub-attachment-chips">${state.attachments.map((a,i)=>`<div class="aihub-attachment-chip ${a.kind==='image'?'is-image':''}">${a.preview?`<img src="${a.preview}" alt="${esc(a.name)}">`:icon(a.kind==='pdf'?'file-pdf':'file-text')}<span><b>${esc(a.name)}</b><small>${a.kind==='image'?'Image preview':a.kind==='pdf'?'PDF text extracted':'Text file'}</small></span><button type="button" data-ai-act="remove-attachment" data-index="${i}" aria-label="Remove ${esc(a.name)}">${icon('x')}</button></div>`).join('')}</div>`;
+    return `<div class="aihub-attachment-chips">${state.attachments.map((a,i)=>attachmentCard(a,i,true)).join('')}</div>`;
+  }
+  function renderMessageAttachments(items) {
+    if (!items || !items.length) return '';
+    return `<div class="aihub-message-attachments">${items.map(a=>attachmentCard(a,0,false)).join('')}</div>`;
   }
   async function compressImageForAI(file) {
     const source = await new Promise((resolve,reject) => {
@@ -224,28 +237,45 @@
     return dataUrl;
   }
   async function addAttachments(files) {
-    for (const file of Array.from(files||[])) {
-      if (state.attachments.length>=5) { if(U.ui&&U.ui.toast)U.ui.toast('Maximum 5 attachments per message.'); break; }
-      if (file.size>8*1024*1024) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: maximum file size is 8 MB.`); continue; }
+    const incoming = Array.from(files || []);
+    for (const file of incoming) {
+      if (state.attachments.length >= 5) { if(U.ui&&U.ui.toast)U.ui.toast('Maximum 5 attachments per message.'); break; }
+      if (file.size > 8*1024*1024) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: maximum file size is 8 MB.`); continue; }
+      if (!file.type.startsWith('image/') && file.type!=='application/pdf' && file.type!=='text/plain' && !/\.(pdf|txt)$/i.test(file.name)) {
+        if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: supported formats are images, PDF and TXT.`);
+        continue;
+      }
+      if (file.type.startsWith('image/') && state.attachments.filter(a=>a.kind==='image').length >= 3) {
+        if(U.ui&&U.ui.toast)U.ui.toast('Maximum 3 images per message.');
+        continue;
+      }
+      const id = 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+      const kind = file.type.startsWith('image/') ? 'image' : (file.type==='application/pdf' || /\.pdf$/i.test(file.name)) ? 'pdf' : 'text';
+      state.attachments.push({id,name:file.name,kind,status:'loading',preview:'',content:''});
+      draw();
       try {
-        if (file.type.startsWith('image/')) {
-          if (state.attachments.filter(a=>a.kind==='image').length >= 3) {
-            if(U.ui&&U.ui.toast)U.ui.toast('Maximum 3 images per message.');
-            continue;
-          }
-          const preview=await compressImageForAI(file);
-          state.attachments.push({name:file.name,kind:'image',preview,content:preview});
-        } else if (file.type==='application/pdf' || /\.pdf$/i.test(file.name)) {
-          const extracted=await extractPdfText(file);
-          state.attachments.push({name:file.name,kind:'pdf',content:extracted.text,pages:extracted.pages});
-        } else if (file.type==='text/plain' || /\.txt$/i.test(file.name)) {
-          const content=await file.text();
-          if(content.length>30000) throw new Error('Text file exceeds 30,000 characters.');
-          state.attachments.push({name:file.name,kind:'text',content});
-        } else { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: currently supported formats are images, PDF and TXT.`); }
-      } catch(err) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: ${err.message||'Could not read file.'}`); }
+        let data = {};
+        if (kind==='image') {
+          const preview = await compressImageForAI(file);
+          data = {preview,content:preview,status:'ready'};
+        } else if (kind==='pdf') {
+          const extracted = await extractPdfText(file);
+          data = {content:extracted.text,pages:extracted.pages,status:'ready'};
+        } else {
+          const content = await file.text();
+          if (content.length>30000) throw new Error('Text file exceeds 30,000 characters.');
+          data = {content,status:'ready'};
+        }
+        const index = state.attachments.findIndex(a=>a.id===id);
+        if (index>=0) state.attachments[index] = {...state.attachments[index],...data};
+      } catch(err) {
+        state.attachments = state.attachments.filter(a=>a.id!==id);
+        if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: ${err.message||'Could not read file.'}`);
+      }
+      draw();
     }
-    state.attachMenuOpen=false; draw();
+    state.attachMenuOpen=false;
+    draw();
   }
   function renderWorkspace() {
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
@@ -499,6 +529,11 @@
   async function sendMessage(message) {
     const rawContent = String(message || '').trim();
     if ((!rawContent && !state.attachments.length) || state.busy) return;
+    if (state.attachments.some(a=>a.status==='loading')) {
+      if(U.ui&&U.ui.toast)U.ui.toast('Please wait until your files finish preparing.');
+      return;
+    }
+    const attachmentSnapshot = state.attachments.map(a=>({name:a.name,kind:a.kind,preview:a.kind==='image'?a.preview:''}));
     const imageAttachments = state.attachments.filter(a=>a.kind==='image').slice(0,3);
     const fileContext=state.attachments.filter(a=>a.kind!=='image').map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
     const imageNotes = imageAttachments.map(a=>`\n[Image attached: ${a.name}]`).join('');
@@ -506,7 +541,7 @@
     const content = (selectedMode.prompt ? selectedMode.prompt : '') + rawContent + fileContext + imageNotes;
     state.busy = true;
     state.firstChatTransition = state.messages.length === 0;
-    state.messages.push({role:'user',content:content,created_at:new Date().toISOString()});
+    state.messages.push({role:'user',content:content,attachments:attachmentSnapshot,created_at:new Date().toISOString()});
     draw();
     try {
       if (!state.activeId) await createConversation();

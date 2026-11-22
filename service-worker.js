@@ -1,5 +1,5 @@
 // Bump V on every deploy so clients drop the old app shell.
-const V='unilife-v24-unibot-exams-studyhub-files-images',FB='https://www.gstatic.com/firebasejs/10.12.2/';
+const V='unilife-v25-chat-upload-preview-loading',FB='https://www.gstatic.com/firebasejs/10.12.2/';
 const SHELL=['./','index.html','manifest.json','css/themes.css','css/main.css','css/dashboard.css','css/mobile.css','css/ai-hub.css','css/skin.css','ui.js','js/config.js','js/ui-fx.js','js/push-config.js','js/data.js','js/api.js','js/i18n.js','js/auth.js','js/importer.js','js/notifications.js','js/ai-hub.js','js/app.js','locales/en.json','locales/ms.json','assets/icons/icon-192.png','assets/icons/icon-512.png','assets/icons/logo-light.png','assets/icons/logo-dark.png','favicon.ico','favicon-dark.ico'];
 const CDN=['unpkg.com','cdnjs.cloudflare.com','fonts.googleapis.com','fonts.gstatic.com','www.gstatic.com'];
 try{importScripts('js/push-config.js')}catch(e){}

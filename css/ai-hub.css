@@ -300,3 +300,22 @@
 @keyframes aihubFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @media(prefers-reduced-motion:reduce){.aihub-workspace *{animation:none!important;transition:none!important}}
 @media(max-width:600px){.aihub-attach-menu{margin-left:10px;flex-direction:column}.aihub-attachment-chip{max-width:100%}.aihub-unified-composer{width:calc(100% - 20px);border-radius:21px}}
+
+/* v25 — ChatGPT/Gemini-style upload previews and preparation feedback */
+.aihub-attachment-chips{align-items:stretch}
+.aihub-attachment-chip{max-width:min(280px,100%);min-height:54px;padding:7px 10px;background:var(--surface);border-color:var(--border)}
+.aihub-attachment-chip .aihub-file-icon{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:10px;background:var(--surface2);color:var(--primary)}
+.aihub-attachment-chip .aihub-file-icon svg{width:21px;height:21px}
+.aihub-attachment-chip .aihub-file-meta{flex:1;min-width:0}
+.aihub-attachment-chip .aihub-file-meta b{display:block;max-width:185px;font-size:11px;font-weight:650}
+.aihub-attachment-chip .aihub-file-meta small{font-size:10px}
+.aihub-file-spinner{width:15px;height:15px;flex:none;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:aihub-spin .7s linear infinite}
+.aihub-attachment-chip.is-loading{opacity:.82}
+.aihub-message-attachments{display:flex;flex-wrap:wrap;gap:7px;margin:5px 0 8px}
+.aihub-message-attachments .aihub-attachment-chip{max-width:260px;min-height:48px;padding:6px 9px}
+.aihub-message-attachments .aihub-attachment-chip img{width:42px;height:42px}
+.aihub-message-attachments .aihub-file-meta b{max-width:175px}
+.aihub-message-attachments .aihub-attachment-chip button{display:none}
+.aihub-message-attachments .aihub-attachment-chip.is-image{padding:5px}
+.aihub-message-attachments .aihub-attachment-chip.is-image .aihub-file-meta{padding:0 5px}
+@media(max-width:600px){.aihub-attachment-chip{max-width:100%}.aihub-message-attachments .aihub-attachment-chip{max-width:100%}}
