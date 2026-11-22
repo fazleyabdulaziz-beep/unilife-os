@@ -248,7 +248,7 @@
         if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: supported formats are images, PDF and TXT.`);
         continue;
       }
-      if (file.type.startsWith('image/') && state.attachments.filter(a=>a.kind==='image').length >= 3) {
+      if ((detectedType.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(detectedName)) && state.attachments.filter(a=>a.kind==='image').length >= 3) {
         if(U.ui&&U.ui.toast)U.ui.toast('Maximum 3 images per message.');
         continue;
       }
@@ -631,11 +631,22 @@
     else if (action==='open') openConversation(button.dataset.id);
     else if (action==='delete') deleteConversation(button.dataset.id);
     else if (action==='tool') chooseTool(button.dataset.tool);
-    else if (action==='upload') $('#aihub-pdf-input')?.click();
+    else if (action==='upload') {
+      const f=$('#aihub-pdf-input');
+      if(f){ f.value=''; try { if(typeof f.showPicker==='function') f.showPicker(); else f.click(); } catch(err) { f.click(); } }
+    }
     else if (action==='attach-menu') { const m=$('.aihub-attach-menu'); if(m){ m.hidden=!m.hidden; state.attachMenuOpen=!m.hidden; button.setAttribute('aria-expanded',String(state.attachMenuOpen)); } }
     else if (action==='study') { state.studyOpen=!state.studyOpen; state.attachMenuOpen=false; draw(); }
-    else if (action==='attach-images') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.value='';f.click();} }
-    else if (action==='attach-files') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='.pdf,.txt,application/pdf,text/plain';f.value='';f.click();} }
+    else if (action==='attach-images') {
+      closeAttachMenu();
+      const f=$('#aihub-file-input');
+      if(f){ f.accept='image/*'; f.value=''; try { if(typeof f.showPicker==='function') f.showPicker(); else f.click(); } catch(err) { f.click(); } }
+    }
+    else if (action==='attach-files') {
+      closeAttachMenu();
+      const f=$('#aihub-file-input');
+      if(f){ f.accept='.pdf,.txt,application/pdf,text/plain'; f.value=''; try { if(typeof f.showPicker==='function') f.showPicker(); else f.click(); } catch(err) { f.click(); } }
+    }
     else if (action==='remove-attachment') { state.attachments.splice(Number(button.dataset.index),1); draw(); }
     else if (action==='doc-summary') startDocumentTask(button.dataset.id,'summary');
     else if (action==='doc-ask') startDocumentTask(button.dataset.id,'ask');

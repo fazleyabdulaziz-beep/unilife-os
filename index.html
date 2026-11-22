@@ -39,8 +39,10 @@
 <div id="toasts"></div>
 <div id="unibot-root"></div>
 <!-- Persistent AI file pickers: kept outside #view so AI redraws cannot destroy a selected file input. -->
-<input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple hidden>
-<input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
+<input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple
+  style="position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0;pointer-events:none">
+<input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf"
+  style="position:fixed;left:-10000px;top:0;width:1px;height:1px;opacity:0;pointer-events:none">
 <script src="https://unpkg.com/lucide@0.383.0"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/config.js"></script>
