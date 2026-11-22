@@ -1,6 +1,6 @@
 /* =========================================================
    AI STUDY HUB — persistent student conversations
-   Uses the existing Groq Script Property and model setting.
+   Uses the shared Groq fast text model configured in AIProvider.gs.
    All ownership and student context are resolved server-side.
 ========================================================= */
 var AI_STUDY_HUB = {

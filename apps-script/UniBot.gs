@@ -1,6 +1,6 @@
 /* =========================================
    UNIBOT — GROQ CHAT ASSISTANT
-   Reuses the existing GROQ_API_KEY and model property.
+   Uses the shared fast text model and existing GROQ_API_KEY.
 ========================================= */
 function uniBotChat_(uid, data) {
   var apiKey = prop('GROQ_API_KEY');
@@ -55,7 +55,7 @@ function uniBotChat_(uid, data) {
     'Student context JSON: ' + JSON.stringify(context)
   ].join('\n');
 
-  var model = prop('GROQ_TIMETABLE_MODEL') || GROQ_TIMETABLE.DEFAULT_MODEL;
+  var model = aiChatModel_();
   var messages = [{ role:'system', content:systemPrompt }]
     .concat(history)
     .concat([{ role:'user', content:message }]);
@@ -65,7 +65,7 @@ function uniBotChat_(uid, data) {
     response = UrlFetchApp.fetch(GROQ_TIMETABLE.ENDPOINT, {
       method:'post', contentType:'application/json',
       headers:{ Authorization:'Bearer ' + apiKey },
-      payload:JSON.stringify({ model:model, messages:messages, temperature:0.55, max_completion_tokens:700 }),
+      payload:JSON.stringify({ model:model, messages:messages, reasoning_effort:'low', max_completion_tokens:700 }),
       muteHttpExceptions:true
     });
   } catch (err) {

@@ -13,3 +13,7 @@ For GitHub Pages:
 
 The new AI workspace is rendered by U.aiHub.render() when the #/ai route is opened.
 This is a frontend update; it does not require Apps Script changes.
+
+
+AI MODEL UPDATE (v23)
+AI Study Hub and UniBot now use Groq openai/gpt-oss-20b by default via AIProvider.gs. Keep GROQ_API_KEY in Apps Script Script Properties. Optional override: AI_CHAT_MODEL. Timetable image import remains on its separate vision-capable model setting.

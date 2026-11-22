@@ -7,7 +7,7 @@ The updated frontend adds the graduation-cap mascot, greeting bubble, bilingual 
 1. Open the Apps Script project connected to this UniLife OS deployment.
 2. Add a new script file named `UniBot` and paste the contents of `apps-script/UniBot.gs`.
 3. In `apps-script/API.gs`, add the `case 'unibotChat': return uniBotChat_(uid, d);` route (already included in this project copy).
-4. Confirm Script Properties contains `GROQ_API_KEY`. The assistant reuses `GROQ_TIMETABLE_MODEL`; if that property is absent, it uses the same default model as the timetable AI.
+4. Confirm Script Properties contains `GROQ_API_KEY`. UniBot and AI Study Hub now share `openai/gpt-oss-20b` by default. Optionally set `AI_CHAT_MODEL` to override the shared text model. `GROQ_TIMETABLE_MODEL` remains reserved for timetable image extraction.
 5. Save the Apps Script project and deploy a **new version** of the existing Web App deployment. Keep the same deployment URL in `js/config.js`.
 
 ## Voice behaviour

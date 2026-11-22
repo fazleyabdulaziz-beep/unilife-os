@@ -1,17 +1,24 @@
 /* AI Study Hub provider adapter.
- * Current adapter reuses the existing Groq Script Property/model.
- * Future provider choices can be implemented here without changing chat storage or UI.
+ * Uses Groq GPT-OSS 20B by default for fast text generation.
+ * Optional Script Property AI_CHAT_MODEL can override the default.
+ * Timetable image extraction remains on its separate vision-capable model.
  */
+var AI_CHAT_DEFAULT_MODEL = 'openai/gpt-oss-20b';
+
+function aiChatModel_() {
+  return prop('AI_CHAT_MODEL') || AI_CHAT_DEFAULT_MODEL;
+}
+
 function aiStudyHubGenerate_(messages) {
   var apiKey = prop('GROQ_API_KEY');
   if (!apiKey) throw fail('aiConfig');
-  var model = prop('GROQ_TIMETABLE_MODEL') || GROQ_TIMETABLE.DEFAULT_MODEL;
+  var model = aiChatModel_();
   var response;
   try {
     response = UrlFetchApp.fetch(GROQ_TIMETABLE.ENDPOINT, {
       method:'post',contentType:'application/json',
       headers:{Authorization:'Bearer ' + apiKey},
-      payload:JSON.stringify({model:model,messages:messages,temperature:0.55,max_completion_tokens:1800}),
+      payload:JSON.stringify({model:model,messages:messages,reasoning_effort:'low',max_completion_tokens:1800}),
       muteHttpExceptions:true
     });
   } catch (err) {

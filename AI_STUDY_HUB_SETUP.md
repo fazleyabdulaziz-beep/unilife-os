@@ -9,14 +9,14 @@ This update adds the AI Study Hub navigation page, responsive dashboard, separat
 - Separate conversations with create, open, delete and persistent message history.
 - Backend student context sourced from the authenticated student's own Courses, Timetable, Assignments and Examinations rows.
 - Read-only AI behaviour: the assistant cannot modify student records.
-- Uses the existing `GROQ_API_KEY` Script Property and `GROQ_TIMETABLE_MODEL` setting (or the existing default model). Provider selection remains a later decision; the current adapter uses the existing Groq configuration so Phase 2 chat can work without exposing a vendor choice in the UI.
+- Uses the existing `GROQ_API_KEY` Script Property with `openai/gpt-oss-20b` as the default text model. Set the optional `AI_CHAT_MODEL` Script Property to override it. UniBot and AI Study Hub share this text model.
 
 ## Apps Script deployment steps
 1. Open the Google Apps Script project connected to the existing UniLife OS spreadsheet.
 2. Add the updated files from `apps-script/`, including the new `AIStudyHub.gs` and `AIProvider.gs`. If using the Apps Script editor, copy the contents into matching script files.
 3. Save all files.
 4. Run the existing `setup()` function once from the Apps Script editor. Approve permissions if prompted. The additive schema migration creates `AIConversations` and `AIChatMessages`; existing sheets and columns are retained.
-5. Confirm Script Properties contain `GROQ_API_KEY`. The implementation reuses `GROQ_TIMETABLE_MODEL` when set.
+5. Confirm Script Properties contain `GROQ_API_KEY`. AI Study Hub and UniBot default to `openai/gpt-oss-20b`; optionally set `AI_CHAT_MODEL` to another compatible Groq chat model. Do not set this property to the timetable vision model unless it supports the required text-chat request.
 6. Deploy > Manage deployments > Edit the existing Web App deployment, choose a new version, and deploy. Keep the same access policy used by the existing UniLife OS API.
 7. Update the GitHub Pages project with the updated frontend files from this ZIP.
 
@@ -67,4 +67,4 @@ Validation performed for this package: all frontend JavaScript and Apps Script s
 
 Add `apps-script/AITutor.gs` to the Apps Script project and update all changed Apps Script and frontend files. Run `setup()` again to create `AITutorQuizzes` and `AITutorAttempts` (existing sheets and data are preserved). Deploy a new Web App version and publish the updated GitHub Pages files.
 
-The coach generates five multiple-choice questions for a selected topic using the existing Groq configuration. Correct answers remain server-side until submission. Attempts are stored per user and topic-level accuracy is used to surface areas for further practice. The weak-topic indicator is a learning signal from quiz history, not a formal diagnosis of ability.
+The coach generates five multiple-choice questions for a selected topic using the shared Groq text model (`openai/gpt-oss-20b` by default). Correct answers remain server-side until submission. Attempts are stored per user and topic-level accuracy is used to surface areas for further practice. The weak-topic indicator is a learning signal from quiz history, not a formal diagnosis of ability.
