@@ -8,7 +8,6 @@ var AI_STUDY_HUB = {
   MAX_REPLY: 7000,
   MAX_HISTORY: 10,
   MAX_CONVERSATIONS: 40,
-  SIX_HOUR_LIMIT: 20,
   SIX_HOURS: 21600
 };
 
@@ -119,16 +118,12 @@ function aiStudyHubSendMessage_(uid, data) {
   });
   var conversation = aiStudyHubConversation_(uid, conversationId);
 
-  // Per-user request lock and quota. This is separate from the floating UniBot quota.
+  // Per-user concurrency lock only. Groq enforces provider usage and rate limits.
   var cache = CacheService.getScriptCache();
   var busyKey = 'aistudy_busy_' + uid;
   if (cache.get(busyKey)) throw fail('aiBusy');
   cache.put(busyKey, '1', 90);
   try {
-    var windowKey = 'aistudy_window_' + uid + '_' + Math.floor(Date.now() / (AI_STUDY_HUB.SIX_HOURS * 1000));
-    var used = Number(cache.get(windowKey) || 0);
-    if (used >= AI_STUDY_HUB.SIX_HOUR_LIMIT) throw fail('aiLimit');
-
     var historyRows = table('AIChatMessages').rows.filter(function(r) {
       return r.conversation_id === conversation.id && r.user_id === uid;
     }).sort(function(a,b) {
@@ -193,7 +188,6 @@ function aiStudyHubSendMessage_(uid, data) {
       aiStudyHubSetCell_('AIConversations',fresh._r,'title',title);
       aiStudyHubSetCell_('AIConversations',fresh._r,'updated_at',now);
     });
-    cache.put(windowKey,String(used+1),AI_STUDY_HUB.SIX_HOURS);
     return {reply:reply,model:model,conversation:{id:conversation.id,title:title,
       created_at:conversation.created_at,updated_at:now,document_id:String(conversation.document_id||'')}};
   } finally {

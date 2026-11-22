@@ -292,7 +292,7 @@
 .aihub-attach-menu[hidden]{display:none}
 .aihub-attach-menu button{display:flex;align-items:center;gap:8px;padding:9px 12px;border:0;border-radius:10px;background:var(--surface2);color:var(--text);font-size:11px}
 .aihub-attach-menu button:hover{background:var(--primary-soft);color:var(--primary)}.aihub-attach-menu svg{width:15px;height:15px}
-.aihub-message{animation:aihubMessageIn .28s cubic-bezier(.2,.8,.2,1) both}
+.aihub-message.is-new,.aihub-message.is-typing{animation:aihubMessageIn .28s cubic-bezier(.2,.8,.2,1) both}
 .aihub-welcome-mark{animation:aihubFloat 4s ease-in-out infinite}
 .aihub-suggestion{transition:transform .22s ease,border-color .22s,box-shadow .22s}.aihub-suggestion:hover{transform:translateY(-3px);box-shadow:0 8px 22px rgba(20,30,45,.07)}
 @keyframes aihubRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}

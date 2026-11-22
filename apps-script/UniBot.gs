@@ -73,13 +73,7 @@ function uniBotChat_(uid, data) {
   var message = String(data.message || '').trim();
   if (!message || message.length > 1000) throw fail('invalid');
 
-  // Per-user six-hour quota. CacheService TTL is limited to six hours.
-  var cache = CacheService.getScriptCache();
-  var windowKey = 'unibot_' + uid + '_' + Math.floor(Date.now() / 21600000);
-  var used = Number(cache.get(windowKey) || 0);
-  if (used >= 20) throw fail('aiLimit');
-  cache.put(windowKey, String(used + 1), 21600);
-
+  // No local message quota: Groq enforces provider usage and rate limits.
   var history = Array.isArray(data.history) ? data.history.slice(-6) : [];
   history = history.map(function(item) {
     var role = item && item.role === 'assistant' ? 'assistant' : 'user';

@@ -71,11 +71,17 @@
       const wasNearBottom = oldMessages
         ? (oldMessages.scrollHeight - oldMessages.scrollTop - oldMessages.clientHeight) < 90
         : true;
-      if (state.seenId !== state.activeId) { state.seenId = state.activeId; state.seen = state.messages.length; }
+      const convChanged = state.seenId !== state.activeId;
+      if (convChanged) { state.seenId = state.activeId; state.seen = state.messages.length; }
       if (state.jump) state.seen = state.messages.length;
       const grew = state.messages.length > state.seen, jump = state.jump;
       state.jump = false;
       view.innerHTML = render();
+      // The rebuilt box starts at scrollTop 0. Put it back where the reader was
+      // INSTANTLY, so any smooth scroll below only travels the short distance
+      // to the new message instead of replaying the whole chat from the top.
+      const rebuilt = $('#aihub-messages');
+      if (rebuilt && oldMessages && !convChanged) rebuilt.scrollTop = previousScrollTop;
       refreshIcons();
       if (state.firstChatTransition) {
         state.firstChatTransition = false;
@@ -89,25 +95,35 @@
       if (state.messages.length) {
         const latest = state.messages[state.messages.length - 1];
         const newUserMessage = grew && latest && latest.role === 'user';
-        // Follow new user messages. During AI streaming, follow only if the
-        // reader was already near the bottom before this redraw. If they have
-        // scrolled up to read history, never pull them back down.
-        if (jump || newUserMessage || (grew && wasNearBottom)) toBottom('smooth');
-        else {
-          const currentMessages = $('#aihub-messages');
-          if (currentMessages) currentMessages.scrollTop = previousScrollTop;
-        }
+        // Opening / switching a conversation: land on the latest message with no animation.
+        // New user message: always follow. AI reply: follow if the reader is at the
+        // bottom (or hasn't scrolled away since sending). If they scrolled up to read
+        // history, never pull them back down.
+        if (jump || convChanged || !oldMessages) toBottom('auto');
+        else if (newUserMessage) { state.follow = true; toBottom('smooth'); }
+        else if (grew && (wasNearBottom || state.follow)) toBottom('smooth');
       }
     }
   }
   function toBottom(behavior){
     const move = () => {
       const box=$('#aihub-messages');
-      if(box) box.scrollTo({top:box.scrollHeight,behavior:'smooth'});
+      if(box) box.scrollTo({top:box.scrollHeight,behavior:behavior||'auto'});
     };
+    if (behavior === 'auto') move();            // instant: no visible travel
     // Wait until the newly rendered message DOM has a measured scrollHeight.
     requestAnimationFrame(() => requestAnimationFrame(move));
   }
+  // Stop auto-follow as soon as the reader scrolls up on purpose; resume when they return to the bottom.
+  (function watchReader(){
+    const inBox = e => e.target && e.target.closest && e.target.closest('#aihub-messages');
+    document.addEventListener('wheel', e => { if (inBox(e) && e.deltaY < 0) state.follow = false; }, {passive:true});
+    document.addEventListener('touchmove', e => { if (inBox(e)) state.follow = false; }, {passive:true});
+    document.addEventListener('scroll', e => {
+      const b = e.target;
+      if (b && b.id === 'aihub-messages' && (b.scrollHeight - b.scrollTop - b.clientHeight) < 90) state.follow = true;
+    }, true);
+  })();
   function syncPageClass(){ document.body.classList.toggle('ai-page', location.hash.replace('#/','')==='ai'); }
   window.addEventListener('hashchange', syncPageClass);
   function autoGrow(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,200)+'px'; }
@@ -548,6 +564,7 @@
     // Simple chat: never prepend hidden mode prompts to user messages.
     const content = rawContent + fileContext + imageNotes;
     state.busy = true;
+    state.follow = true;
     state.firstChatTransition = state.messages.length === 0;
     state.messages.push({role:'user',content:content,attachments:attachmentSnapshot,created_at:new Date().toISOString()});
     draw();
