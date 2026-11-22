@@ -52,3 +52,11 @@ PHASE 4 — AI PERSONAL STUDY INTELLIGENCE
 - Manual flashcard creation and SM-2-style spaced repetition review queue.
 - Transparent exam readiness heuristic based on completed revision sessions and days remaining.
 - English and Bahasa Melayu UI.
+
+
+VERSION 24 — UNIBOT EXAM CONTEXT + STUDY HUB ATTACHMENTS
+- UniBot now receives the student's upcoming examinations from the app's hydrated Examinations data and is instructed to answer exam-date questions from that context only.
+- Study Space's Upload PDF button now opens the dedicated PDF library upload input (previously it opened the generic chat attachment picker).
+- PDF extraction retries without a worker when a network blocks the PDF.js CDN worker.
+- AI Study Hub chat now compresses and sends up to three images to the existing Groq vision model; text-only chat remains on GPT-OSS-20B.
+- Bumped service-worker cache version to v24.

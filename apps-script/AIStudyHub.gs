@@ -111,7 +111,12 @@ function aiStudyHubSendMessage_(uid, data) {
   data = data || {};
   var conversationId = String(data.conversation_id || '');
   var message = String(data.message || '').trim();
-  if (!message || message.length > AI_STUDY_HUB.MAX_MESSAGE) throw fail('invalid');
+  var images = Array.isArray(data.images) ? data.images.slice(0,3) : [];
+  if ((!message && !images.length) || message.length > AI_STUDY_HUB.MAX_MESSAGE) throw fail('invalid');
+  images.forEach(function(image) {
+    if (typeof image !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(image) ||
+        image.length > GROQ_TIMETABLE.MAX_IMAGE_CHARS) throw fail('invalid');
+  });
   var conversation = aiStudyHubConversation_(uid, conversationId);
 
   // Per-user request lock and quota. This is separate from the floating UniBot quota.
@@ -158,9 +163,20 @@ function aiStudyHubSendMessage_(uid, data) {
     }
     systemPrompt = systemPrompt.join('\\n');
 
-    var messages = [{role:'system',content:systemPrompt}].concat(history).concat([{role:'user',content:message}]);
-    // Provider adapter isolates vendor-specific request/response handling for a later provider decision.
-    var generated = aiStudyHubGenerate_(messages);
+    var requestModel = aiChatModel_();
+    var userContent = message;
+    if (images.length) {
+      // GPT-OSS is text-only. Route image-containing turns through the existing Groq vision model.
+      requestModel = prop('GROQ_TIMETABLE_MODEL') || GROQ_TIMETABLE.DEFAULT_MODEL;
+      userContent = [{type:'text',text:message || 'Please describe and analyse the attached image(s).'}];
+      images.forEach(function(image) {
+        userContent.push({type:'image_url',image_url:{url:image}});
+      });
+      systemPrompt += '\nThe student attached image(s). Inspect them carefully. Describe visible content and answer the student\'s question. Do not claim to see details that are unclear.';
+    }
+    var messages = [{role:'system',content:systemPrompt}].concat(history).concat([{role:'user',content:userContent}]);
+    // Text turns use GPT-OSS; image turns use the configured vision-capable Groq model.
+    var generated = aiStudyHubGenerate_(messages, requestModel);
     var model = generated.model;
     var reply = generated.reply;
 

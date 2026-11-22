@@ -9,16 +9,18 @@ function aiChatModel_() {
   return prop('AI_CHAT_MODEL') || AI_CHAT_DEFAULT_MODEL;
 }
 
-function aiStudyHubGenerate_(messages) {
+function aiStudyHubGenerate_(messages, modelOverride) {
   var apiKey = prop('GROQ_API_KEY');
   if (!apiKey) throw fail('aiConfig');
-  var model = aiChatModel_();
+  var model = modelOverride || aiChatModel_();
   var response;
   try {
     response = UrlFetchApp.fetch(GROQ_TIMETABLE.ENDPOINT, {
       method:'post',contentType:'application/json',
       headers:{Authorization:'Bearer ' + apiKey},
-      payload:JSON.stringify({model:model,messages:messages,reasoning_effort:'low',max_completion_tokens:1800}),
+      payload:JSON.stringify(model.indexOf('gpt-oss') >= 0
+        ? {model:model,messages:messages,reasoning_effort:'low',max_completion_tokens:1800}
+        : {model:model,messages:messages,temperature:0.2,max_completion_tokens:1800}),
       muteHttpExceptions:true
     });
   } catch (err) {

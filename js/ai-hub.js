@@ -205,14 +205,36 @@
     if (!state.attachments.length) return '';
     return `<div class="aihub-attachment-chips">${state.attachments.map((a,i)=>`<div class="aihub-attachment-chip ${a.kind==='image'?'is-image':''}">${a.preview?`<img src="${a.preview}" alt="${esc(a.name)}">`:icon(a.kind==='pdf'?'file-pdf':'file-text')}<span><b>${esc(a.name)}</b><small>${a.kind==='image'?'Image preview':a.kind==='pdf'?'PDF text extracted':'Text file'}</small></span><button type="button" data-ai-act="remove-attachment" data-index="${i}" aria-label="Remove ${esc(a.name)}">${icon('x')}</button></div>`).join('')}</div>`;
   }
+  async function compressImageForAI(file) {
+    const source = await new Promise((resolve,reject) => {
+      const reader = new FileReader();
+      reader.onload = () => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = reader.result; };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const scale = Math.min(1, 1600 / Math.max(source.width, source.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(source.width * scale));
+    canvas.height = Math.max(1, Math.round(source.height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not prepare image for AI.');
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+    if (dataUrl.length > 2800000) throw new Error('Image is too large after compression. Try a smaller image.');
+    return dataUrl;
+  }
   async function addAttachments(files) {
     for (const file of Array.from(files||[])) {
       if (state.attachments.length>=5) { if(U.ui&&U.ui.toast)U.ui.toast('Maximum 5 attachments per message.'); break; }
       if (file.size>8*1024*1024) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: maximum file size is 8 MB.`); continue; }
       try {
         if (file.type.startsWith('image/')) {
-          const preview=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);});
-          state.attachments.push({name:file.name,kind:'image',preview,content:''});
+          if (state.attachments.filter(a=>a.kind==='image').length >= 3) {
+            if(U.ui&&U.ui.toast)U.ui.toast('Maximum 3 images per message.');
+            continue;
+          }
+          const preview=await compressImageForAI(file);
+          state.attachments.push({name:file.name,kind:'image',preview,content:preview});
         } else if (file.type==='application/pdf' || /\.pdf$/i.test(file.name)) {
           const extracted=await extractPdfText(file);
           state.attachments.push({name:file.name,kind:'pdf',content:extracted.text,pages:extracted.pages});
@@ -302,7 +324,13 @@
     if (!pdfjs) throw {code:'aiPdfUnavailable'};
     pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const pdf = await pdfjs.getDocument({data:bytes}).promise;
+    let pdf;
+    try {
+      pdf = await pdfjs.getDocument({data:bytes}).promise;
+    } catch (workerError) {
+      // Some school/company networks block CDN workers. Retry PDF parsing on the main thread.
+      pdf = await pdfjs.getDocument({data:bytes, disableWorker:true}).promise;
+    }
     if (pdf.numPages < 1 || pdf.numPages > 50) throw {code:'aiPdfPages'};
     const pages = [];
     let total = 0;
@@ -471,17 +499,21 @@
   async function sendMessage(message) {
     const rawContent = String(message || '').trim();
     if ((!rawContent && !state.attachments.length) || state.busy) return;
-    if (state.attachments.some(a=>a.kind==='image')) { if(U.ui&&U.ui.toast)U.ui.toast('Image preview is ready, but image understanding is not enabled in the current AI backend yet. Remove images or send a PDF/TXT attachment for text analysis.'); return; }
-    const fileContext=state.attachments.map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
+    const imageAttachments = state.attachments.filter(a=>a.kind==='image').slice(0,3);
+    const fileContext=state.attachments.filter(a=>a.kind!=='image').map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
+    const imageNotes = imageAttachments.map(a=>`\n[Image attached: ${a.name}]`).join('');
     const selectedMode = modes.find(m=>m.id===state.mode)||modes[0];
-    const content = (selectedMode.prompt ? selectedMode.prompt : '') + rawContent + fileContext;
+    const content = (selectedMode.prompt ? selectedMode.prompt : '') + rawContent + fileContext + imageNotes;
     state.busy = true;
     state.firstChatTransition = state.messages.length === 0;
     state.messages.push({role:'user',content:content,created_at:new Date().toISOString()});
     draw();
     try {
       if (!state.activeId) await createConversation();
-      const r = await U.api.call('aiStudyHubSendMessage', {conversation_id:state.activeId,message:content});
+      const r = await U.api.call('aiStudyHubSendMessage', {
+        conversation_id:state.activeId,message:content,
+        images:imageAttachments.map(a=>a.content)
+      });
       state.messages.push({role:'assistant',content:r.reply,created_at:new Date().toISOString()});
       state.attachments=[];
       if (r.conversation) {
@@ -554,7 +586,7 @@
     else if (action==='open') openConversation(button.dataset.id);
     else if (action==='delete') deleteConversation(button.dataset.id);
     else if (action==='tool') chooseTool(button.dataset.tool);
-    else if (action==='upload') $('#aihub-file-input')?.click();
+    else if (action==='upload') $('#aihub-pdf-input')?.click();
     else if (action==='attach-menu') { const m=$('.aihub-attach-menu'); if(m){ m.hidden=!m.hidden; state.attachMenuOpen=!m.hidden; button.setAttribute('aria-expanded',String(state.attachMenuOpen)); } }
     else if (action==='study') { state.studyOpen=!state.studyOpen; state.attachMenuOpen=false; draw(); }
     else if (action==='attach-images') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.click();} }

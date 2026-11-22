@@ -940,7 +940,11 @@ function uniBotContext() {
   const assignments = (D.assignments || []).filter(a => a.status !== 'done')
     .sort((a,b) => String(a.due).localeCompare(String(b.due))).slice(0,8)
     .map(a => ({title:a.title,due:a.due,course:a.course||''}));
-  return { page:route(), today:iso(0), classes, assignments };
+  const today = iso(0);
+  const exams = (D.exams || []).filter(x => String(x.date || '') >= today)
+    .sort((a,b) => String(a.date).localeCompare(String(b.date))).slice(0,10)
+    .map(x => ({course:x.course||'',date:x.date||'',time:x.time||'',venue:x.venue||''}));
+  return { page:route(), today, classes, assignments, exams };
 }
 async function sendUniBot(message) {
   message = String(message || '').trim();
