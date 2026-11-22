@@ -353,3 +353,6 @@ body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15
 /* Chat identity avatars are deliberately static; only the typing indicator animates. */
 .aihub-message-avatar.bot-mascot .aihub-bot-avatar .aihub-bot,
 .aihub-message-avatar.bot-mascot .aihub-bot { animation:none !important; transform:none !important; }
+
+/* v35: retire legacy AI mode selector */
+.aihub-mode-strip,.aihub-mode-pill,.aihub-mode{display:none!important}

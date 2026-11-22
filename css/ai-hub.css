@@ -355,3 +355,27 @@
   }
   .aihub-chat-stage{height:0;min-height:0;flex:1 1 auto}
 }
+
+
+/* v35 — simple, calm, Gemini-inspired chat layout */
+.aihub-workspace-top{justify-content:space-between}
+.aihub-brand small{display:none}
+.aihub-top-actions{gap:8px}
+.aihub-chat-stage{min-height:0}
+.aihub-welcome-state{max-width:900px;margin:0 auto;justify-content:center;text-align:center;gap:20px}
+.aihub-welcome-state .aihub-bot{display:none}
+.aihub-welcome-copy{max-width:760px;margin:0 auto}
+.aihub-welcome-copy h1{font-size:clamp(2rem,4.2vw,3.4rem);line-height:1.12;letter-spacing:-.045em}
+.aihub-welcome-copy .aihub-mode-hint{font-size:1rem;opacity:.72}
+.aihub-current-mode{display:none!important}
+.aihub-composer{border-radius:28px}
+.aihub-composer textarea{font-size:1rem;line-height:1.55}
+.aihub-workspace-disclaimer{opacity:.58}
+@media(max-width:760px){
+ .aihub-workspace-top{gap:8px}
+ .aihub-brand small{display:none}
+ .aihub-top-actions{gap:5px}
+ .aihub-top-button{padding-inline:10px}
+ .aihub-welcome-state{text-align:left;align-items:flex-start}
+ .aihub-welcome-copy h1{font-size:2rem}
+}
