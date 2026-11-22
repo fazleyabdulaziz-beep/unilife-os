@@ -323,3 +323,7 @@
 /* v26 — attachment selection feedback */
 .aihub-attachment-chip.is-loading .aihub-file-meta small{color:var(--primary)}
 .aihub-attachment-chip:not(.is-loading) .aihub-file-meta small{color:var(--muted)}
+
+/* v27: make failed attachment preparation visible instead of silently removing the card. */
+.aihub-attachment-chip.is-error{border-color:var(--danger,#d65b5b);background:rgba(214,91,91,.07)}
+.aihub-attachment-chip.is-error .aihub-file-meta small{color:var(--danger,#d65b5b)}

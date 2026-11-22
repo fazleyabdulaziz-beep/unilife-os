@@ -4,7 +4,7 @@
    All ownership and student context are resolved server-side.
 ========================================================= */
 var AI_STUDY_HUB = {
-  MAX_MESSAGE: 3000,
+  MAX_MESSAGE: 45000,
   MAX_REPLY: 7000,
   MAX_HISTORY: 10,
   MAX_CONVERSATIONS: 40,

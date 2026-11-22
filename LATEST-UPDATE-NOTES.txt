@@ -1,3 +1,23 @@
+UniLife OS v27 — persistent attachment picker + server-authoritative UniBot exams
+
+Frontend:
+- Moved AI file-picker inputs outside the dynamically re-rendered #view container.
+- This keeps the selected file input alive while the AI workspace redraws.
+- Added extension-based image/PDF/TXT detection when browser MIME type is blank.
+- Attachment preparation errors are now logged for easier diagnosis.
+
+Apps Script:
+- UniBot now loads the authenticated user's upcoming exams directly from the Examinations sheet.
+- Normalizes Date objects, ISO dates, and legacy DD/MM/YYYY date strings.
+- Uses the user's saved timezone when converting sheet dates.
+- Stops relying on potentially stale or empty browser D.exams for exam answers.
+
+Deployment:
+- Replace frontend files from this ZIP in GitHub Pages.
+- Copy apps-script/UniBot.gs into Apps Script and deploy a new version.
+- Service-worker cache key bumped to v27.
+
+
 LATEST UNILIFE OS PACKAGE
 
 Base package: user-uploaded UniLife-OS-Notification-Systems-Separated-Complete(1).zip

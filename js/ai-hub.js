@@ -203,8 +203,8 @@
   ];
   function attachmentCard(a, i, removable) {
     const kindIcon = a.kind==='image' ? 'image' : a.kind==='pdf' ? 'file-pdf' : 'file-text';
-    const status = a.status==='loading' ? 'Preparing…' : a.kind==='image' ? 'Image' : a.kind==='pdf' ? 'PDF document' : 'Text document';
-    return `<div class="aihub-attachment-chip ${a.kind==='image'?'is-image':''} ${a.status==='loading'?'is-loading':''}">
+    const status = a.status==='loading' ? 'Preparing…' : a.status==='error' ? 'Could not prepare — remove and try again' : a.kind==='image' ? 'Image' : a.kind==='pdf' ? 'PDF document' : 'Text document';
+    return `<div class="aihub-attachment-chip ${a.kind==='image'?'is-image':''} ${a.status==='loading'?'is-loading':a.status==='error'?'is-error':''}">
       ${a.preview && a.kind==='image' ? `<img src="${a.preview}" alt="${esc(a.name)}">` : `<span class="aihub-file-icon">${icon(kindIcon)}</span>`}
       <span class="aihub-file-meta"><b>${esc(a.name)}</b><small>${status}</small></span>
       ${a.status==='loading' ? '<span class="aihub-file-spinner" aria-label="Preparing file"></span>' : removable ? `<button type="button" data-ai-act="remove-attachment" data-index="${i}" aria-label="Remove ${esc(a.name)}">${icon('x')}</button>` : ''}
@@ -241,7 +241,10 @@
     for (const file of incoming) {
       if (state.attachments.length >= 5) { if(U.ui&&U.ui.toast)U.ui.toast('Maximum 5 attachments per message.'); break; }
       if (file.size > 8*1024*1024) { if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: maximum file size is 8 MB.`); continue; }
-      if (!file.type.startsWith('image/') && file.type!=='application/pdf' && file.type!=='text/plain' && !/\.(pdf|txt)$/i.test(file.name)) {
+      const detectedType = String(file.type || '').toLowerCase();
+      const detectedName = String(file.name || '');
+      if (!detectedType.startsWith('image/') && detectedType!=='application/pdf' && detectedType!=='text/plain' &&
+          !/\.(png|jpe?g|gif|webp|bmp|heic|pdf|txt)$/i.test(detectedName)) {
         if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: supported formats are images, PDF and TXT.`);
         continue;
       }
@@ -250,7 +253,10 @@
         continue;
       }
       const id = 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
-      const kind = file.type.startsWith('image/') ? 'image' : (file.type==='application/pdf' || /\.pdf$/i.test(file.name)) ? 'pdf' : 'text';
+      const fileType = String(file.type || '').toLowerCase();
+      const fileName = String(file.name || 'attachment');
+      const kind = fileType.startsWith('image/') || /\.(png|jpe?g|gif|webp|bmp|heic)$/i.test(fileName)
+        ? 'image' : (fileType==='application/pdf' || /\.pdf$/i.test(fileName)) ? 'pdf' : 'text';
       state.attachments.push({id,name:file.name,kind,status:'loading',preview:'',content:''});
       draw();
       try {
@@ -269,8 +275,10 @@
         const index = state.attachments.findIndex(a=>a.id===id);
         if (index>=0) state.attachments[index] = {...state.attachments[index],...data};
       } catch(err) {
-        state.attachments = state.attachments.filter(a=>a.id!==id);
-        if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: ${err.message||'Could not read file.'}`);
+        const index = state.attachments.findIndex(a=>a.id===id);
+        if (index>=0) state.attachments[index] = {...state.attachments[index],status:'error',error:(err&&err.message)||'Could not read file.'};
+        console.warn('AI attachment preparation failed:', file && file.name, err);
+        if(U.ui&&U.ui.toast)U.ui.toast(`${file.name}: ${(err&&err.message)||'Could not read file.'}`);
       }
       draw();
     }
@@ -305,8 +313,6 @@
         </form></div>
         <p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
-      <input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple hidden>
-      <input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
       ${state.uploading?`<div class="aihub-upload-progress"><span class="aihub-spinner"></span><span>${esc(state.uploadProgress||t('aiHubUploading'))}</span></div>`:''}
       ${state.studyOpen?`<div class="aihub-study-scrim" data-ai-act="study"></div>
         <aside class="aihub-study-panel" aria-label="My study space">
@@ -371,7 +377,7 @@
       if (text) pages.push(`[Page ${pageNo}]\\n${text}`);
       total += text.length;
       state.uploadProgress = `${t('aiHubExtracting')} ${pageNo}/${pdf.numPages}`;
-      if (total > 60000) throw {code:'aiPdfTooLong'};
+      if (total > 40000) throw {code:'aiPdfTooLong'};
       if (pageNo % 3 === 0) draw();
     }
     const extracted = pages.join('\\n\\n');
@@ -533,6 +539,10 @@
       if(U.ui&&U.ui.toast)U.ui.toast('Please wait until your files finish preparing.');
       return;
     }
+    if (state.attachments.some(a=>a.status==='error')) {
+      if(U.ui&&U.ui.toast)U.ui.toast('One or more files could not be prepared. Remove the failed file and try again.');
+      return;
+    }
     const attachmentSnapshot = state.attachments.map(a=>({name:a.name,kind:a.kind,preview:a.kind==='image'?a.preview:''}));
     const imageAttachments = state.attachments.filter(a=>a.kind==='image').slice(0,3);
     const fileContext=state.attachments.filter(a=>a.kind!=='image').map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
@@ -624,8 +634,8 @@
     else if (action==='upload') $('#aihub-pdf-input')?.click();
     else if (action==='attach-menu') { const m=$('.aihub-attach-menu'); if(m){ m.hidden=!m.hidden; state.attachMenuOpen=!m.hidden; button.setAttribute('aria-expanded',String(state.attachMenuOpen)); } }
     else if (action==='study') { state.studyOpen=!state.studyOpen; state.attachMenuOpen=false; draw(); }
-    else if (action==='attach-images') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.click();} }
-    else if (action==='attach-files') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='.pdf,.txt,application/pdf,text/plain';f.click();} }
+    else if (action==='attach-images') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='image/*';f.value='';f.click();} }
+    else if (action==='attach-files') { closeAttachMenu(); const f=$('#aihub-file-input'); if(f){f.accept='.pdf,.txt,application/pdf,text/plain';f.value='';f.click();} }
     else if (action==='remove-attachment') { state.attachments.splice(Number(button.dataset.index),1); draw(); }
     else if (action==='doc-summary') startDocumentTask(button.dataset.id,'summary');
     else if (action==='doc-ask') startDocumentTask(button.dataset.id,'ask');

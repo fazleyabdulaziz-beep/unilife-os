@@ -38,6 +38,9 @@
 <div id="modal" class="modal" hidden></div>
 <div id="toasts"></div>
 <div id="unibot-root"></div>
+<!-- Persistent AI file pickers: kept outside #view so AI redraws cannot destroy a selected file input. -->
+<input id="aihub-file-input" type="file" accept="image/*,.pdf,.txt,text/plain" multiple hidden>
+<input id="aihub-pdf-input" type="file" accept="application/pdf,.pdf" hidden>
 <script src="https://unpkg.com/lucide@0.383.0"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="js/config.js"></script>

@@ -2,6 +2,60 @@
    UNIBOT — GROQ CHAT ASSISTANT
    Uses the shared fast text model and existing GROQ_API_KEY.
 ========================================= */
+
+/**
+ * Normalize dates read from Sheets. Legacy cells may be Date objects even
+ * though current app records are stored as ISO text.
+ */
+function uniBotDateKey_(value, timezone) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, timezone || Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  var s = String(value == null ? '' : value).trim();
+  if (!s) return '';
+  var iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return iso[1] + '-' + ('0' + iso[2]).slice(-2) + '-' + ('0' + iso[3]).slice(-2);
+  // Accept legacy Malaysian/SG date text such as 24/11/2026.
+  var dmy = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+  if (dmy) return dmy[3] + '-' + ('0' + dmy[2]).slice(-2) + '-' + ('0' + dmy[1]).slice(-2);
+  var parsed = new Date(s);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(parsed, timezone || Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return '';
+}
+
+function uniBotTimeText_(value, timezone) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, timezone || Session.getScriptTimeZone(), 'HH:mm');
+  }
+  var s = String(value == null ? '' : value).trim();
+  var m = s.match(/^(\d{1,2}):(\d{2})/);
+  return m ? ('0' + m[1]).slice(-2) + ':' + m[2] : s.slice(0, 5);
+}
+
+/**
+ * Read exams from the authenticated student's own Examinations sheet.
+ * Do not depend on the browser's D.exams cache: it can be stale or empty.
+ */
+function uniBotLoadUpcomingExams_(uid, timezone, today) {
+  var rows = table('Examinations').rows;
+  return rows.filter(function(row) {
+    return String(row.user_id || '') === String(uid);
+  }).map(function(row) {
+    return {
+      course: String(row.course || '').trim(),
+      date: uniBotDateKey_(row.date, timezone),
+      time: uniBotTimeText_(row.time, timezone),
+      venue: String(row.venue || '').trim()
+    };
+  }).filter(function(exam) {
+    return !!exam.date && exam.date >= today;
+  }).sort(function(a, b) {
+    return a.date.localeCompare(b.date) || a.time.localeCompare(b.time);
+  }).slice(0, 20);
+}
+
 function uniBotChat_(uid, data) {
   var apiKey = prop('GROQ_API_KEY');
   if (!apiKey) throw fail('aiConfig');
@@ -37,12 +91,17 @@ function uniBotChat_(uid, data) {
       return { title:String(a.title || '').slice(0,100), due:String(a.due || '').slice(0,10),
         course:String(a.course || '').slice(0,80) };
     }) : [],
-    exams: Array.isArray(rawContext.exams) ? rawContext.exams.slice(0, 10).map(function(x) {
-      x = x && typeof x === 'object' ? x : {};
-      return { course:String(x.course || '').slice(0,80), date:String(x.date || '').slice(0,10),
-        time:String(x.time || '').slice(0,5), venue:String(x.venue || '').slice(0,80) };
-    }) : []
+    // Exams are loaded server-side from the authenticated user's sheet.
+    // This avoids stale/missing browser D.exams and normalizes legacy date cells.
+    exams: []
   };
+  var student = table('Users').rows.filter(function(row) {
+    return String(row.id || '') === String(uid);
+  })[0] || {};
+  var timezone = String(student.timezone || Session.getScriptTimeZone() || 'Asia/Singapore');
+  var today = uniBotDateKey_(new Date(), timezone);
+  context.today = today;
+  context.exams = uniBotLoadUpcomingExams_(uid, timezone, today);
 
   var systemPrompt = [
     'You are UniBot, the friendly university companion inside UniLife OS.',
