@@ -64,6 +64,10 @@
       const old = $('textarea[name="message"]');
       const keep = old ? old.value : '';
       const hadFocus = old && document.activeElement === old;
+      // Preserve the chat viewport before replacing the view markup. Rebuilding
+      // #view otherwise resets the scroll container to the top on every update.
+      const oldMessages = $('#aihub-messages');
+      const previousScrollTop = oldMessages ? oldMessages.scrollTop : 0;
       const stripOld = $('.aihub-mode-strip');
       const stripLeft = stripOld ? stripOld.scrollLeft : 0;
       if (state.seenId !== state.activeId) { state.seenId = state.activeId; state.seen = state.messages.length; }
@@ -83,12 +87,13 @@
       state.seen = state.messages.length;
       movePill(stripLeft);
       if (state.messages.length) {
-        const last = state.messages[state.messages.length - 1];
-        if (jump) toBottom('auto');
-        else if (grew && last.role !== 'user') {
-          const fresh = Array.from(document.querySelectorAll('.aihub-message.is-new.from-ai'))[0];
-          if (fresh) fresh.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (grew) toBottom('smooth');
+        // Only move the viewport when the message list actually grows (send /
+        // receive). For all other redraws, keep the exact previous position.
+        if (jump || grew) toBottom('auto');
+        else {
+          const currentMessages = $('#aihub-messages');
+          if (currentMessages) currentMessages.scrollTop = previousScrollTop;
+        }
       }
     }
   }
