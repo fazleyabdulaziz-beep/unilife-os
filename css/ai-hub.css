@@ -319,3 +319,7 @@
 .aihub-message-attachments .aihub-attachment-chip.is-image{padding:5px}
 .aihub-message-attachments .aihub-attachment-chip.is-image .aihub-file-meta{padding:0 5px}
 @media(max-width:600px){.aihub-attachment-chip{max-width:100%}.aihub-message-attachments .aihub-attachment-chip{max-width:100%}}
+
+/* v26 — attachment selection feedback */
+.aihub-attachment-chip.is-loading .aihub-file-meta small{color:var(--primary)}
+.aihub-attachment-chip:not(.is-loading) .aihub-file-meta small{color:var(--muted)}

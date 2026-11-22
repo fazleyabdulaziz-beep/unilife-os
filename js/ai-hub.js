@@ -643,11 +643,21 @@
     else if (action==='tutor-reset') resetTutorQuiz();
   });
   document.addEventListener('change', e => {
-    if (e.target && e.target.id === 'aihub-file-input') { const files=e.target.files; e.target.value=''; addAttachments(files); return; }
-    if (e.target && e.target.id === 'aihub-pdf-input') {
-      const file = e.target.files && e.target.files[0];
+    if (e.target && e.target.id === 'aihub-file-input') {
+      // FileList is live: clearing input.value first empties the same FileList.
+      // Snapshot File objects before resetting the picker so addAttachments receives them.
+      const files = Array.from(e.target.files || []);
       e.target.value = '';
-      return uploadPdf(file);
+      if (files.length) addAttachments(files);
+      return;
+    }
+    if (e.target && e.target.id === 'aihub-pdf-input') {
+      // Keep a stable File reference before resetting the input, allowing the same PDF
+      // to be selected again later without losing the current selection.
+      const file = e.target.files && e.target.files.length ? e.target.files[0] : null;
+      e.target.value = '';
+      if (file) uploadPdf(file);
+      return;
     }
   });
   document.addEventListener('change', e => {
