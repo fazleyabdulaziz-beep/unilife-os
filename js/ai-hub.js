@@ -68,6 +68,9 @@
       // #view otherwise resets the scroll container to the top on every update.
       const oldMessages = $('#aihub-messages');
       const previousScrollTop = oldMessages ? oldMessages.scrollTop : 0;
+      const wasNearBottom = oldMessages
+        ? (oldMessages.scrollHeight - oldMessages.scrollTop - oldMessages.clientHeight) < 90
+        : true;
       const stripOld = $('.aihub-mode-strip');
       const stripLeft = stripOld ? stripOld.scrollLeft : 0;
       if (state.seenId !== state.activeId) { state.seenId = state.activeId; state.seen = state.messages.length; }
@@ -87,9 +90,12 @@
       state.seen = state.messages.length;
       movePill(stripLeft);
       if (state.messages.length) {
-        // Only move the viewport when the message list actually grows (send /
-        // receive). For all other redraws, keep the exact previous position.
-        if (jump || grew) toBottom('auto');
+        const latest = state.messages[state.messages.length - 1];
+        const newUserMessage = grew && latest && latest.role === 'user';
+        // Follow new user messages. During AI streaming, follow only if the
+        // reader was already near the bottom before this redraw. If they have
+        // scrolled up to read history, never pull them back down.
+        if (jump || newUserMessage || wasNearBottom) toBottom('auto');
         else {
           const currentMessages = $('#aihub-messages');
           if (currentMessages) currentMessages.scrollTop = previousScrollTop;
