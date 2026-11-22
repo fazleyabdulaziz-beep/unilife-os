@@ -327,3 +327,31 @@
 /* v27: make failed attachment preparation visible instead of silently removing the card. */
 .aihub-attachment-chip.is-error{border-color:var(--danger,#d65b5b);background:rgba(214,91,91,.07)}
 .aihub-attachment-chip.is-error .aihub-file-meta small{color:var(--danger,#d65b5b)}
+
+
+/* v32: keep the AI workspace within the viewport; only the message pane scrolls.
+   Earlier min-height-only sizing let the chat stage grow with its content, so
+   scrollTo() targeted a non-scrollable child while the document jumped from top. */
+.aihub-workspace{
+  height:calc(100dvh - 170px);
+  min-height:0;
+}
+.aihub-chat-stage{
+  height:0;
+  min-height:0;
+  flex:1 1 auto;
+}
+.aihub-chat-stage .aihub-messages{
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+@media(max-width:760px){
+  .aihub-workspace{
+    height:calc(100dvh - 210px - env(safe-area-inset-bottom));
+    min-height:0;
+  }
+  .aihub-chat-stage{height:0;min-height:0;flex:1 1 auto}
+}

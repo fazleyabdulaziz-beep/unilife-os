@@ -98,7 +98,12 @@
     }
   }
   function toBottom(behavior){
-    const box=$('#aihub-messages'); if(box) box.scrollTo({top:box.scrollHeight,behavior:behavior||'auto'});
+    const move = () => {
+      const box=$('#aihub-messages');
+      if(box) box.scrollTop = box.scrollHeight;
+    };
+    // Wait until the newly rendered message DOM has a measured scrollHeight.
+    requestAnimationFrame(() => requestAnimationFrame(move));
   }
   function syncPageClass(){ document.body.classList.toggle('ai-page', location.hash.replace('#/','')==='ai'); }
   window.addEventListener('hashchange', syncPageClass);
