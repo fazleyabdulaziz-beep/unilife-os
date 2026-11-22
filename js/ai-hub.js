@@ -71,8 +71,6 @@
       const wasNearBottom = oldMessages
         ? (oldMessages.scrollHeight - oldMessages.scrollTop - oldMessages.clientHeight) < 90
         : true;
-      const stripOld = $('.aihub-mode-strip');
-      const stripLeft = stripOld ? stripOld.scrollLeft : 0;
       if (state.seenId !== state.activeId) { state.seenId = state.activeId; state.seen = state.messages.length; }
       if (state.jump) state.seen = state.messages.length;
       const grew = state.messages.length > state.seen, jump = state.jump;
@@ -88,14 +86,13 @@
       if (field && keep) { field.value = keep; autoGrow(field); }
       if (field && hadFocus) field.focus();
       state.seen = state.messages.length;
-      movePill(stripLeft);
       if (state.messages.length) {
         const latest = state.messages[state.messages.length - 1];
         const newUserMessage = grew && latest && latest.role === 'user';
         // Follow new user messages. During AI streaming, follow only if the
         // reader was already near the bottom before this redraw. If they have
         // scrolled up to read history, never pull them back down.
-        if (jump || newUserMessage || wasNearBottom) toBottom('auto');
+        if (jump || newUserMessage || (grew && wasNearBottom)) toBottom('smooth');
         else {
           const currentMessages = $('#aihub-messages');
           if (currentMessages) currentMessages.scrollTop = previousScrollTop;
@@ -106,24 +103,13 @@
   function toBottom(behavior){
     const move = () => {
       const box=$('#aihub-messages');
-      if(box) box.scrollTop = box.scrollHeight;
+      if(box) box.scrollTo({top:box.scrollHeight,behavior:'smooth'});
     };
     // Wait until the newly rendered message DOM has a measured scrollHeight.
     requestAnimationFrame(() => requestAnimationFrame(move));
   }
   function syncPageClass(){ document.body.classList.toggle('ai-page', location.hash.replace('#/','')==='ai'); }
   window.addEventListener('hashchange', syncPageClass);
-  function movePill(stripLeft){
-    const strip=$('.aihub-mode-strip'), act=$('.aihub-mode.active'), pill=$('.aihub-mode-pill');
-    if(!strip||!act||!pill) return;
-    strip.scrollLeft=stripLeft||0;
-    const to={l:act.offsetLeft,w:act.offsetWidth};
-    const set=p=>{pill.style.width=p.w+'px';pill.style.transform='translateX('+p.l+'px)';};
-    if(state.pill){ pill.style.transition='none'; set(state.pill); void pill.offsetWidth; pill.style.transition=''; }
-    requestAnimationFrame(()=>set(to));
-    state.pill=to;
-    if(act.offsetLeft+act.offsetWidth>strip.clientWidth+strip.scrollLeft||act.offsetLeft<strip.scrollLeft) strip.scrollTo({left:Math.max(0,act.offsetLeft-24),behavior:'smooth'});
-  }
   function autoGrow(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,200)+'px'; }
   function closeAttachMenu(){
     state.attachMenuOpen=false;
@@ -304,16 +290,12 @@
   function renderWorkspace() {
     const name = U.data && U.data.user && U.data.user.name ? U.data.user.name.split(' ')[0] : '';
     const active = state.conversations.find(c => c.id === state.activeId);
-    const selected = modes.find(m=>m.id===state.mode)||modes[0];
     const welcome = t('aiHubWelcome').replace('{name}', '<span class="hl">'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</span>');
-    const modeBar = '<span class="aihub-mode-pill"></span>' + modes.map(m=>`<button type="button" class="aihub-mode ${state.mode===m.id?'active':''}" data-ai-act="mode" data-mode="${m.id}" aria-pressed="${state.mode===m.id}">${icon(m.icon)}<span>${m.label}</span></button>`).join('');
-    const suggestionBar = suggestions.map((x,i)=>`<button type="button" class="aihub-suggestion" style="--i:${i}" data-ai-act="suggest" data-mode="${x.mode}" data-text="${esc(x.text)}"><em>0${i+1}</em><span>${x.text}</span>${icon(x.icon)}</button>`).join('');
     const words = t('aiHubWelcome').split(' ').map((w,i)=>`<span class="w" style="--w:${i}">${w.includes('{name}')?w.replace('{name}','<em>'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</em>'):esc(w)}</span>`).join(' ');
-    const empty = (!state.messages.length || state.firstChatTransition) ? `<div class="aihub-welcome-state ${state.firstChatTransition?'is-leaving':''}"><div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div><div class="aihub-welcome-copy"><p class="aihub-welcome-kicker">${selected.label} mode</p><h1>${words}</h1><p class="aihub-mode-hint">${selected.hint}</p></div><div class="aihub-suggestions">${suggestionBar}</div></div>` : '';
-    return `<section class="aihub-workspace ${state.messages.length?'has-chat':''} ${state.firstChatTransition?'is-first-chat-transition':''}" data-mode="${state.mode}">
+    const empty = (!state.messages.length || state.firstChatTransition) ? `<div class="aihub-welcome-state ${state.firstChatTransition?'is-leaving':''}"><div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div><div class="aihub-welcome-copy"><h1>${words}</h1><p class="aihub-mode-hint">Ask anything about your studies or university life.</p></div></div>` : '';
+    return `<section class="aihub-workspace ${state.messages.length?'has-chat':''} ${state.firstChatTransition?'is-first-chat-transition':''}">
       <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="study" aria-expanded="${state.studyOpen}">${icon('library')}<span>Study space</span></button></div></header>
       ${state.historyOpen?`<div class="aihub-history-drawer"><div class="aihub-history-heading"><b>Recent conversations</b><button type="button" data-ai-act="history">Close</button></div>${conversationList()}</div>`:''}
-      <div class="aihub-mode-strip" role="group" aria-label="AI modes">${modeBar}</div>
       <div class="aihub-chat-stage"><div class="aihub-messages ${state.messages.length?'has-messages':'is-empty'}" id="aihub-messages">${empty}${messageList()}</div>
       </div>
       <div class="aihub-dock"><div class="aihub-composer-wrap">
@@ -325,7 +307,7 @@
         <form data-ai-form="send" class="aihub-composer aihub-unified-composer">
           <div class="aihub-attachment-list">${renderAttachments()}</div>
           <textarea name="message" rows="1" maxlength="3000" placeholder="Message UniLife AI..." aria-label="Message UniLife AI" ${state.busy?'disabled':''}></textarea>
-          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode"><i></i>${selected.label} mode</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${state.busy?'<span class="aihub-send-spinner" aria-label="Sending"></span>':icon('arrow-up')}</button></div>
+          <div class="aihub-composer-bottom"><div class="aihub-composer-tools"><button type="button" class="aihub-attach-trigger" data-ai-act="attach-menu" aria-label="Add files" aria-haspopup="menu" aria-expanded="false" title="Add files">${icon('plus')}</button><span class="aihub-current-mode"><i></i>AI Chat</span><small>${t('aiHubContext')}</small></div><button class="aihub-send" type="submit" aria-label="Send" ${state.busy?'disabled':''}>${state.busy?'<span class="aihub-send-spinner" aria-label="Sending"></span>':icon('arrow-up')}</button></div>
         </form></div>
         <p class="aihub-workspace-disclaimer">AI can make mistakes. Check important academic information.</p>
       </div>
@@ -563,18 +545,8 @@
     const imageAttachments = state.attachments.filter(a=>a.kind==='image').slice(0,3);
     const fileContext=state.attachments.filter(a=>a.kind!=='image').map(a=>`\n\n[Attached file: ${a.name}]\n${a.content}`).join('');
     const imageNotes = imageAttachments.map(a=>`\n[Image attached: ${a.name}]`).join('');
-    const selectedMode = modes.find(m=>m.id===state.mode)||modes[0];
-    // Each AI mode instruction is added at most once per conversation.
-    // This supports switching modes in an existing chat without repeating the
-    // same instruction on every reply or re-injecting it when returning to a mode.
-    // Checking saved user-message content also works for conversations loaded
-    // from history, without needing a separate local/session flag.
-    const modePrompt = selectedMode.prompt || '';
-    const modePromptAlreadyUsed = !!modePrompt && state.messages.some(m =>
-      m && m.role === 'user' && String(m.content || '').startsWith(modePrompt)
-    );
-    const modeInstruction = modePrompt && !modePromptAlreadyUsed ? modePrompt : '';
-    const content = modeInstruction + rawContent + fileContext + imageNotes;
+    // Simple chat: never prepend hidden mode prompts to user messages.
+    const content = rawContent + fileContext + imageNotes;
     state.busy = true;
     state.firstChatTransition = state.messages.length === 0;
     state.messages.push({role:'user',content:content,attachments:attachmentSnapshot,created_at:new Date().toISOString()});
