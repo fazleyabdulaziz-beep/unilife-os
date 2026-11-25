@@ -353,3 +353,40 @@ body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15
 /* Chat identity avatars are deliberately static; only the typing indicator animates. */
 .aihub-message-avatar.bot-mascot .aihub-bot-avatar .aihub-bot,
 .aihub-message-avatar.bot-mascot .aihub-bot { animation:none !important; transform:none !important; }
+
+
+/* UniLife OS theme studio + multi-mascot login atmosphere */
+.auth-simple .auth-ambient { isolation:isolate; }
+.auth-simple .auth-unibot-float {
+  position:absolute; display:grid; place-items:center; width:clamp(66px,9vw,118px); height:clamp(66px,9vw,118px);
+  left:auto; right:auto; top:auto; opacity:.19; filter:blur(1.2px) drop-shadow(0 12px 26px color-mix(in srgb,var(--primary) 28%,transparent));
+  animation:auth-bot-float 9s ease-in-out infinite;
+}
+.auth-simple .auth-unibot-float .aihub-bot { width:100%; height:100%; }
+.auth-simple .auth-bot-1 { left:8%; top:13%; --bot-tint:var(--primary); }
+.auth-simple .auth-bot-2 { right:13%; top:9%; width:clamp(90px,12vw,155px);height:clamp(90px,12vw,155px);--bot-tint:var(--primary2);animation-delay:-2s; }
+.auth-simple .auth-bot-3 { left:17%; bottom:13%; --bot-tint:var(--orb3);animation-delay:-4s; }
+.auth-simple .auth-bot-4 { right:8%; bottom:14%;width:clamp(76px,10vw,130px);height:clamp(76px,10vw,130px);--bot-tint:var(--primary);animation-delay:-1s; }
+.auth-simple .auth-bot-5 { left:43%; top:4%;width:66px;height:66px;--bot-tint:var(--primary2);animation-delay:-5s; }
+.auth-simple .auth-bot-6 { left:3%; top:53%;width:82px;height:82px;--bot-tint:var(--orb2);animation-delay:-3s; }
+.auth-simple .auth-bot-7 { right:3%; top:54%;width:72px;height:72px;--bot-tint:var(--orb3);animation-delay:-6s; }
+.auth-simple .auth-unibot-float .aihub-bot { filter:drop-shadow(0 0 18px color-mix(in srgb,var(--bot-tint,var(--primary)) 70%,transparent)); }
+@keyframes auth-bot-float { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-18px) rotate(5deg)} }
+.auth-simple .auth-preferences { display:flex;align-items:center;gap:8px; }
+.auth-palette-control { display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:var(--glass);color:var(--text);backdrop-filter:blur(14px); }
+.auth-palette-control select { max-width:92px;border:0;outline:0;background:transparent;color:inherit;font:inherit;font-size:12px; }
+.theme-studio-dialog { min-width:min(420px,82vw); }
+.theme-studio-dialog .theme-gallery { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0; }
+.theme-studio-dialog .theme-swatch { min-width:0; }
+.theme-preview { background:linear-gradient(135deg,var(--swatch),var(--swatch2,var(--primary))); }
+@media(max-width:700px){
+ .auth-simple .auth-unibot-float { opacity:.13;filter:blur(1.5px); }
+ .auth-simple .auth-bot-1{left:3%;top:16%}.auth-simple .auth-bot-2{right:2%;top:12%}.auth-simple .auth-bot-3{left:4%;bottom:12%}.auth-simple .auth-bot-4{right:3%;bottom:10%}.auth-simple .auth-bot-5{left:45%;top:3%}.auth-simple .auth-bot-6{left:1%;top:48%}.auth-simple .auth-bot-7{right:1%;top:48%}
+ .auth-simple .auth-preferences { gap:5px; }
+ .auth-palette-control { padding:7px 8px; }
+}
+@media(prefers-reduced-motion:reduce){.auth-simple .auth-unibot-float{animation:none!important}}
+.auth-simple .auth-bot-1 .body,.auth-simple .auth-bot-5 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 52%,var(--primary2)))}
+.auth-simple .auth-bot-2 .body,.auth-simple .auth-bot-6 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--primary2),color-mix(in srgb,var(--primary2) 58%,var(--primary)))}
+.auth-simple .auth-bot-3 .body,.auth-simple .auth-bot-7 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--orb2),var(--primary2))}
+.auth-simple .auth-bot-4 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--orb3),var(--primary))}

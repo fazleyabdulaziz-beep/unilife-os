@@ -126,19 +126,8 @@ function showReminderCentre(items,isPreview=false){
  const testNote=isPreview?`<div class="dev-warning" style="margin:10px 0"><i data-lucide="flask-conical"></i><div><b>${ms?'Mod pratonton':'Preview mode'}</b><small>${ms?'Data contoh sahaja. Tiada data atau rekod dismissal sebenar diubah.':'Sample data only. No real data or dismissal records are changed.'}</small></div></div>`:'';
  const action=isPreview?'dev-close-reminder-preview':'dismiss-all-due-reminders';
  const button= isPreview?(ms?'Tutup pratonton':'Close preview'):(ms?'Tutup Semua':'Dismiss All');
- const modalRoot=modal(`<div class="day-head"><div><small>${heading}</small><h3>${summary}</h3></div><span class="badge">${items.length}</span></div>${testNote}<div style="max-height:55vh;overflow:auto;margin:12px 0">${rows}</div>${!isPreview?`<p class="muted" style="font-size:12px">${ms?'Jadual kelas boleh dilihat dalam Calendar.':'Class schedules and notifications remain in Calendar.'}</p>`:''}<div class="row end"><button type="button" class="btn" data-act="${action}">${button}</button></div>`);
+ modal(`<div class="day-head"><div><small>${heading}</small><h3>${summary}</h3></div><span class="badge">${items.length}</span></div>${testNote}<div style="max-height:55vh;overflow:auto;margin:12px 0">${rows}</div>${!isPreview?`<p class="muted" style="font-size:12px">${ms?'Jadual kelas boleh dilihat dalam Calendar.':'Class schedules and notifications remain in Calendar.'}</p>`:''}<div class="row end"><button class="btn" data-act="${action}">${button}</button></div>`);
  reminderCentreOpen=true;
- // Bind directly to the newly-created modal button as well as the app's delegated actions.
- // This keeps dismissal reliable on mobile browsers and after modal content is replaced.
- const dismissButton=modalRoot.querySelector(`[data-act="${action}"]`);
- if(dismissButton){
-  dismissButton.addEventListener('click',event=>{
-   event.preventDefault();
-   event.stopPropagation();
-   if(isPreview){reminderCentreOpen=false;close();}
-   else dismissAllDueReminders(items);
-  },{once:true});
- }
  window.lucide&&lucide.createIcons();
 }
 function checkDueDatePopup(){
@@ -153,15 +142,11 @@ function checkDueDatePopup(){
  });
  if(active.length)showReminderCentre(active,false);
 }
-function dismissAllDueReminders(items=collectDueReminders()){
- // Persist the reminders shown in this popup so they respect the configured repeat interval.
+function dismissAllDueReminders(){
  const {key,state}=reminderState(),now=Date.now();
- items.forEach(x=>{state[x.key]=now;});
- try { localStorage.setItem(key,JSON.stringify(state)); }
- catch(e) { console.warn('Could not save dismissed reminders:',e); }
- // Always close the popup, even if browser storage is unavailable.
- reminderCentreOpen=false;
- close();
+ collectDueReminders().forEach(x=>state[x.key]=now);
+ try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}
+ reminderCentreOpen=false;close();
 }
 function previewReminderPopup(){
  const ms=U.prefs.lang==='ms',today=new Date();today.setHours(0,0,0,0);
@@ -1123,8 +1108,9 @@ const acts={
  cmonth:id=>{st.cm=+id===0?0:(st.cm||0)+ +id;render()},
  close,
  menu:()=>{$('#sidebar').classList.toggle('open');$('#scrim').classList.toggle('open')},
+ 'theme-studio':()=>{const palettes=[['aurora',t('paletteAurora'),'#7c8cff','#4be1ec'],['sunset',t('paletteSunset'),'#ff8a5c','#ffc857'],['mint',t('paletteMint'),'#3fd6a0','#b5e86a'],['rose',t('paletteRose'),'#ff7aa8','#ffb86b'],['lagoon',t('paletteLagoon'),'#38bdf8','#34d399'],['graphite',t('paletteGraphite'),'#71717a','#c4c4cc']];modal(`<div class="theme-studio-dialog"><div class="row"><div><b>${t('themeStudio')}</b><p class="muted">${t('themeStudioHint')}</p></div><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><div class="theme-gallery">${palettes.map(([id,name,color,color2])=>`<button type="button" class="theme-swatch ${U.prefs.palette===id?'selected':''}" data-act="palette" data-id="${id}" aria-pressed="${U.prefs.palette===id}"><span class="theme-preview" style="--swatch:${color};--swatch2:${color2}"><i></i><i></i><i></i></span><b>${name}</b></button>`).join('')}</div><label class="field">${t('appearance')}<select data-set="theme"><option value="auto" ${U.prefs.theme==='auto'?'selected':''}>${t('automaticDayNight')}</option><option value="light" ${U.prefs.theme==='light'?'selected':''}>${t('light')}</option><option value="dark" ${U.prefs.theme==='dark'?'selected':''}>${t('dark')}</option></select></label></div>`);},
  quicktheme:()=>{U.prefs.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';store();apply();render();},
- palette:id=>{U.prefs.palette=id;store();apply();render();toast(t('themeUpdated'));},
+ palette:id=>{U.prefs.palette=id;store();apply();if($('#modal')&&!$('#modal').hidden){close();}render();toast(t('themeUpdated'));},
  'profile-menu':()=>modal(`<div class="profile-pop"><div class="row"><b>${t('account')}</b><button class="icon-btn" data-act="close"><i data-lucide="x"></i></button></div><p>${esc(D.user.name||t('student'))}</p><small>${esc(D.user.email||'')}</small><div class="row" style="margin-top:14px"><button class="btn" data-act="go-settings">${t('profileAndSettings')}</button><button class="btn ghost" data-act="logout">${t('logout')}</button></div></div>`),
  'go-settings':()=>{close();location.hash='#/settings';},
  'settings-open':id=>{st.settingsPage=id;render()},

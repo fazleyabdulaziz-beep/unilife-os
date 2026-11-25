@@ -21,9 +21,10 @@ UL.auth = {
           localStorage.setItem('ul_prefs', JSON.stringify(UL.prefs));
         } catch (_) {}
         if (key === 'lang') { localStorage.setItem('ul_auth_lang_override', value); await UL.i18n.load(value); }
-        if (key === 'theme') {
+        if (key === 'theme' || key === 'palette') {
           const root = document.documentElement;
-          root.dataset.theme = value === 'dark' ? 'dark' : 'light';
+          const mode = UL.prefs.theme || 'auto';
+          root.dataset.theme = mode === 'auto' || mode === 'system' ? ((new Date().getHours() < 6 || new Date().getHours() >= 18) ? 'dark' : 'light') : mode;
           root.dataset.palette = window.ULPalette(UL.prefs.palette);
         }
         draw();
@@ -118,13 +119,8 @@ UL.auth = {
 
         el.innerHTML = `
           <div class="auth-ambient" aria-hidden="true">
-            <span class="auth-orb auth-orb-one"></span>
-            <span class="auth-orb auth-orb-two"></span>
-            <span class="auth-orb auth-orb-three"></span>
-            <div class="auth-unibot-float">
-              <div class="aihub-bot"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div>
-              <span class="auth-bot-spark spark-a">✦</span><span class="auth-bot-spark spark-b">✧</span>
-            </div>
+            <span class="auth-orb auth-orb-one"></span><span class="auth-orb auth-orb-two"></span><span class="auth-orb auth-orb-three"></span>
+            ${Array.from({length:7},(_,i)=>`<div class="auth-unibot-float auth-bot-${i+1}"><div class="aihub-bot"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div></div>`).join('')}
           </div>
 
           <div class="auth-preferences" aria-label="Login appearance and language">
@@ -213,6 +209,7 @@ UL.auth = {
           setPreference('lang', e.target.value);
         el.querySelector('#auth-theme').onclick = () =>
           setPreference('theme', dark ? 'light' : 'dark');
+        el.querySelector('#auth-palette').onchange = e => setPreference('palette', e.target.value);
 
         el.querySelector('#auth-switch').onclick = e => {
           e.preventDefault();
