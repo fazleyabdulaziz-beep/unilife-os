@@ -1,0 +1,197 @@
+/* UniLife OS — complete visual theme packs.  All packs share application behaviour and data. */
+:root { --theme-pack-accent: var(--primary); }
+
+/* Shared themed component language */
+html[data-visual-theme] body { transition: background-color .35s ease, color .35s ease; }
+html[data-visual-theme] .card,
+html[data-visual-theme] .modal .dlg,
+html[data-visual-theme] .unibot-panel,
+html[data-visual-theme] .auth-simple-card,
+html[data-visual-theme] .settings-group,
+html[data-visual-theme] .dashboard-widget { transition: background .3s ease, border-color .3s ease, box-shadow .3s ease, border-radius .3s ease; }
+.visual-theme-gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; margin:16px 0 20px; }
+.visual-theme-card { display:flex; flex-direction:column; align-items:stretch; gap:7px; min-width:0; padding:10px; border:1px solid var(--border); border-radius:17px; background:var(--surface); color:var(--text); text-align:left; cursor:pointer; transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.visual-theme-card:hover { transform:translateY(-2px); }
+.visual-theme-card.selected { border:2px solid var(--primary); padding:9px; box-shadow:0 0 0 3px var(--primary-soft); }
+.visual-theme-card strong { font-size:13px; }
+.visual-theme-card small { color:var(--muted); font-size:11px; line-height:1.4; }
+.visual-theme-card em { color:var(--primary); font-size:10px; font-style:normal; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+.visual-theme-art { position:relative; display:flex; align-items:flex-end; gap:5px; height:68px; padding:8px; overflow:hidden; border-radius:11px; background:linear-gradient(135deg,var(--pack-a),var(--pack-b)); }
+.visual-theme-art i { display:block; width:20%; height:22px; border-radius:6px; background:rgba(255,255,255,.48); }
+.visual-theme-art i:first-child { height:39px; width:32%; background:rgba(255,255,255,.78); }
+.visual-theme-art b { position:absolute; right:10px; top:7px; font-size:27px; line-height:1; filter:drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
+.accent-palette-details { margin:12px 0 18px; padding:12px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.accent-palette-details summary { cursor:pointer; color:var(--muted); font-size:12px; font-weight:700; }
+.theme-studio-dialog { width:min(680px,92vw); max-height:min(82vh,760px); overflow:auto; }
+.auth-visual-theme { display:flex; align-items:center; gap:7px; min-height:38px; padding:0 11px; border:1px solid var(--border); border-radius:999px; background:var(--glass); color:var(--text); backdrop-filter:blur(14px); }
+.auth-visual-theme svg { width:15px; height:15px; flex:none; }
+.auth-visual-theme select { max-width:116px; min-width:0; border:0; outline:0; background:transparent; color:inherit; font:600 12px var(--font); }
+@media(max-width:600px) { .visual-theme-gallery { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; } .visual-theme-card { padding:8px; } .auth-visual-theme { padding:0 8px; } .auth-visual-theme select { max-width:88px; } }
+
+/* CLASSIC — preserve the existing UniLife appearance. */
+html[data-visual-theme="classic"] { --theme-pack-accent:var(--primary); }
+
+/* LOFI STUDY — warm paper, gentle ink, hand-drawn edges and a cat companion. */
+html[data-visual-theme="lofi"] {
+  --bg:#f4ecdf !important; --surface:#fffaf1 !important; --surface2:#eee2d1 !important;
+  --text:#514337 !important; --muted:#8b7968 !important; --border:rgba(111,83,58,.28) !important;
+  --primary:#a87952 !important; --primary2:#d1a77d !important; --on-primary:#fffaf2 !important;
+  --glass:rgba(255,250,241,.78) !important; --glass-border:rgba(111,83,58,.22) !important;
+  --grad:linear-gradient(135deg,#a87952,#d1a77d) !important; --glow:rgba(168,121,82,.2) !important;
+  --r:18px !important; --r-md:13px !important; --r-sm:10px !important; --pad:19px !important;
+  --font:'Nunito',system-ui,sans-serif !important; --font-display:'Kalam','Nunito',cursive !important;
+  --shadow:2px 3px 0 rgba(112,83,57,.09),0 8px 22px rgba(112,83,57,.08) !important;
+  --shadow-lg:3px 5px 0 rgba(112,83,57,.08),0 16px 34px rgba(112,83,57,.12) !important;
+}
+html[data-visual-theme="lofi"] body { background-image:repeating-linear-gradient(0deg,transparent 0 31px,rgba(151,119,85,.055) 32px 33px),radial-gradient(ellipse at 12% 8%,rgba(220,190,151,.28),transparent 42%); }
+html[data-visual-theme="lofi"] .card,
+html[data-visual-theme="lofi"] .dashboard-widget,
+html[data-visual-theme="lofi"] .settings-group,
+html[data-visual-theme="lofi"] .auth-simple-card,
+html[data-visual-theme="lofi"] .unibot-panel,
+html[data-visual-theme="lofi"] .modal .dlg { border:1.5px dashed rgba(133,100,70,.42) !important; border-radius:17px 14px 19px 13px !important; box-shadow:var(--shadow) !important; }
+html[data-visual-theme="lofi"] .btn,
+html[data-visual-theme="lofi"] button:not(.icon-btn):not(.unibot-launcher):not(.auth-eye):not(.unibot-greeting-close),
+html[data-visual-theme="lofi"] .auth-simple .auth-submit { border:1.5px dashed rgba(133,100,70,.55) !important; border-radius:12px 9px 13px 10px !important; box-shadow:2px 3px 0 rgba(112,83,57,.12) !important; }
+html[data-visual-theme="lofi"] .auth-simple .auth-submit,
+html[data-visual-theme="lofi"] .btn:not(.ghost) { background:#b88962 !important; color:#fffaf2 !important; }
+html[data-visual-theme="lofi"] input,
+html[data-visual-theme="lofi"] select,
+html[data-visual-theme="lofi"] textarea { border-radius:10px 8px 11px 9px !important; border-color:rgba(133,100,70,.35) !important; background:#fffdf7 !important; color:#514337 !important; }
+html[data-visual-theme="lofi"] h1,
+html[data-visual-theme="lofi"] h2,
+html[data-visual-theme="lofi"] h3,
+html[data-visual-theme="lofi"] .welcome-copy h2,
+html[data-visual-theme="lofi"] .auth-simple-heading h1 { font-family:'Kalam','Nunito',cursive !important; font-weight:700 !important; letter-spacing:0 !important; }
+html[data-visual-theme="lofi"] .topbar,
+html[data-visual-theme="lofi"] .sidebar,
+html[data-visual-theme="lofi"] .bottomnav { background:rgba(248,240,227,.9) !important; border-color:rgba(133,100,70,.2) !important; }
+html[data-visual-theme="lofi"] .aihub-bot .body { border:3px solid #9c7657; border-radius:48% 48% 45% 45% !important; background:radial-gradient(circle at 32% 25%,#fff9e9,transparent 43%),linear-gradient(145deg,#e9cda8,#c99c72) !important; box-shadow:0 14px 28px rgba(112,83,57,.18) !important; animation:none !important; }
+html[data-visual-theme="lofi"] .aihub-bot .body:before,
+html[data-visual-theme="lofi"] .aihub-bot .body:after { content:""; position:absolute; top:-13%; width:32%; height:35%; background:#d9b48d; border:3px solid #9c7657; clip-path:polygon(50% 0,100% 100%,0 100%); }
+html[data-visual-theme="lofi"] .aihub-bot .body:before { left:8%; transform:rotate(-12deg); }
+html[data-visual-theme="lofi"] .aihub-bot .body:after { right:8%; transform:rotate(12deg); }
+html[data-visual-theme="lofi"] .aihub-bot .eyes { top:48% !important; gap:24px !important; }
+html[data-visual-theme="lofi"] .aihub-bot .eyes:after { content:""; position:absolute; left:50%; top:18px; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid #9b6f69; transform:translateX(-50%); }
+html[data-visual-theme="lofi"] .aihub-bot .eye:after { background:#fff4dc !important; }
+html[data-visual-theme="lofi"] .aihub-bot .eye { width:9px !important; height:12px !important; background:#594537 !important; animation:none !important; }
+html[data-visual-theme="lofi"] .aihub-bot .shadow { opacity:.12 !important; }
+html[data-visual-theme="lofi"] .auth-simple .auth-unibot-float { opacity:.18; filter:blur(1.4px) sepia(.16) !important; }
+html[data-visual-theme="lofi"] .unibot-header { background:linear-gradient(120deg,#f0dfc9,#e8d3b8) !important; color:#514337 !important; }
+html[data-visual-theme="lofi"] .unibot-message.bot { background:#f6ecdc !important; border:1px dashed rgba(133,100,70,.35) !important; }
+html[data-visual-theme="lofi"] .unibot-message.user { background:#e5d1b8 !important; color:#514337 !important; }
+
+/* FOREST CAMP — earthy greens and a fox-shaped companion. */
+html[data-visual-theme="forest"] {
+  --bg:#edf1e7 !important; --surface:#fbfcf7 !important; --surface2:#e4eadc !important;
+  --text:#293b2d !important; --muted:#71816f !important; --border:rgba(55,83,57,.17) !important;
+  --primary:#527b57 !important; --primary2:#a7bd7b !important; --on-primary:#fff !important;
+  --glass:rgba(251,252,247,.78) !important; --grad:linear-gradient(130deg,#527b57,#a7bd7b) !important;
+  --r:22px !important; --r-md:16px !important; --font:'Nunito',system-ui,sans-serif !important; --font-display:'Nunito',system-ui,sans-serif !important;
+  --shadow:0 8px 26px rgba(48,76,48,.09) !important; --shadow-lg:0 16px 42px rgba(48,76,48,.14) !important;
+}
+html[data-visual-theme="forest"] body { background-image:radial-gradient(ellipse at 5% 0%,rgba(170,194,139,.23),transparent 38%),radial-gradient(ellipse at 95% 100%,rgba(100,143,95,.13),transparent 42%); }
+html[data-visual-theme="forest"] .card,html[data-visual-theme="forest"] .dashboard-widget { border-radius:24px 18px 24px 18px !important; border-color:rgba(82,123,87,.2) !important; }
+html[data-visual-theme="forest"] .btn:not(.ghost) { background:linear-gradient(135deg,#527b57,#78975e) !important; }
+html[data-visual-theme="forest"] .aihub-bot .body { background:radial-gradient(circle at 32% 24%,#fff0d8,transparent 42%),linear-gradient(145deg,#e7a05b,#c66f3e) !important; border-radius:44% 56% 50% 50% !important; }
+html[data-visual-theme="forest"] .aihub-bot .body:before,html[data-visual-theme="forest"] .aihub-bot .body:after { content:""; position:absolute; top:-16%; width:35%; height:42%; background:#c97843; clip-path:polygon(50% 0,100% 100%,0 100%); }
+html[data-visual-theme="forest"] .aihub-bot .body:before { left:6%; transform:rotate(-9deg); } html[data-visual-theme="forest"] .aihub-bot .body:after { right:6%; transform:rotate(9deg); }
+html[data-visual-theme="forest"] .aihub-bot .eye { background:#3b2b20 !important; }
+
+/* DREAMY SKY — airy blues, cloud surfaces and a cloud companion. */
+html[data-visual-theme="sky"] {
+  --bg:#edf6fc !important; --surface:#fbfdff !important; --surface2:#e2f0fa !important;
+  --text:#30485d !important; --muted:#7891a6 !important; --border:rgba(83,143,183,.19) !important;
+  --primary:#69a9d5 !important; --primary2:#a9d6e9 !important; --on-primary:#fff !important;
+  --glass:rgba(251,253,255,.78) !important; --grad:linear-gradient(130deg,#69a9d5,#a9d6e9) !important;
+  --r:26px !important; --r-md:19px !important; --font:'Quicksand',system-ui,sans-serif !important; --font-display:'Quicksand',system-ui,sans-serif !important;
+  --shadow:0 10px 30px rgba(86,145,184,.10) !important; --shadow-lg:0 18px 46px rgba(86,145,184,.15) !important;
+}
+html[data-visual-theme="sky"] body { background-image:radial-gradient(ellipse at 18% 0%,rgba(255,255,255,.95),transparent 45%),radial-gradient(ellipse at 90% 90%,rgba(169,214,233,.22),transparent 40%); }
+html[data-visual-theme="sky"] .card,html[data-visual-theme="sky"] .dashboard-widget,html[data-visual-theme="sky"] .unibot-panel { border-radius:26px !important; border-color:rgba(105,169,213,.2) !important; }
+html[data-visual-theme="sky"] .aihub-bot .body { border-radius:50% !important; background:#fff !important; box-shadow:-18px 12px 0 -5px #fff,18px 10px 0 -6px #fff,0 16px 28px rgba(92,154,195,.2) !important; animation:none !important; }
+html[data-visual-theme="sky"] .aihub-bot .eye { background:#527c9b !important; width:10px !important; height:10px !important; }
+
+/* PIXEL GAMER — deep arcade panels, crisp edges and a neon robot companion. */
+html[data-visual-theme="gamer"] {
+  --bg:#101321 !important; --surface:#191f32 !important; --surface2:#222b43 !important;
+  --text:#e8edff !important; --muted:#9aa8c8 !important; --border:rgba(120,145,255,.25) !important;
+  --primary:#9b7bff !important; --primary2:#43e7d2 !important; --on-primary:#111426 !important;
+  --glass:rgba(25,31,50,.82) !important; --grad:linear-gradient(120deg,#9b7bff,#43e7d2) !important;
+  --r:12px !important; --r-md:9px !important; --r-sm:6px !important; --font:'Inter',system-ui,sans-serif !important; --font-display:'Inter',system-ui,sans-serif !important;
+  --shadow:0 0 0 1px rgba(155,123,255,.10),0 8px 24px rgba(0,0,0,.25) !important; --shadow-lg:0 0 26px rgba(67,231,210,.12),0 18px 42px rgba(0,0,0,.35) !important;
+}
+html[data-visual-theme="gamer"] body { background-image:linear-gradient(rgba(120,145,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(120,145,255,.035) 1px,transparent 1px),radial-gradient(ellipse at 50% 0%,rgba(112,91,205,.16),transparent 48%); background-size:28px 28px,28px 28px,auto; }
+html[data-visual-theme="gamer"] .card,html[data-visual-theme="gamer"] .dashboard-widget,html[data-visual-theme="gamer"] .unibot-panel { border:1px solid rgba(155,123,255,.28) !important; border-radius:12px !important; box-shadow:var(--shadow) !important; }
+html[data-visual-theme="gamer"] .btn:not(.ghost),html[data-visual-theme="gamer"] .auth-simple .auth-submit { background:linear-gradient(110deg,#9b7bff,#43e7d2) !important; color:#111426 !important; border-radius:7px !important; box-shadow:0 0 18px rgba(67,231,210,.17) !important; }
+html[data-visual-theme="gamer"] .aihub-bot .body { border:2px solid #43e7d2; border-radius:17px !important; background:linear-gradient(145deg,#343e67,#202b48) !important; box-shadow:0 0 22px rgba(67,231,210,.3),inset 0 0 18px rgba(155,123,255,.15) !important; animation:none !important; }
+html[data-visual-theme="gamer"] .aihub-bot .body:before { content:""; position:absolute; left:50%; top:-18px; width:3px; height:18px; background:#43e7d2; transform:translateX(-50%); }
+html[data-visual-theme="gamer"] .aihub-bot .body:after { content:""; position:absolute; left:calc(50% - 5px); top:-25px; width:10px; height:10px; border-radius:50%; background:#43e7d2; box-shadow:0 0 12px #43e7d2; }
+html[data-visual-theme="gamer"] .aihub-bot .eye { background:#43e7d2 !important; box-shadow:0 0 9px #43e7d2 !important; border-radius:2px !important; }
+html[data-visual-theme="gamer"] .topbar,html[data-visual-theme="gamer"] .sidebar,html[data-visual-theme="gamer"] .bottomnav { background:rgba(16,19,33,.9) !important; border-color:rgba(120,145,255,.2) !important; }
+
+/* Respect the user's reduced-motion setting in every visual pack. */
+@media(prefers-reduced-motion:reduce) {
+  html[data-visual-theme] *,html[data-visual-theme] *:before,html[data-visual-theme] *:after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; }
+}
+
+/* Login screens follow the selected world too (the auth shell has its own legacy colours). */
+html[data-visual-theme="lofi"] .auth-simple { --auth-ink:#514337 !important; --auth-muted:#8b7968 !important; --auth-card:rgba(255,250,241,.82) !important; --auth-line:rgba(133,100,70,.32) !important; --auth-field:#fffdf7 !important; background:radial-gradient(ellipse at 12% 12%,rgba(220,190,151,.42),transparent 44%),linear-gradient(135deg,#f4ecdf,#eee3d3) !important; }
+html[data-visual-theme="forest"] .auth-simple { --auth-ink:#293b2d !important; --auth-muted:#71816f !important; --auth-card:rgba(251,252,247,.84) !important; --auth-line:rgba(82,123,87,.28) !important; --auth-field:#fbfcf7 !important; background:radial-gradient(ellipse at 10% 10%,rgba(170,194,139,.36),transparent 45%),linear-gradient(135deg,#edf1e7,#e2eadc) !important; }
+html[data-visual-theme="sky"] .auth-simple { --auth-ink:#30485d !important; --auth-muted:#7891a6 !important; --auth-card:rgba(251,253,255,.84) !important; --auth-line:rgba(105,169,213,.25) !important; --auth-field:#fff !important; background:radial-gradient(ellipse at 15% 10%,#fff,transparent 48%),linear-gradient(135deg,#edf6fc,#dfeefa) !important; }
+html[data-visual-theme="gamer"] .auth-simple { --auth-ink:#e8edff !important; --auth-muted:#9aa8c8 !important; --auth-card:rgba(25,31,50,.91) !important; --auth-line:rgba(120,145,255,.3) !important; --auth-field:#222b43 !important; background:radial-gradient(ellipse at 50% 0%,rgba(112,91,205,.22),transparent 48%),#101321 !important; }
+html[data-visual-theme="lofi"] .auth-simple .auth-field input,
+html[data-visual-theme="forest"] .auth-simple .auth-field input,
+html[data-visual-theme="sky"] .auth-simple .auth-field input,
+html[data-visual-theme="gamer"] .auth-simple .auth-field input { background:var(--auth-field) !important; color:var(--auth-ink) !important; border-color:var(--auth-line) !important; }
+html[data-visual-theme="lofi"] .auth-simple .auth-submit { background:#a87952 !important; color:#fffaf2 !important; }
+html[data-visual-theme="forest"] .auth-simple .auth-submit { background:#527b57 !important; color:#fff !important; }
+html[data-visual-theme="sky"] .auth-simple .auth-submit { background:#69a9d5 !important; color:#fff !important; }
+html[data-visual-theme="gamer"] .auth-simple .auth-submit { background:linear-gradient(110deg,#9b7bff,#43e7d2) !important; color:#111426 !important; }
+html[data-visual-theme="lofi"] .auth-simple-brand b { color:#a87952 !important; }
+html[data-visual-theme="forest"] .auth-simple-brand b { color:#527b57 !important; }
+html[data-visual-theme="sky"] .auth-simple-brand b { color:#69a9d5 !important; }
+html[data-visual-theme="gamer"] .auth-simple-brand b { color:#43e7d2 !important; }
+
+/* Dashboard cards and UniBot chat surfaces use the same visual vocabulary. */
+html[data-visual-theme="lofi"] .campus-card,
+html[data-visual-theme="lofi"] .unibot-message.bot { border:1.5px dashed rgba(133,100,70,.4) !important; border-radius:17px 14px 19px 13px !important; box-shadow:var(--shadow) !important; }
+html[data-visual-theme="lofi"] .welcome-card { background:linear-gradient(125deg,#f1e2cd,#f8efdf) !important; border:1.5px dashed rgba(133,100,70,.4) !important; }
+html[data-visual-theme="forest"] .campus-card { border-color:rgba(82,123,87,.22) !important; border-radius:24px 18px 24px 18px !important; }
+html[data-visual-theme="forest"] .welcome-card { background:linear-gradient(125deg,#dce8d2,#edf1e7) !important; border-color:rgba(82,123,87,.22) !important; }
+html[data-visual-theme="sky"] .campus-card { border-color:rgba(105,169,213,.22) !important; border-radius:26px !important; }
+html[data-visual-theme="sky"] .welcome-card { background:linear-gradient(125deg,#dceefa,#f5fbff) !important; border-color:rgba(105,169,213,.22) !important; }
+html[data-visual-theme="gamer"] .campus-card { border-color:rgba(155,123,255,.28) !important; border-radius:12px !important; }
+html[data-visual-theme="gamer"] .welcome-card { background:linear-gradient(125deg,#242b48,#182238) !important; border-color:rgba(67,231,210,.25) !important; }
+html[data-visual-theme="lofi"] .unibot-message.bot { background:#f6ecdc !important; color:#514337 !important; }
+html[data-visual-theme="lofi"] .unibot-message.user { background:#e5d1b8 !important; color:#514337 !important; }
+html[data-visual-theme="forest"] .unibot-message.bot { background:#e6eddf !important; }
+html[data-visual-theme="sky"] .unibot-message.bot { background:#e4f2fb !important; }
+html[data-visual-theme="gamer"] .unibot-message.bot { background:#222b43 !important; border:1px solid rgba(67,231,210,.18) !important; }
+
+/* Optional dark appearances for the light-first worlds. */
+html[data-theme="dark"][data-visual-theme="lofi"] {
+  --bg:#211b17 !important; --surface:#30261f !important; --surface2:#3b3027 !important;
+  --text:#f0e3d2 !important; --muted:#c0a990 !important; --border:rgba(238,211,179,.18) !important;
+  --primary:#d0a078 !important; --primary2:#e4c29a !important; --on-primary:#261b14 !important;
+  --glass:rgba(48,38,31,.82) !important; --grad:linear-gradient(135deg,#c18d63,#e4c29a) !important;
+  --shadow:2px 3px 0 rgba(0,0,0,.16),0 8px 22px rgba(0,0,0,.2) !important;
+}
+html[data-theme="dark"][data-visual-theme="lofi"] body { background-image:repeating-linear-gradient(0deg,transparent 0 31px,rgba(238,211,179,.035) 32px 33px),radial-gradient(ellipse at 12% 8%,rgba(193,141,99,.13),transparent 42%); }
+html[data-theme="dark"][data-visual-theme="lofi"] .auth-simple { --auth-ink:#f0e3d2 !important; --auth-muted:#c0a990 !important; --auth-card:rgba(48,38,31,.9) !important; --auth-line:rgba(238,211,179,.2) !important; --auth-field:#3b3027 !important; background:linear-gradient(135deg,#211b17,#30261f) !important; }
+html[data-theme="dark"][data-visual-theme="lofi"] .topbar,html[data-theme="dark"][data-visual-theme="lofi"] .sidebar,html[data-theme="dark"][data-visual-theme="lofi"] .bottomnav { background:rgba(39,30,24,.94) !important; }
+html[data-theme="dark"][data-visual-theme="forest"] {
+  --bg:#111b14 !important; --surface:#1b2a1e !important; --surface2:#263829 !important;
+  --text:#e7f0e2 !important; --muted:#a1b59c !important; --border:rgba(174,203,153,.16) !important;
+  --primary:#91b77c !important; --primary2:#c0d39b !important; --on-primary:#172416 !important;
+  --glass:rgba(27,42,30,.84) !important; --grad:linear-gradient(130deg,#527b57,#a7bd7b) !important;
+}
+html[data-theme="dark"][data-visual-theme="forest"] .auth-simple { --auth-ink:#e7f0e2 !important; --auth-muted:#a1b59c !important; --auth-card:rgba(27,42,30,.9) !important; --auth-line:rgba(174,203,153,.18) !important; --auth-field:#263829 !important; background:linear-gradient(135deg,#111b14,#1b2a1e) !important; }
+html[data-theme="dark"][data-visual-theme="sky"] {
+  --bg:#111d2a !important; --surface:#1b2b3b !important; --surface2:#263b50 !important;
+  --text:#e7f3fc !important; --muted:#a3bed1 !important; --border:rgba(151,205,235,.17) !important;
+  --primary:#8bc8eb !important; --primary2:#b7e4f5 !important; --on-primary:#13283a !important;
+  --glass:rgba(27,43,59,.84) !important; --grad:linear-gradient(130deg,#69a9d5,#a9d6e9) !important;
+}
+html[data-theme="dark"][data-visual-theme="sky"] .auth-simple { --auth-ink:#e7f3fc !important; --auth-muted:#a3bed1 !important; --auth-card:rgba(27,43,59,.9) !important; --auth-line:rgba(151,205,235,.18) !important; --auth-field:#263b50 !important; background:linear-gradient(135deg,#111d2a,#1b2b3b) !important; }
+html[data-visual-theme]:not([data-visual-theme="classic"]) .accent-palette-details { display:none; }

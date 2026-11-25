@@ -250,11 +250,12 @@ function bootstrap(uid){
   data.welcomeSubtitle=p.extra.welcomeSubtitle||'A little progress every day adds up. Keep your goals in sight.';
   data.widgetSizes=p.extra.widgetSizes||{};
   data.reminderFrequency=p.extra.reminderFrequency||'daily';
+  data.visualTheme=p.extra.visualTheme||'classic';
   return{user:userOut(u),prefs:p.prefs,data:data};
 }
 function getPrefs(uid){
   var base={font:'Inter',theme:'light',lang:'en',density:'comfortable',order:WIDGETS.slice(),hidden:[],notif:{push:false,assignments:true,classes:true,exams:true,finance:true,classReminderMinutes:[60],assignmentDays:[7,3,1,0],examDays:[7,3,1,0],inAppPopup:true,repeatUntilDismissed:true}};
-  var ex={budget:800,study:[0,0,0,0,0,0,0],welcomeTitle:'Your campus, your pace.',welcomeSubtitle:'A little progress every day adds up. Keep your goals in sight.',widgetSizes:{},reminderFrequency:'daily'};
+  var ex={budget:800,study:[0,0,0,0,0,0,0],welcomeTitle:'Your campus, your pace.',welcomeSubtitle:'A little progress every day adds up. Keep your goals in sight.',widgetSizes:{},reminderFrequency:'daily',visualTheme:'classic'};
   var r=uid?table('UserPreferences').rows.filter(function(x){return x.user_id===uid;})[0]:null;
   if(!r)return{prefs:base,extra:ex};
   return{
@@ -281,6 +282,7 @@ function savePrefs(uid,d){
   notif.assignmentDays=offsets('assignmentDays',[7,3,1,0]);
   notif.examDays=offsets('examDays',[7,3,1,0]);
   var ex=cur.extra;
+  var visualTheme=E(['classic','lofi','forest','sky','gamer'])(d.visualTheme!=null?d.visualTheme:(d.extra&&d.extra.visualTheme!=null?d.extra.visualTheme:(cur.extra.visualTheme||'classic')));
   if(d.extra){
     if(!Array.isArray(d.extra.study)||d.extra.study.length!==7)throw fail('invalid');
     ex={
@@ -289,9 +291,11 @@ function savePrefs(uid,d){
       welcomeTitle:S(80,0)(d.extra.welcomeTitle==null?(cur.extra.welcomeTitle||'Your campus, your pace.'):d.extra.welcomeTitle),
       welcomeSubtitle:S(160,0)(d.extra.welcomeSubtitle==null?(cur.extra.welcomeSubtitle||'A little progress every day adds up. Keep your goals in sight.'):d.extra.welcomeSubtitle),
       widgetSizes:(function(){var src=d.extra.widgetSizes||cur.extra.widgetSizes||{},out={};if(!src||typeof src!=='object'||Array.isArray(src))throw fail('invalid');Object.keys(src).forEach(function(k){if(WIDGETS.indexOf(k)<0||['small','medium','large'].indexOf(src[k])<0)throw fail('invalid');out[k]=src[k];});return out;})(),
-      reminderFrequency:E(['hourly','daily','weekly'])(d.extra.reminderFrequency==null?(cur.extra.reminderFrequency||'daily'):d.extra.reminderFrequency)
+      reminderFrequency:E(['hourly','daily','weekly'])(d.extra.reminderFrequency==null?(cur.extra.reminderFrequency||'daily'):d.extra.reminderFrequency),
+      visualTheme:visualTheme
     };
-  }
+  } else if(d.visualTheme!=null){ex.visualTheme=visualTheme;}
+  if(d.extra && d.extra.visualTheme==null)ex.visualTheme=visualTheme;
   var o={user_id:uid,font:E(FONTS)(d.font),theme:E(['light','dark','system'])(d.theme),lang:E(['en','ms'])(d.lang),
     density:E(['comfortable','compact'])(d.density),widget_order:JSON.stringify(list(d.order)),
     widget_hidden:JSON.stringify(list(d.hidden)),notif_json:JSON.stringify(notif),extra_json:JSON.stringify(ex)};

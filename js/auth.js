@@ -17,20 +17,23 @@ UL.auth = {
 
       const setPreference = async (key, value) => {
         UL.prefs[key] = value;
+        if (key === 'visualTheme') { try { localStorage.setItem('ul_visual_theme_override', '1'); } catch (_) {} }
         try {
           localStorage.setItem('ul_prefs', JSON.stringify(UL.prefs));
         } catch (_) {}
         if (key === 'lang') { localStorage.setItem('ul_auth_lang_override', value); await UL.i18n.load(value); }
-        if (key === 'theme' || key === 'palette') {
+        if (key === 'theme' || key === 'palette' || key === 'visualTheme') {
           const root = document.documentElement;
           const mode = UL.prefs.theme || 'auto';
           root.dataset.theme = mode === 'auto' || mode === 'system' ? ((new Date().getHours() < 6 || new Date().getHours() >= 18) ? 'dark' : 'light') : mode;
           root.dataset.palette = window.ULPalette(UL.prefs.palette);
+          root.dataset.visualTheme = window.ULVisualTheme(UL.prefs.visualTheme);
         }
         draw();
       };
 
       document.documentElement.dataset.palette = window.ULPalette(UL.prefs.palette);
+      document.documentElement.dataset.visualTheme = window.ULVisualTheme(UL.prefs.visualTheme);
       const el = document.createElement('div');
       el.className = 'authwrap auth-simple';
       document.body.append(el);
@@ -69,7 +72,7 @@ UL.auth = {
           switchRegister: 'Daftar sekarang',
           footer: 'Ruang kecil untuk kemajuan besar.',
           language: 'Bahasa',
-          theme: 'Tema',
+          theme: 'Tema', visualTheme: 'Gaya',
           dark: 'Gelap',
           light: 'Cerah',
           forgot: 'Lupa kata laluan?', resetTitle: 'Tetapkan kata laluan baharu.',
@@ -103,7 +106,7 @@ UL.auth = {
           switchRegister: 'Create an account',
           footer: 'A little progress, every day.',
           language: 'Language',
-          theme: 'Appearance',
+          theme: 'Appearance', visualTheme: 'Theme',
           dark: 'Dark',
           light: 'Light',
           forgot: 'Forgot password?', resetTitle: 'Set a new password.',
@@ -130,6 +133,13 @@ UL.auth = {
               <select id="auth-language" aria-label="${copy.language}">
                 <option value="en" ${lang === 'en' ? 'selected' : ''}>EN</option>
                 <option value="ms" ${lang === 'ms' ? 'selected' : ''}>BM</option>
+              </select>
+            </label>
+            <label class="auth-visual-theme">
+              <i data-lucide="palette"></i>
+              <span class="sr-only">${copy.visualTheme}</span>
+              <select id="auth-visual-theme" aria-label="${copy.visualTheme}">
+                ${window.ULThemePacks.map(pack => `<option value="${pack.id}" ${window.ULVisualTheme(UL.prefs.visualTheme)===pack.id?'selected':''}>${pack.name}</option>`).join('')}
               </select>
             </label>
             <button type="button" class="auth-theme" id="auth-theme"
@@ -209,7 +219,7 @@ UL.auth = {
           setPreference('lang', e.target.value);
         el.querySelector('#auth-theme').onclick = () =>
           setPreference('theme', dark ? 'light' : 'dark');
-        el.querySelector('#auth-palette').onchange = e => setPreference('palette', e.target.value);
+        el.querySelector('#auth-visual-theme').onchange = e => setPreference('visualTheme', e.target.value);
 
         el.querySelector('#auth-switch').onclick = e => {
           e.preventDefault();
@@ -274,7 +284,7 @@ UL.auth = {
             if (reg) {
               const p = UL.prefs;
               body.name = String(f.name || '').trim();
-              body.prefs = { font: p.font, theme: p.theme, lang: p.lang, density: p.density, order: p.order, hidden: p.hidden, notif: p.notif };
+              body.prefs = { font: p.font, theme: p.theme, lang: p.lang, density: p.density, order: p.order, hidden: p.hidden, notif: p.notif, visualTheme: window.ULVisualTheme(p.visualTheme) };
             }
             const r = await UL.api.call(mode, body);
             localStorage.setItem('ul_token', r.token);
