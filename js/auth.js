@@ -45,6 +45,9 @@ UL.auth = {
       };
 
       const draw = (err = '') => {
+        const visualTheme = window.ULVisualTheme(UL.prefs.visualTheme);
+        const mascotTheme = visualTheme === 'lofi' || visualTheme === 'forest' ? visualTheme : '';
+        const mascotName = visualTheme === 'lofi' ? 'cat' : 'fox';
         const reg = mode === 'register';
         const forgot = mode === 'forgot';
         const reset = mode === 'reset';
@@ -123,7 +126,7 @@ UL.auth = {
         el.innerHTML = `
           <div class="auth-ambient" aria-hidden="true">
             <span class="auth-orb auth-orb-one"></span><span class="auth-orb auth-orb-two"></span><span class="auth-orb auth-orb-three"></span>
-            ${Array.from({length:7},(_,i)=>`<div class="auth-unibot-float auth-bot-${i+1}"><div class="aihub-bot"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div></div>`).join('')}
+            ${Array.from({length:7},(_,i)=>`<div class="auth-unibot-float auth-bot-${i+1}">${mascotTheme ? `<img class="auth-theme-mascot" src="assets/themes/${mascotTheme}/${mascotName}-sleeping.png" alt="" aria-hidden="true">` : `<div class="aihub-bot"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div>`}</div>`).join('')}
           </div>
 
           <div class="auth-preferences" aria-label="Login appearance and language">

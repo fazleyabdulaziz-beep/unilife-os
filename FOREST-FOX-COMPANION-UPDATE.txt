@@ -1,0 +1,15 @@
+UniLife OS v33 — Forest Fox Companion
+
+Changes:
+- Added the supplied transparent sleeping and awake fox PNGs under assets/themes/forest/.
+- Forest theme dashboard companion now sleeps while chat is closed and wakes when opened.
+- Forest theme chat header uses the supplied awake fox.
+- Login and registration ambient mascots use the sleeping fox when Forest is selected.
+- AI Study Hub welcome state and assistant message avatars use the awake fox for Forest.
+- Lofi cat behaviour and other theme mascots remain unchanged.
+- Service Worker cache version bumped to unilife-v33-forest-fox-companion and fox PNGs added to precache.
+
+Deployment:
+- Replace the GitHub Pages project files with this ZIP.
+- No Apps Script update is required; this is a front-end asset and rendering update.
+- Hard refresh after deployment if the old Service Worker assets remain cached.

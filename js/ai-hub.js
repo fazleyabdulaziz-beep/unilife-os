@@ -153,6 +153,11 @@
     return url ? `<img src="${esc(url)}" alt="${esc(name)}">` : `<span>${esc(name.trim().charAt(0).toUpperCase() || 'U')}</span>`;
   }
   function botAvatarMarkup() {
+    const theme = document.documentElement.dataset.visualTheme;
+    if (theme === 'lofi' || theme === 'forest') {
+      const name = theme === 'lofi' ? 'cat' : 'fox';
+      return `<span class="aihub-bot-avatar theme-bot-avatar" aria-hidden="true"><img src="assets/themes/${theme}/${name}-awake.png" alt=""></span>`;
+    }
     return `<span class="aihub-bot-avatar" aria-hidden="true"><span class="aihub-bot"><span class="body"></span><span class="eyes"><i class="eye"></i><i class="eye"></i></span><span class="shadow"></span></span></span>`;
   }
   function messageList() {
@@ -308,7 +313,9 @@
     const active = state.conversations.find(c => c.id === state.activeId);
     const welcome = t('aiHubWelcome').replace('{name}', '<span class="hl">'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</span>');
     const words = t('aiHubWelcome').split(' ').map((w,i)=>`<span class="w" style="--w:${i}">${w.includes('{name}')?w.replace('{name}','<em>'+esc(name || (U.prefs && U.prefs.lang==='ms'?'pelajar':'there'))+'</em>'):esc(w)}</span>`).join(' ');
-    const empty = (!state.messages.length || state.firstChatTransition) ? `<div class="aihub-welcome-state ${state.firstChatTransition?'is-leaving':''}"><div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div><div class="aihub-welcome-copy"><h1>${words}</h1><p class="aihub-mode-hint">Ask anything about your studies or university life.</p></div></div>` : '';
+    const theme = document.documentElement.dataset.visualTheme;
+    const mascot = theme === 'lofi' || theme === 'forest' ? `<img class="aihub-welcome-mascot" src="assets/themes/${theme}/${theme === 'lofi' ? 'cat' : 'fox'}-awake.png" alt="">` : `<div class="aihub-bot" aria-hidden="true"><div class="body"></div><div class="eyes"><i class="eye"></i><i class="eye"></i></div><div class="shadow"></div></div>`;
+    const empty = (!state.messages.length || state.firstChatTransition) ? `<div class="aihub-welcome-state ${state.firstChatTransition?'is-leaving':''}">${mascot}<div class="aihub-welcome-copy"><h1>${words}</h1><p class="aihub-mode-hint">Ask anything about your studies or university life.</p></div></div>` : '';
     return `<section class="aihub-workspace ${state.messages.length?'has-chat':''} ${state.firstChatTransition?'is-first-chat-transition':''}">
       <header class="aihub-workspace-top"><div class="aihub-brand">${icon('sparkles')}<span>UniLife AI</span><small>STUDY COMPANION</small></div><div class="aihub-top-actions"><button type="button" class="aihub-top-button" data-ai-act="history" aria-expanded="${state.historyOpen}">${icon('history')}<span>History</span></button><button type="button" class="aihub-top-button" data-ai-act="new">${icon('plus')}<span>New chat</span></button><button type="button" class="aihub-top-button" data-ai-act="study" aria-expanded="${state.studyOpen}">${icon('library')}<span>Study space</span></button></div></header>
       ${state.historyOpen?`<div class="aihub-history-drawer"><div class="aihub-history-heading"><b>Recent conversations</b><button type="button" data-ai-act="history">Close</button></div>${conversationList()}</div>`:''}

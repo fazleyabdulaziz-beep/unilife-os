@@ -765,6 +765,10 @@ function initUniBotGreeting() {
 }
 function uniBotMarkup() {
   const prefs = uniBotPrefs();
+  const visualTheme = window.ULVisualTheme(U.prefs.visualTheme);
+  const mascotTheme = visualTheme === 'lofi' || visualTheme === 'forest' ? visualTheme : '';
+  const mascotName = visualTheme === 'lofi' ? 'MewBot' : visualTheme === 'forest' ? 'FoxBot' : 'UniBot';
+  const mascotLabel = visualTheme === 'lofi' ? 'cat' : 'fox';
   return `
     ${uniBotWelcomeLoading ? `<div class="unibot-welcome-stack" id="unibot-welcome-stack" role="status" aria-live="polite"></div>` : ''}
     ${uniBotGreeting && !uniBotOpen && !uniBotWelcomeLoading ? `
@@ -776,8 +780,8 @@ function uniBotMarkup() {
     ${uniBotOpen ? '<button class="unibot-chat-backdrop" data-act="unibot-close" aria-label="Close UniBot chat"></button>' : ''}
     <section class="unibot-panel" id="unibot-panel" ${uniBotOpen ? '' : 'hidden'}>
       <header class="unibot-header">
-        ${window.ULVisualTheme(U.prefs.visualTheme)==='lofi' ? '<img class="unibot-header-mascot" src="assets/themes/lofi/cat-awake.png" alt="Awake UniBot cat">' : ''}
-        <div class="unibot-header-copy"><b>${window.ULVisualTheme(U.prefs.visualTheme)==='lofi'?'MewBot':'UniBot'}</b><small>${uniBotText('Your UniLife companion','Teman UniLife anda')}</small></div>
+        ${mascotTheme ? `<img class="unibot-header-mascot theme-header-mascot" src="assets/themes/${mascotTheme}/${mascotLabel}-awake.png" alt="Awake UniBot ${mascotLabel}">` : ''}
+        <div class="unibot-header-copy"><b>${mascotName}</b><small>${uniBotText('Your UniLife companion','Teman UniLife anda')}</small></div>
         <button data-act="unibot-voice-toggle" aria-label="Toggle voice" title="${prefs.voiceEnabled ? 'Mute voice' : 'Enable voice'}"><i data-lucide="${prefs.voiceEnabled ? 'volume-2' : 'volume-x'}"></i></button>
         <button data-act="unibot-auto-speak-toggle" aria-label="Toggle automatic replies" title="${prefs.autoSpeak ? 'Automatic speech on' : 'Automatic speech off'}"><i data-lucide="${prefs.autoSpeak ? 'audio-lines' : 'message-square'}"></i></button>
         <button data-act="unibot-greeting-toggle" aria-label="Toggle greetings" title="${prefs.autoGreeting ? 'Automatic greeting on' : 'Automatic greeting off'}"><i data-lucide="${prefs.autoGreeting ? 'message-circle' : 'message-circle-off'}"></i></button>
@@ -809,9 +813,9 @@ function uniBotMarkup() {
         <button type="submit" aria-label="Send" ${uniBotBusy ? 'disabled' : ''}><i data-lucide="send"></i></button>
       </form>
     </section>
-    <button class="unibot-launcher ${window.ULVisualTheme(U.prefs.visualTheme)==='lofi'?'lofi-cat-launcher':''}" data-act="unibot-toggle" aria-label="${window.ULVisualTheme(U.prefs.visualTheme)==='lofi'?(uniBotOpen?'Close cat chat':'Wake up the cat and chat'):(uniBotOpen?'Close UniBot chat':'Open UniBot')}" aria-expanded="${uniBotOpen}">
-      ${window.ULVisualTheme(U.prefs.visualTheme)==='lofi'
-        ? `<img class="lofi-cat-art ${uniBotOpen?'is-awake':'is-sleeping'}" src="assets/themes/lofi/${uniBotOpen?'cat-awake.png':'cat-sleeping.png'}" alt="${uniBotOpen?'UniBot cat is awake and ready to chat':'UniBot cat is sleeping. Tap to wake it up'}" draggable="false">`
+    <button class="unibot-launcher ${mascotTheme?'theme-mascot-launcher '+mascotTheme+'-mascot-launcher':''} ${visualTheme==='lofi'?'lofi-cat-launcher':''}" data-act="unibot-toggle" aria-label="${mascotTheme?(uniBotOpen?'Close '+mascotLabel+' chat':'Wake up the '+mascotLabel+' and chat'):(uniBotOpen?'Close UniBot chat':'Open UniBot')}" aria-expanded="${uniBotOpen}">
+      ${mascotTheme
+        ? `<img class="lofi-cat-art theme-mascot-art ${mascotTheme}-mascot-art ${uniBotOpen?'is-awake':'is-sleeping'}" src="assets/themes/${mascotTheme}/${mascotLabel}-${uniBotOpen?'awake':'sleeping'}.png" alt="${uniBotOpen?'UniBot '+mascotLabel+' is awake and ready to chat':'UniBot '+mascotLabel+' is sleeping. Tap to wake it up'}" draggable="false">`
         : `<div class="unibot-studyhub-orb" aria-hidden="true">
             <div class="aihub-bot">
               <div class="body"></div>
@@ -821,7 +825,7 @@ function uniBotMarkup() {
             <span class="unibot-orb-spark spark-one">✦</span>
             <span class="unibot-orb-spark spark-two">✧</span>
           </div>`}
-      <span class="unibot-label">${window.ULVisualTheme(U.prefs.visualTheme)==='lofi'?(uniBotOpen?'Chat with me':'Zzz…'):'UniBot'}</span>
+      <span class="unibot-label">${mascotTheme?(uniBotOpen?'Chat with me':'Zzz…'):'UniBot'}</span>
     </button>`;
 }
 function renderUniBot() {
