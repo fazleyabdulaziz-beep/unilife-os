@@ -126,7 +126,7 @@ function showReminderCentre(items,isPreview=false){
  const testNote=isPreview?`<div class="dev-warning" style="margin:10px 0"><i data-lucide="flask-conical"></i><div><b>${ms?'Mod pratonton':'Preview mode'}</b><small>${ms?'Data contoh sahaja. Tiada data atau rekod dismissal sebenar diubah.':'Sample data only. No real data or dismissal records are changed.'}</small></div></div>`:'';
  const action=isPreview?'dev-close-reminder-preview':'dismiss-all-due-reminders';
  const button= isPreview?(ms?'Tutup pratonton':'Close preview'):(ms?'Tutup Semua':'Dismiss All');
- modal(`<div class="day-head"><div><small>${heading}</small><h3>${summary}</h3></div><span class="badge">${items.length}</span></div>${testNote}<div style="max-height:55vh;overflow:auto;margin:12px 0">${rows}</div>${!isPreview?`<p class="muted" style="font-size:12px">${ms?'Jadual kelas boleh dilihat dalam Calendar.':'Class schedules and notifications remain in Calendar.'}</p>`:''}<div class="row end"><button class="btn" data-act="${action}">${button}</button></div>`);
+ modal(`<div class="day-head"><div><small>${heading}</small><h3>${summary}</h3></div><span class="badge">${items.length}</span></div>${testNote}<div style="max-height:55vh;overflow:auto;margin:12px 0">${rows}</div>${!isPreview?`<p class="muted" style="font-size:12px">${ms?'Jadual kelas boleh dilihat dalam Calendar.':'Class schedules and notifications remain in Calendar.'}</p>`:''}<div class="row end"><button type="button" class="btn" data-act="${action}">${button}</button></div>`);
  reminderCentreOpen=true;
  window.lucide&&lucide.createIcons();
 }
@@ -143,10 +143,14 @@ function checkDueDatePopup(){
  if(active.length)showReminderCentre(active,false);
 }
 function dismissAllDueReminders(){
+ // Persist each currently due item so the popup respects the configured repeat interval.
  const {key,state}=reminderState(),now=Date.now();
- collectDueReminders().forEach(x=>state[x.key]=now);
- try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}
- reminderCentreOpen=false;close();
+ collectDueReminders().forEach(x=>{state[x.key]=now;});
+ try { localStorage.setItem(key,JSON.stringify(state)); }
+ catch(e) { console.warn('Could not save dismissed reminders:',e); }
+ // Always close the popup, even if browser storage is unavailable.
+ reminderCentreOpen=false;
+ close();
 }
 function previewReminderPopup(){
  const ms=U.prefs.lang==='ms',today=new Date();today.setHours(0,0,0,0);
