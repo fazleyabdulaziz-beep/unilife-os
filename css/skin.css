@@ -390,3 +390,57 @@ body.ai-page .aihub-history-drawer{position:absolute;top:52px;right:0;z-index:15
 .auth-simple .auth-bot-2 .body,.auth-simple .auth-bot-6 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--primary2),color-mix(in srgb,var(--primary2) 58%,var(--primary)))}
 .auth-simple .auth-bot-3 .body,.auth-simple .auth-bot-7 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--orb2),var(--primary2))}
 .auth-simple .auth-bot-4 .body{background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.42),transparent 45%),linear-gradient(135deg,var(--orb3),var(--primary))}
+
+
+/* Search field: explicitly theme the native search control in both color modes.
+   Some browsers retain a white native search-field surface even when generic
+   input styles use theme variables. */
+#search.search,
+.topbar input.search,
+input[type="search"].search {
+  -webkit-appearance: none;
+  appearance: none;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text);
+  background: var(--surface) !important;
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  caret-color: var(--primary);
+  color-scheme: light;
+}
+html[data-theme="dark"] #search.search,
+html[data-theme="dark"] .topbar input.search,
+html[data-theme="dark"] input[type="search"].search {
+  color-scheme: dark;
+  color: var(--text) !important;
+  -webkit-text-fill-color: var(--text);
+  background: var(--surface2) !important;
+  background-color: var(--surface2) !important;
+  border-color: var(--border) !important;
+}
+#search.search::placeholder,
+.topbar input.search::placeholder {
+  color: var(--muted) !important;
+  -webkit-text-fill-color: var(--muted);
+  opacity: 1;
+}
+#search.search:focus,
+.topbar input.search:focus {
+  background: var(--surface) !important;
+  background-color: var(--surface) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px var(--primary-soft) !important;
+}
+html[data-theme="dark"] #search.search:focus,
+html[data-theme="dark"] .topbar input.search:focus {
+  background: var(--surface) !important;
+  background-color: var(--surface) !important;
+}
+#search.search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  cursor: pointer;
+  filter: invert(.55);
+}
+html[data-theme="dark"] #search.search::-webkit-search-cancel-button {
+  filter: invert(.85);
+}

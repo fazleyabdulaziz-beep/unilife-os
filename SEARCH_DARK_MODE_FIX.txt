@@ -1,0 +1,8 @@
+UniLife OS — Search field dark-mode fix
+
+- Explicitly applies the active theme surface and text tokens to the dashboard search input.
+- Handles native browser search-field rendering with appearance and color-scheme rules.
+- Styles placeholder, focus state, caret, and search-clear control for dark mode.
+- Service Worker cache version: unilife-v34-search-dark-mode-fix
+
+Deploy the full project and hard-refresh (Ctrl+Shift+R). No Apps Script changes required.
