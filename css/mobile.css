@@ -246,3 +246,27 @@
   .unibot-studyhub-orb .aihub-bot { width: 66px !important; height: 66px !important; }
   .unibot-label { margin-top: 0 !important; font-size: 10px !important; }
 }
+
+/* UniBot mobile alignment: give the fixed root a predictable mascot-sized anchor. */
+@media (max-width: 600px) {
+  #unibot-root:not(.is-welcome-stage) {
+    width: 82px !important;
+    height: 90px !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+  }
+  #unibot-root:not(.is-welcome-stage) .unibot-launcher {
+    position: absolute !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 82px !important;
+    height: 90px !important;
+  }
+  #unibot-root:not(.is-welcome-stage) .unibot-greeting {
+    right: 72px !important;
+    bottom: 48px !important;
+    width: min(230px, calc(100vw - 112px)) !important;
+    max-width: calc(100vw - 112px) !important;
+    z-index: 5 !important;
+  }
+}
